@@ -1,0 +1,18 @@
+# Build & Publish Binaries
+[Bb]in/
+[Oo]bj/
+SingleFile_EXE_Output/
+SingleFile_EXE_Output*/
+*.exe
+*.zip
+*.dll
+*.pdb
+
+# IDE & User Temp Data
+.vs/
+.idea/
+*.user
+*.userosv
+*.suo
+scratch/
+.system_generated/
