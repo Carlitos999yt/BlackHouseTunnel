@@ -223,25 +223,15 @@ namespace NepTunnel.Services
                 {
                     try { hkcuSoftware.DeleteSubKeyTree("Roblox Studio Mod Manager", throwOnMissingSubKey: false); } catch { }
                     try { hkcuSoftware.DeleteSubKeyTree("Roblox Studio", throwOnMissingSubKey: false); } catch { }
+                    try { hkcuSoftware.DeleteSubKeyTree("Roblox", throwOnMissingSubKey: false); } catch { }
+                    try { hkcuSoftware.DeleteSubKeyTree("ROBLOX Corporation", throwOnMissingSubKey: false); } catch { }
                 }
 
                 string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
                 string versionsFolder = Path.Combine(localAppData, "Roblox", "Versions");
                 if (Directory.Exists(versionsFolder))
                 {
-                    var versionDirs = Directory.GetDirectories(versionsFolder);
-                    foreach (var vDir in versionDirs)
-                    {
-                        try
-                        {
-                            var files = Directory.GetFiles(vDir, "RobloxStudioBeta.exe");
-                            if (files.Length == 0)
-                            {
-                                Directory.Delete(vDir, true);
-                            }
-                        }
-                        catch { }
-                    }
+                    try { Directory.Delete(versionsFolder, true); } catch { }
                 }
             }
             catch { }
