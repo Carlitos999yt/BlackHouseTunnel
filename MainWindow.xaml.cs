@@ -1507,15 +1507,16 @@ namespace NepTunnel
                     {
                         try
                         {
-                            if (Directory.Exists(rsmFolder)) Directory.Delete(rsmFolder, true);
-                            if (Directory.Exists(rsmManagerFolder)) Directory.Delete(rsmManagerFolder, true);
+                            ForceDeleteDirectory(rsmFolder);
+                            ForceDeleteDirectory(rsmManagerFolder);
+                            RsmInstallerService.CleanRsmRegistryAndProtocols();
                             _studioPath = RobloxStudioService.GetStudioPath();
-                            SetStatus("RSM installation removed. Studio fallback updated.", (SolidColorBrush)FindResource("WarnBrush"));
+                            SetStatus("RSM eliminado por completo. Registro de Windows y navegador restaurados.", (SolidColorBrush)FindResource("WarnBrush"));
                             ShowRsmAssistantView();
                         }
                         catch (Exception ex)
                         {
-                            MessageBox.Show($"Error removing RSM: {ex.Message}", "Delete Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                            MessageBox.Show($"Error al eliminar RSM: {ex.Message}", "Delete Error", MessageBoxButton.OK, MessageBoxImage.Error);
                         }
                     }
                 );
@@ -1541,6 +1542,62 @@ namespace NepTunnel
             grid.Children.Add(scrollViewer);
 
             NavigateTo(grid, "left");
+        }
+        #endregion
+
+        #region Directory Force Deletion Helper
+        private static void ForceDeleteDirectory(string targetDir)
+        {
+            if (!Directory.Exists(targetDir)) return;
+
+            try
+            {
+                var processes = Process.GetProcesses()
+                    .Where(p => p.ProcessName.Contains("RobloxStudio", StringComparison.OrdinalIgnoreCase));
+                foreach (var proc in processes)
+                {
+                    try { proc.Kill(); proc.WaitForExit(1000); } catch { }
+                }
+            }
+            catch { }
+
+            try
+            {
+                var dirInfo = new DirectoryInfo(targetDir);
+                foreach (var file in dirInfo.GetFiles("*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        if (file.IsReadOnly) file.IsReadOnly = false;
+                        file.Attributes = FileAttributes.Normal;
+                    }
+                    catch { }
+                }
+
+                foreach (var dir in dirInfo.GetDirectories("*", SearchOption.AllDirectories))
+                {
+                    try
+                    {
+                        dir.Attributes = FileAttributes.Normal;
+                    }
+                    catch { }
+                }
+            }
+            catch { }
+
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    Directory.Delete(targetDir, true);
+                    break;
+                }
+                catch
+                {
+                    if (attempt == 3) throw;
+                    System.Threading.Thread.Sleep(300);
+                }
+            }
         }
         #endregion
 

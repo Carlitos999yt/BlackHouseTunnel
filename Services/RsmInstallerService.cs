@@ -204,5 +204,47 @@ namespace NepTunnel.Services
 
             return true;
         }
+
+        public static void CleanRsmRegistryAndProtocols()
+        {
+            if (!System.Runtime.InteropServices.RuntimeInformation.IsOSPlatform(System.Runtime.InteropServices.OSPlatform.Windows)) return;
+
+            try
+            {
+                using var classesKey = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software\Classes", writable: true);
+                if (classesKey != null)
+                {
+                    try { classesKey.DeleteSubKeyTree("roblox-studio", throwOnMissingSubKey: false); } catch { }
+                    try { classesKey.DeleteSubKeyTree("roblox-studio-auth", throwOnMissingSubKey: false); } catch { }
+                }
+
+                using var hkcuSoftware = Microsoft.Win32.Registry.CurrentUser.OpenSubKey(@"Software", writable: true);
+                if (hkcuSoftware != null)
+                {
+                    try { hkcuSoftware.DeleteSubKeyTree("Roblox Studio Mod Manager", throwOnMissingSubKey: false); } catch { }
+                    try { hkcuSoftware.DeleteSubKeyTree("Roblox Studio", throwOnMissingSubKey: false); } catch { }
+                }
+
+                string localAppData = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+                string versionsFolder = Path.Combine(localAppData, "Roblox", "Versions");
+                if (Directory.Exists(versionsFolder))
+                {
+                    var versionDirs = Directory.GetDirectories(versionsFolder);
+                    foreach (var vDir in versionDirs)
+                    {
+                        try
+                        {
+                            var files = Directory.GetFiles(vDir, "RobloxStudioBeta.exe");
+                            if (files.Length == 0)
+                            {
+                                Directory.Delete(vDir, true);
+                            }
+                        }
+                        catch { }
+                    }
+                }
+            }
+            catch { }
+        }
     }
 }
