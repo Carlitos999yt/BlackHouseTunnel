@@ -251,25 +251,50 @@ namespace NepTunnel.Services
             _sessions.Clear();
         }
 
-        public static int WarmTunnel(int proxyPort = PROXY_PORT, int packets = WARM_PACKETS, double intervalSec = WARM_INTERVAL_SEC)
+        public static int WarmTunnel(string? dstHost = null, int dstPort = 0, int proxyPort = PROXY_PORT, int packets = 5)
         {
             int sent = 0;
+
+            // 1. Direct UDP Probe to Playit.gg Remote Endpoint to warm remote NAT & Playit router
+            if (!string.IsNullOrEmpty(dstHost) && dstPort > 0)
+            {
+                try
+                {
+                    var dnsTask = Dns.GetHostAddressesAsync(dstHost);
+                    if (dnsTask.Wait(1000) && dnsTask.Result.Length > 0)
+                    {
+                        var remoteEp = new IPEndPoint(dnsTask.Result[0], dstPort);
+                        using var directSock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                        directSock.SendTimeout = 500;
+                        DisableConnReset(directSock);
+                        byte[] probe = System.Text.Encoding.UTF8.GetBytes("NEP_TUNNEL_WARMUP_V1");
+                        for (int i = 0; i < 3; i++)
+                        {
+                            try
+                            {
+                                directSock.SendTo(probe, remoteEp);
+                                sent++;
+                            }
+                            catch { }
+                            Thread.Sleep(40);
+                        }
+                    }
+                }
+                catch { }
+            }
+
+            // 2. Loopback Proxy Warmup
             try
             {
                 using var sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                sock.SendTimeout = 1000;
+                sock.SendTimeout = 500;
+                DisableConnReset(sock);
                 var ep = new IPEndPoint(IPAddress.Loopback, proxyPort);
-                var rng = new Random();
+                byte[] payload = System.Text.Encoding.UTF8.GetBytes("NEP_PROXY_WARMUP_V1");
 
                 for (int i = 0; i < packets; i++)
                 {
                     if (!_isRunning) break;
-
-                    byte[] payload = new byte[2 + rng.Next(6, 20)];
-                    payload[0] = 0xFF;
-                    payload[1] = 0x00;
-                    rng.NextBytes(new Span<byte>(payload, 2, payload.Length - 2));
-
                     try
                     {
                         sock.SendTo(payload, ep);
@@ -277,10 +302,11 @@ namespace NepTunnel.Services
                     }
                     catch { break; }
 
-                    Thread.Sleep((int)(intervalSec * 1000));
+                    Thread.Sleep(50);
                 }
             }
             catch { }
+
             return sent;
         }
     }

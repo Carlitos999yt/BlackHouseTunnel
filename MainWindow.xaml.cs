@@ -2307,7 +2307,7 @@ namespace NepTunnel
                     LogAppend(logBox.RichText, $"Warming tunnel ({UdpProxy.WARM_PACKETS} probes)…", "warn");
                 });
 
-                int warmed = UdpProxy.WarmTunnel();
+                int warmed = UdpProxy.WarmTunnel(dstHost, dstPort);
                 Dispatcher.Invoke(() =>
                 {
                     if (warmed > 0)
