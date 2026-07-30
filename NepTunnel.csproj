@@ -10,13 +10,13 @@
     <StartupObject>NepTunnel.App</StartupObject>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
 
-    <!-- Single File Executable Self-Extract Options (PyInstaller Behavior) -->
+    <!-- Single File Executable Fast Memory-Mapped Options -->
     <PublishSingleFile>true</PublishSingleFile>
     <SelfContained>true</SelfContained>
     <RuntimeIdentifier>win-x64</RuntimeIdentifier>
     <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
     <IncludeAllContentForSelfExtract>true</IncludeAllContentForSelfExtract>
-    <EnableCompressionInSingleFile>true</EnableCompressionInSingleFile>
+    <EnableCompressionInSingleFile>false</EnableCompressionInSingleFile>
 
     <!-- Size & Runtime Trimming Optimizations -->
     <DebuggerSupport>false</DebuggerSupport>
