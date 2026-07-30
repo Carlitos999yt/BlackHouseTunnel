@@ -253,6 +253,7 @@ namespace NepTunnel.Services
 
         public static void LaunchServer(string studio, string port, string uid, string pg, string tg, string username = "Carlitos")
         {
+            string cleanName = string.IsNullOrWhiteSpace(username) ? "Carlitos" : username;
             var args = new List<string>
             {
                 "-task", "StartServer",
@@ -267,9 +268,13 @@ namespace NepTunnel.Services
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
                 "-instanceId", "StudioServer",
-                "-displayName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
-                "-username", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
-                "-userName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username
+                "-playerName", cleanName,
+                "-player", cleanName,
+                "-name", cleanName,
+                "-playername", cleanName,
+                "-displayName", cleanName,
+                "-username", cleanName,
+                "-userName", cleanName
             };
 
             var psi = BuildCmd(studio, args);
@@ -308,6 +313,7 @@ namespace NepTunnel.Services
 
         public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Carlitos")
         {
+            string cleanName = string.IsNullOrWhiteSpace(username) ? "Carlitos" : username;
             var args = new List<string>
             {
                 "-task", "StartClient",
@@ -319,9 +325,13 @@ namespace NepTunnel.Services
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
                 "-instanceId", inst,
-                "-displayName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
-                "-username", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
-                "-userName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username
+                "-playerName", cleanName,
+                "-player", cleanName,
+                "-name", cleanName,
+                "-playername", cleanName,
+                "-displayName", cleanName,
+                "-username", cleanName,
+                "-userName", cleanName
             };
 
             var psi = BuildCmd(studio, args);
