@@ -16,3 +16,6 @@ SingleFile_EXE_Output*/
 *.suo
 scratch/
 .system_generated/
+
+# AI Tools Folder (Dev Branch Only)
+[Hh]erramientas IA/
