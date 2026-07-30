@@ -1,75 +1,75 @@
 using System;
 using System.IO;
-using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Media.Imaging;
 
 namespace NepTunnel.Services
 {
-    // Service to handle downloading and caching application banner and logo images asynchronously.
+    // Service to handle loading application banner and logo images locally without internet requests.
     public static class BannerService
     {
-        public const string BG_IMG_URL = "https://gaming-cdn.com/img/products/1756/pcover/1756.jpg?v=1649173756";
-        public const string LOGO_URL = "https://i.imgur.com/68Bdv5u_d.webp?maxwidth=760&fidelity=grand";
-
         public static string BannerCachePath => Path.Combine(ConfigManager.AssetsDir, "banner.jpg");
         public static string LogoCachePath => Path.Combine(ConfigManager.AssetsDir, "logo.png");
 
-        // Loads the banner image from local disk cache or downloads it from remote URL.
-        public static async Task<BitmapImage?> GetBannerImageAsync()
+        // Loads the banner image from WPF embedded assembly resources or local disk.
+        public static Task<BitmapImage?> GetBannerImageAsync()
         {
-            try
+            return Task.Run(() =>
             {
-                if (File.Exists(BannerCachePath))
+                try
                 {
-                    return LoadBitmapFromFile(BannerCachePath);
+                    // 1. Try embedded WPF Assembly Pack URI
+                    var packUri = new Uri("pack://application:,,,/bundled_assets/banner.jpg", UriKind.Absolute);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = packUri;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
                 }
-
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(10);
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                byte[] data = await client.GetByteArrayAsync(BG_IMG_URL);
-
-                Directory.CreateDirectory(ConfigManager.AssetsDir);
-                await File.WriteAllBytesAsync(BannerCachePath, data);
-
-                return LoadBitmapFromFile(BannerCachePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[banner] Download failed: {ex.Message}");
-                return null;
-            }
+                catch
+                {
+                    // 2. Fallback to local file path
+                    if (File.Exists(BannerCachePath))
+                    {
+                        return LoadBitmapFromFile(BannerCachePath);
+                    }
+                    return null;
+                }
+            });
         }
 
-        // Loads the application logo image from local disk cache or downloads it from remote URL.
-        public static async Task<BitmapImage?> GetLogoImageAsync()
+        // Loads the application logo image from WPF embedded assembly resources or local disk.
+        public static Task<BitmapImage?> GetLogoImageAsync()
         {
-            try
+            return Task.Run(() =>
             {
-                if (File.Exists(LogoCachePath))
+                try
                 {
-                    return LoadBitmapFromFile(LogoCachePath);
+                    // 1. Try embedded WPF Assembly Pack URI
+                    var packUri = new Uri("pack://application:,,,/bundled_assets/logo.png", UriKind.Absolute);
+                    var bitmap = new BitmapImage();
+                    bitmap.BeginInit();
+                    bitmap.UriSource = packUri;
+                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
+                    bitmap.EndInit();
+                    bitmap.Freeze();
+                    return bitmap;
                 }
-
-                using var client = new HttpClient();
-                client.Timeout = TimeSpan.FromSeconds(10);
-                client.DefaultRequestHeaders.Add("User-Agent", "Mozilla/5.0");
-                byte[] data = await client.GetByteArrayAsync(LOGO_URL);
-
-                Directory.CreateDirectory(ConfigManager.AssetsDir);
-                await File.WriteAllBytesAsync(LogoCachePath, data);
-
-                return LoadBitmapFromFile(LogoCachePath);
-            }
-            catch (Exception ex)
-            {
-                Console.WriteLine($"[logo] Download failed: {ex.Message}");
-                return null;
-            }
+                catch
+                {
+                    // 2. Fallback to local file path
+                    if (File.Exists(LogoCachePath))
+                    {
+                        return LoadBitmapFromFile(LogoCachePath);
+                    }
+                    return null;
+                }
+            });
         }
 
-        // Helper method to safely instantiate and freeze a BitmapImage from a file path.
+        // Helper method to safely load and freeze a BitmapImage from a file path.
         private static BitmapImage? LoadBitmapFromFile(string path)
         {
             try
