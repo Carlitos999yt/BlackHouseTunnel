@@ -1,21 +1,20 @@
 using System;
 using System.IO;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace NepTunnel.Services
 {
-    // Service to handle loading application banner and logo vector assets.
+    // Service to handle loading application banner and logo images asynchronously.
     public static class BannerService
     {
         public static string BannerCachePath => Path.Combine(ConfigManager.AssetsDir, "banner.jpg");
         public static string LogoCachePath => Path.Combine(ConfigManager.AssetsDir, "logo.png");
 
-        // Returns resolution-independent vector banner drawing source.
-        public static Task<ImageSource?> GetBannerImageAsync()
+        // Loads the banner image from WPF embedded assembly resources or local disk.
+        public static Task<BitmapImage?> GetBannerImageAsync()
         {
-            return Task.Run<ImageSource?>(() =>
+            return Task.Run<BitmapImage?>(() =>
             {
                 try
                 {
@@ -31,16 +30,20 @@ namespace NepTunnel.Services
                 }
                 catch
                 {
-                    // 2. Return native vector banner image
-                    return VectorAssetService.CreateVectorBanner();
+                    // 2. Fallback to local file path
+                    if (File.Exists(BannerCachePath))
+                    {
+                        return LoadBitmapFromFile(BannerCachePath);
+                    }
+                    return null;
                 }
             });
         }
 
-        // Returns resolution-independent vector logo drawing source.
-        public static Task<ImageSource?> GetLogoImageAsync()
+        // Loads the application logo image from WPF embedded assembly resources or local disk.
+        public static Task<BitmapImage?> GetLogoImageAsync()
         {
-            return Task.Run<ImageSource?>(() =>
+            return Task.Run<BitmapImage?>(() =>
             {
                 try
                 {
@@ -56,8 +59,12 @@ namespace NepTunnel.Services
                 }
                 catch
                 {
-                    // 2. Return native vector logo image
-                    return VectorAssetService.CreateVectorLogo();
+                    // 2. Fallback to local file path
+                    if (File.Exists(LogoCachePath))
+                    {
+                        return LoadBitmapFromFile(LogoCachePath);
+                    }
+                    return null;
                 }
             });
         }
