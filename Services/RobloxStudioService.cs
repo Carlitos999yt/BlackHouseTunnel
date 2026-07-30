@@ -251,9 +251,9 @@ namespace NepTunnel.Services
 
         public static Action<string, string>? OnStudioError;
 
-        public static void LaunchServer(string studio, string port, string uid, string pg, string tg, string username = "Carlitos")
+        public static void LaunchServer(string studio, string port, string uid, string pg, string tg, string username = "Player1")
         {
-            string cleanName = string.IsNullOrWhiteSpace(username) ? "Carlitos" : username;
+            string cleanName = string.IsNullOrWhiteSpace(username) ? "Player1" : username;
             var args = new List<string>
             {
                 "-task", "StartServer",
@@ -311,9 +311,9 @@ namespace NepTunnel.Services
             }
         }
 
-        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Carlitos")
+        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Player1")
         {
-            string cleanName = string.IsNullOrWhiteSpace(username) ? "Carlitos" : username;
+            string cleanName = string.IsNullOrWhiteSpace(username) ? "Player1" : username;
             var args = new List<string>
             {
                 "-task", "StartClient",

@@ -1928,7 +1928,7 @@ namespace NepTunnel
                 }
 
                 string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Carlitos";
+                if (string.IsNullOrWhiteSpace(username)) username = "Player1";
 
                 cfg.Uid = uid;
                 cfg.Username = username;
@@ -2201,7 +2201,7 @@ namespace NepTunnel
             connectBtn.Click += (s, e) =>
             {
                 string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Carlitos";
+                if (string.IsNullOrWhiteSpace(username)) username = "Player1";
                 string addr = addrTb.Text.Trim();
                 if (string.IsNullOrEmpty(addr) || !addr.Contains(':'))
                 {
