@@ -251,7 +251,7 @@ namespace NepTunnel.Services
 
         public static Action<string, string>? OnStudioError;
 
-        public static void LaunchServer(string studio, string port, string uid, string pg, string tg)
+        public static void LaunchServer(string studio, string port, string uid, string pg, string tg, string username = "Carlitos")
         {
             var args = new List<string>
             {
@@ -266,7 +266,10 @@ namespace NepTunnel.Services
                 "-userid", uid,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", "StudioServer"
+                "-instanceId", "StudioServer",
+                "-displayName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
+                "-username", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
+                "-userName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username
             };
 
             var psi = BuildCmd(studio, args);
@@ -303,7 +306,7 @@ namespace NepTunnel.Services
             }
         }
 
-        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0")
+        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Carlitos")
         {
             var args = new List<string>
             {
@@ -315,7 +318,10 @@ namespace NepTunnel.Services
                 "-port", port,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", inst
+                "-instanceId", inst,
+                "-displayName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
+                "-username", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username,
+                "-userName", string.IsNullOrWhiteSpace(username) ? "Carlitos" : username
             };
 
             var psi = BuildCmd(studio, args);
