@@ -251,9 +251,8 @@ namespace NepTunnel.Services
 
         public static Action<string, string>? OnStudioError;
 
-        public static void LaunchServer(string studio, string port, string uid, string pg, string tg, string username = "Player1")
+        public static void LaunchServer(string studio, string port, string uid, string pg, string tg)
         {
-            string cleanName = string.IsNullOrWhiteSpace(username) ? "Player1" : username;
             var args = new List<string>
             {
                 "-task", "StartServer",
@@ -267,14 +266,7 @@ namespace NepTunnel.Services
                 "-userid", uid,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", "StudioServer",
-                "-playerName", cleanName,
-                "-player", cleanName,
-                "-name", cleanName,
-                "-playername", cleanName,
-                "-displayName", cleanName,
-                "-username", cleanName,
-                "-userName", cleanName
+                "-instanceId", "StudioServer"
             };
 
             var psi = BuildCmd(studio, args);
@@ -311,9 +303,8 @@ namespace NepTunnel.Services
             }
         }
 
-        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Player1")
+        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0")
         {
-            string cleanName = string.IsNullOrWhiteSpace(username) ? "Player1" : username;
             var args = new List<string>
             {
                 "-task", "StartClient",
@@ -324,14 +315,7 @@ namespace NepTunnel.Services
                 "-port", port,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", inst,
-                "-playerName", cleanName,
-                "-player", cleanName,
-                "-name", cleanName,
-                "-playername", cleanName,
-                "-displayName", cleanName,
-                "-username", cleanName,
-                "-userName", cleanName
+                "-instanceId", inst
             };
 
             var psi = BuildCmd(studio, args);

@@ -12,9 +12,6 @@ namespace NepTunnel.Services
         [JsonPropertyName("uid")]
         public string Uid { get; set; } = "1344077747";
 
-        [JsonPropertyName("username")]
-        public string Username { get; set; } = "Carlitos";
-
         [JsonPropertyName("port")]
         public string Port { get; set; } = "55555";
 

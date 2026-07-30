@@ -813,7 +813,6 @@ namespace NepTunnel
 
             var details = new[]
             {
-                (LocalizationService.Get("lbl_username"), !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos"),
                 (LocalizationService.Get("lbl_tunnel_addr"), cfg.Addr),
                 (LocalizationService.Get("lbl_server_port"), cfg.Port),
                 (LocalizationService.Get("lbl_uid"), cfg.Uid),
@@ -1793,7 +1792,6 @@ namespace NepTunnel
             cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             cardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
             cardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1804,27 +1802,21 @@ namespace NepTunnel
             var uidTb = new TextBox { Text = cfg.Uid, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
             Grid.SetRow(uidTb, 0); Grid.SetColumn(uidTb, 1); cardGrid.Children.Add(uidTb);
 
-            // My Username / Nickname
-            var userLbl = new TextBlock { Text = LocalizationService.Get("lbl_username"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(userLbl, 1); Grid.SetColumn(userLbl, 0); cardGrid.Children.Add(userLbl);
-            var userTb = new TextBox { Text = !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos", Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(userTb, 1); Grid.SetColumn(userTb, 1); cardGrid.Children.Add(userTb);
-
             // Server Local Port
             var portLbl = new TextBlock { Text = LocalizationService.Get("lbl_server_port"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(portLbl, 2); Grid.SetColumn(portLbl, 0); cardGrid.Children.Add(portLbl);
+            Grid.SetRow(portLbl, 1); Grid.SetColumn(portLbl, 0); cardGrid.Children.Add(portLbl);
             var portTb = new TextBox { Text = cfg.Port, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(portTb, 2); Grid.SetColumn(portTb, 1); cardGrid.Children.Add(portTb);
+            Grid.SetRow(portTb, 1); Grid.SetColumn(portTb, 1); cardGrid.Children.Add(portTb);
 
             // Tunnel Address
             var addrLbl = new TextBlock { Text = LocalizationService.Get("lbl_tunnel_addr"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(addrLbl, 3); Grid.SetColumn(addrLbl, 0); cardGrid.Children.Add(addrLbl);
+            Grid.SetRow(addrLbl, 2); Grid.SetColumn(addrLbl, 0); cardGrid.Children.Add(addrLbl);
             var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(addrTb, 3); Grid.SetColumn(addrTb, 1); cardGrid.Children.Add(addrTb);
+            Grid.SetRow(addrTb, 2); Grid.SetColumn(addrTb, 1); cardGrid.Children.Add(addrTb);
 
             // Map File (Optional)
             var mapLbl = new TextBlock { Text = LocalizationService.Get("lbl_map_file"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(mapLbl, 4); Grid.SetColumn(mapLbl, 0); cardGrid.Children.Add(mapLbl);
+            Grid.SetRow(mapLbl, 3); Grid.SetColumn(mapLbl, 0); cardGrid.Children.Add(mapLbl);
 
             var mapStack = new Grid();
             mapStack.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
@@ -1852,7 +1844,7 @@ namespace NepTunnel
                 }
             };
             Grid.SetColumn(mapBrowseBtn, 1); mapStack.Children.Add(mapBrowseBtn);
-            Grid.SetRow(mapStack, 4); Grid.SetColumn(mapStack, 1); cardGrid.Children.Add(mapStack);
+            Grid.SetRow(mapStack, 3); Grid.SetColumn(mapStack, 1); cardGrid.Children.Add(mapStack);
 
             card.Child = cardGrid;
             stack.Children.Add(card);
@@ -1872,16 +1864,7 @@ namespace NepTunnel
                 Style = (Style)FindResource("NepButtonStyle"),
                 Margin = new Thickness(6, 0, 6, 0)
             };
-            backBtn.Click += (s, e) =>
-            {
-                cfg.Uid = uidTb.Text.Trim();
-                cfg.Port = portTb.Text.Trim();
-                cfg.Addr = addrTb.Text.Trim();
-                cfg.Map = mapTb.Text.Trim();
-                cfg.Studio = _studioPath;
-                ConfigManager.SaveConfig(cfg);
-                ShowMainMenuView("right");
-            };
+            backBtn.Click += (s, e) => ShowMainMenuView("right");
             btnRow.Children.Add(backBtn);
 
             // Tutorial Button at Bottom of Host Config View
@@ -1927,18 +1910,14 @@ namespace NepTunnel
                     return;
                 }
 
-                string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Player1";
-
                 cfg.Uid = uid;
-                cfg.Username = username;
                 cfg.Port = port;
                 cfg.Addr = addr;
                 cfg.Map = mapPath;
                 cfg.Studio = _studioPath;
                 ConfigManager.SaveConfig(cfg);
 
-                ShowHostRunningView(uid, port, addr, mapPath, username);
+                ShowHostRunningView(uid, port, addr, mapPath);
             };
             btnRow.Children.Add(launchBtn);
             stack.Children.Add(btnRow);
@@ -1949,7 +1928,7 @@ namespace NepTunnel
         #endregion
 
         #region View 7: Host Running View
-        private void ShowHostRunningView(string uid, string port, string addr, string mapPath, string username = "Carlitos")
+        private void ShowHostRunningView(string uid, string port, string addr, string mapPath)
         {
             _isHostActive = true;
             string pg = Guid.NewGuid().ToString().ToUpper();
@@ -1995,8 +1974,8 @@ namespace NepTunnel
             {
                 try
                 {
-                    RobloxStudioService.LaunchClient(_studioPath, "127.0.0.1", port, pg, tg, "StudioPlayer_Host", username);
-                    LogAppend(logBox.RichText, $"Local client launched as '{username}'.", "info");
+                    RobloxStudioService.LaunchClient(_studioPath, "127.0.0.1", port, pg, tg, "StudioPlayer_Host");
+                    LogAppend(logBox.RichText, "Local client launched.", "info");
                 }
                 catch (Exception ex)
                 {
@@ -2069,7 +2048,7 @@ namespace NepTunnel
                 Dispatcher.Invoke(() => LogAppend(logBox.RichText, "Launching Studio server process…"));
                 try
                 {
-                    RobloxStudioService.LaunchServer(_studioPath, port, uid, pg, tg, username);
+                    RobloxStudioService.LaunchServer(_studioPath, port, uid, pg, tg);
                     Dispatcher.Invoke(() => LogAppend(logBox.RichText, "Server started! Waiting 5 s for Studio init…", "ok"));
                     ConfigManager.WriteSessionLog(pg, tg, addr, port, uid);
                     await Task.Delay(5000);
@@ -2130,19 +2109,6 @@ namespace NepTunnel
             var cfg = ConfigManager.LoadConfig();
 
             var cardStack = new StackPanel();
-
-            // My Username / Nick Field
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("lbl_username"),
-                FontSize = 14,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                Margin = new Thickness(0, 0, 0, 4)
-            });
-
-            var userTb = new TextBox { Text = !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos", Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 0, 0, 8) };
-            cardStack.Children.Add(userTb);
-
             cardStack.Children.Add(new TextBlock
             {
                 Text = LocalizationService.Get("lbl_tunnel_input"),
@@ -2200,8 +2166,6 @@ namespace NepTunnel
             };
             connectBtn.Click += (s, e) =>
             {
-                string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Player1";
                 string addr = addrTb.Text.Trim();
                 if (string.IsNullOrEmpty(addr) || !addr.Contains(':'))
                 {
@@ -2221,11 +2185,10 @@ namespace NepTunnel
                 }
                 errLbl.Text = "";
 
-                cfg.Username = username;
                 cfg.Addr = addr;
                 ConfigManager.SaveConfig(cfg);
 
-                ShowJoinRunningView(parts[0], rp, username);
+                ShowJoinRunningView(parts[0], rp);
             };
             btnRow.Children.Add(connectBtn);
 
@@ -2237,7 +2200,7 @@ namespace NepTunnel
         #endregion
 
         #region View 9: Join Running View
-        private void ShowJoinRunningView(string dstHost, int dstPort, string username = "Carlitos")
+        private void ShowJoinRunningView(string dstHost, int dstPort)
         {
             _isJoinActive = true;
             var grid = new Grid { Background = (SolidColorBrush)FindResource("BgBrush") };
@@ -2365,7 +2328,7 @@ namespace NepTunnel
 
                 try
                 {
-                    RobloxStudioService.LaunchClient(_studioPath, "127.0.0.1", UdpProxy.PROXY_PORT.ToString(), pg, tg, "StudioPlayer_Proxy", username);
+                    RobloxStudioService.LaunchClient(_studioPath, "127.0.0.1", UdpProxy.PROXY_PORT.ToString(), pg, tg, "StudioPlayer_Proxy");
                     Dispatcher.Invoke(() =>
                     {
                         LogAppend(logBox.RichText, "● CONNECTED — Studio launched", "ok");
