@@ -2,11 +2,11 @@ using System;
 using System.IO;
 using System.Net.Http;
 using System.Threading.Tasks;
-using System.Windows.Media;
 using System.Windows.Media.Imaging;
 
 namespace NepTunnel.Services
 {
+    // Service to handle downloading and caching application banner and logo images asynchronously.
     public static class BannerService
     {
         public const string BG_IMG_URL = "https://gaming-cdn.com/img/products/1756/pcover/1756.jpg?v=1649173756";
@@ -15,6 +15,7 @@ namespace NepTunnel.Services
         public static string BannerCachePath => Path.Combine(ConfigManager.AssetsDir, "banner.jpg");
         public static string LogoCachePath => Path.Combine(ConfigManager.AssetsDir, "logo.png");
 
+        // Loads the banner image from local disk cache or downloads it from remote URL.
         public static async Task<BitmapImage?> GetBannerImageAsync()
         {
             try
@@ -41,6 +42,7 @@ namespace NepTunnel.Services
             }
         }
 
+        // Loads the application logo image from local disk cache or downloads it from remote URL.
         public static async Task<BitmapImage?> GetLogoImageAsync()
         {
             try
@@ -67,6 +69,7 @@ namespace NepTunnel.Services
             }
         }
 
+        // Helper method to safely instantiate and freeze a BitmapImage from a file path.
         private static BitmapImage? LoadBitmapFromFile(string path)
         {
             try

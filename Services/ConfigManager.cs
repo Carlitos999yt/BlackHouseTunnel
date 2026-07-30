@@ -6,6 +6,7 @@ using System.Text.Json.Serialization;
 
 namespace NepTunnel.Services
 {
+    // Model representing persistent application settings stored in nep_config.json.
     public class NepConfig
     {
         [JsonPropertyName("uid")]
@@ -30,6 +31,7 @@ namespace NepTunnel.Services
         public List<string> SavedMaps { get; set; } = new List<string>();
     }
 
+    // Handles configuration loading, saving, search path resolution, and session logging.
     public static class ConfigManager
     {
         public static string ScriptDir { get; } = AppDomain.CurrentDomain.BaseDirectory;
@@ -37,6 +39,7 @@ namespace NepTunnel.Services
         public static string LogFile { get; } = Path.Combine(ScriptDir, "SESSION_INFO.txt");
         public static string AssetsDir { get; } = Path.Combine(ScriptDir, "bundled_assets");
 
+        // Returns all potential locations to read or write nep_config.json.
         private static List<string> GetConfigSearchPaths()
         {
             var paths = new List<string>();
@@ -45,7 +48,7 @@ namespace NepTunnel.Services
             string cwdConfig = Path.Combine(Directory.GetCurrentDirectory(), "nep_config.json");
             paths.Add(cwdConfig);
 
-            // 2. User AppData directory (%APPDATA%\NepTunnel\nep_config.json) - Most secure & persistent location
+            // 2. User AppData directory (%APPDATA%\NepTunnel\nep_config.json)
             string appDataConfig = Path.Combine(AppDataDir, "nep_config.json");
             if (!paths.Contains(appDataConfig)) paths.Add(appDataConfig);
 
@@ -74,6 +77,7 @@ namespace NepTunnel.Services
             InitBundledAssets();
         }
 
+        // Copies bundled asset map files to the local assets directory if available.
         private static void InitBundledAssets()
         {
             string[] bundledFiles = new[] { "MapsforNepfile.rbxm", "CleanedAnimsNepFile.rbxm" };
@@ -103,6 +107,7 @@ namespace NepTunnel.Services
             catch { }
         }
 
+        // Reads nep_config.json from disk or returns default configuration.
         public static NepConfig LoadConfig()
         {
             var config = new NepConfig();
@@ -126,7 +131,7 @@ namespace NepTunnel.Services
                 catch { }
             }
 
-            // Inject bundled maps so they are always available
+            // Inject bundled maps so they are always available in saved maps list
             foreach (var bMap in BundledMaps)
             {
                 if (!config.SavedMaps.Contains(bMap))
@@ -138,6 +143,7 @@ namespace NepTunnel.Services
             return config;
         }
 
+        // Saves current application configuration to nep_config.json across search locations.
         public static void SaveConfig(NepConfig config)
         {
             try
@@ -145,7 +151,6 @@ namespace NepTunnel.Services
                 var options = new JsonSerializerOptions { WriteIndented = true };
                 string json = JsonSerializer.Serialize(config, options);
 
-                // Ensure AppData directory exists
                 try { Directory.CreateDirectory(AppDataDir); } catch { }
 
                 var searchPaths = GetConfigSearchPaths();
@@ -166,6 +171,7 @@ namespace NepTunnel.Services
             catch { }
         }
 
+        // Writes active session command lines to SESSION_INFO.txt for user reference.
         public static string WriteSessionLog(string pg, string tg, string tunnelAddr, string port, string uid)
         {
             string host, dp;
@@ -201,24 +207,24 @@ namespace NepTunnel.Services
 
             var lines = new List<string>
             {
-                "╔════════════════════════════════════════════════════════╗",
-                "║  NEP TUNNEL  ·  ROBLOX STUDIO SESSION LOG            ║",
-                "╚════════════════════════════════════════════════════════╝",
+                "==========================================================",
+                "  NEP TUNNEL - ROBLOX STUDIO SESSION LOG                  ",
+                "==========================================================",
                 $"Date       : {DateTime.Now:yyyy-MM-dd HH:mm:ss}",
                 $"User ID    : {uid}",
                 $"Address    : {tunnelAddr}",
                 $"Server Local Port: {port}",
                 "",
-                "── WINDOWS (Command Prompt) ──",
+                "-- WINDOWS (Command Prompt) --",
                 winCmd,
                 "",
-                "── MAC (Terminal) ──",
+                "-- MAC (Terminal) --",
                 macCmd,
                 "",
-                "── LINUX / VINEGAR ──",
+                "-- LINUX / VINEGAR --",
                 linCmd,
                 "",
-                "══════════════════════════════════════════════════════════"
+                "=========================================================="
             };
 
             try

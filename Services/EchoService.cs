@@ -1,7 +1,6 @@
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
-using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
@@ -10,6 +9,7 @@ using System.Threading.Tasks;
 
 namespace NepTunnel.Services
 {
+    // Echo server running on host side to verify incoming UDP probe packets from joiners.
     public class EchoServer
     {
         public static readonly byte[] ECHO_REQ = Encoding.ASCII.GetBytes("NEP_TEST\0");
@@ -24,6 +24,7 @@ namespace NepTunnel.Services
         public HashSet<string> ClientIps { get; } = new HashSet<string>();
         public bool IsRunning => _sock != null && _cts != null && !_cts.IsCancellationRequested;
 
+        // Starts listening for echo packets on the specified UDP port.
         public bool Start(int port, Action<string, string>? logFn = null)
         {
             Stop();
@@ -51,7 +52,7 @@ namespace NepTunnel.Services
             }
             catch (SocketException ex)
             {
-                logFn?.Invoke($"✗ Could not bind to port {port}.", "err");
+                logFn?.Invoke($"Could not bind to port {port}.", "err");
                 logFn?.Invoke("  Is Roblox Studio already running? Close it and try again.", "err");
                 logFn?.Invoke($"  OS Error: {ex.Message}", "dim");
                 Stop();
@@ -59,12 +60,13 @@ namespace NepTunnel.Services
             }
             catch (Exception ex)
             {
-                logFn?.Invoke($"✗ Unexpected error binding port: {ex.Message}", "err");
+                logFn?.Invoke($"Unexpected error binding port: {ex.Message}", "err");
                 Stop();
                 return false;
             }
         }
 
+        // Stops the echo server socket listener loop.
         public void Stop()
         {
             try { _cts?.Cancel(); } catch { }
@@ -80,6 +82,7 @@ namespace NepTunnel.Services
             _cts = null;
         }
 
+        // Internal worker loop handling incoming echo request packets and responding.
         private async Task RunLoop(CancellationToken token)
         {
             byte[] buffer = new byte[512];
@@ -102,192 +105,141 @@ namespace NepTunnel.Services
                             }
                         }
 
-                        if (match)
+                        if (match && result.RemoteEndPoint is IPEndPoint senderEp)
                         {
-                            int nonceLen = result.ReceivedBytes - ECHO_REQ.Length;
-                            byte[] resp = new byte[ECHO_RESP.Length + nonceLen];
-                            Buffer.BlockCopy(ECHO_RESP, 0, resp, 0, ECHO_RESP.Length);
-                            Buffer.BlockCopy(buffer, ECHO_REQ.Length, resp, ECHO_RESP.Length, nonceLen);
-
-                            await _sock.SendToAsync(resp, SocketFlags.None, result.RemoteEndPoint, token);
+                            await _sock.SendToAsync(ECHO_RESP, SocketFlags.None, senderEp, token);
                             EchoedCount++;
-                            if (result.RemoteEndPoint is IPEndPoint ipEp)
+                            string ipStr = senderEp.Address.ToString();
+                            lock (ClientIps)
                             {
-                                lock (ClientIps)
-                                {
-                                    ClientIps.Add(ipEp.Address.ToString());
-                                }
+                                ClientIps.Add(ipStr);
                             }
                         }
                     }
                 }
-                catch (OperationCanceledException) { break; }
-                catch (SocketException) { }
-                catch (ObjectDisposedException) { break; }
-                catch { }
+                catch (OperationCanceledException)
+                {
+                    break;
+                }
+                catch
+                {
+                    // Ignore transient network errors during shutdown
+                }
             }
         }
     }
 
+    // Echo client used by joiners to send test probe packets to host.
     public static class EchoClient
     {
-        public static async Task RunEchoTestAsync(Action<string, string> logFn, string tunnelHost, int tunnelPort, int maxSuccesses = 3, double timeoutSec = 10.0)
+        // Sends test probe packets to target host and measures round-trip latency.
+        public static async Task RunEchoTestAsync(Action<string, string> logFn, string host, int port, int probeCount = 5)
         {
-            logFn("─── Echo Round-Trip Test ───", "info");
-            logFn($"Target: {tunnelHost}:{tunnelPort}", "dim");
-            logFn("Sending probes directly to tunnel (bypassing local proxy)...", "warn");
-            logFn("Note: Tunnels can take a few seconds to \"wake up\". Please wait...", "dim");
+            logFn($"=== RUNNING ECHO TEST TO {host}:{port} ===", "info");
+            logFn($"Sending {probeCount} test packets directly to tunnel...", "dim");
+
+            IPAddress targetIp;
+            try
+            {
+                IPAddress[] addrs = await Dns.GetHostAddressesAsync(host);
+                if (addrs.Length == 0)
+                {
+                    logFn($"DNS error: Could not resolve {host}", "err");
+                    return;
+                }
+                targetIp = addrs[0];
+            }
+            catch (Exception ex)
+            {
+                logFn($"DNS error resolving {host}: {ex.Message}", "err");
+                return;
+            }
 
             using var sock = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-            sock.ReceiveTimeout = 500;
+            sock.SendTimeout = 2000;
+            sock.ReceiveTimeout = 2000;
             if (OperatingSystem.IsWindows())
             {
                 const int SIO_UDP_CONNRESET = -1744830452;
                 try { sock.IOControl(SIO_UDP_CONNRESET, new byte[] { 0 }, null); } catch { }
             }
 
-            IPAddress[] addrs;
-            try
-            {
-                addrs = await Dns.GetHostAddressesAsync(tunnelHost);
-                if (addrs.Length == 0)
-                {
-                    logFn($"✗ Send error: Could not resolve hostname {tunnelHost}", "err");
-                    return;
-                }
-            }
-            catch (Exception ex)
-            {
-                logFn($"✗ Send error: {ex.Message}", "err");
-                return;
-            }
-
-            var targetEp = new IPEndPoint(addrs[0], tunnelPort);
-            var sent = new Dictionary<string, long>();
+            var targetEp = new IPEndPoint(targetIp, port);
             int received = 0;
             var rtts = new List<double>();
+            byte[] respBuf = new byte[512];
 
-            long startTime = Stopwatch.GetTimestamp();
-            double probeIntervalSec = 0.4;
-            double nextProbeTimeSec = 0;
-            bool icmpReject = false;
-            var rng = new Random();
-
-            while (GetElapsedSeconds(startTime) < timeoutSec && received < maxSuccesses)
+            for (int i = 1; i <= probeCount; i++)
             {
-                double nowSec = GetElapsedSeconds(startTime);
-                if (nowSec >= nextProbeTimeSec)
+                try
                 {
-                    byte[] nonce = new byte[8];
-                    rng.NextBytes(nonce);
-                    string nonceKey = Convert.ToBase64String(nonce);
+                    var sw = Stopwatch.StartNew();
+                    await sock.SendToAsync(EchoServer.ECHO_REQ, SocketFlags.None, targetEp);
 
-                    byte[] probe = new byte[EchoServer.ECHO_REQ.Length + nonce.Length];
-                    Buffer.BlockCopy(EchoServer.ECHO_REQ, 0, probe, 0, EchoServer.ECHO_REQ.Length);
-                    Buffer.BlockCopy(nonce, 0, probe, EchoServer.ECHO_REQ.Length, nonce.Length);
+                    using var cts = new CancellationTokenSource(2000);
+                    EndPoint senderEp = new IPEndPoint(IPAddress.Any, 0);
 
                     try
                     {
-                        await sock.SendToAsync(probe, SocketFlags.None, targetEp);
-                        sent[nonceKey] = Stopwatch.GetTimestamp();
-                        nextProbeTimeSec = nowSec + probeIntervalSec;
-                    }
-                    catch (Exception ex)
-                    {
-                        logFn($"✗ Send error: {ex.Message}", "err");
-                        break;
-                    }
-                }
+                        var result = await sock.ReceiveFromAsync(respBuf, SocketFlags.None, senderEp, cts.Token);
+                        sw.Stop();
 
-                try
-                {
-                    byte[] rcvBuffer = new byte[512];
-                    EndPoint remoteEp = new IPEndPoint(IPAddress.Any, 0);
-
-                    using var cts = new CancellationTokenSource(100);
-                    var res = await sock.ReceiveFromAsync(rcvBuffer, SocketFlags.None, remoteEp, cts.Token);
-
-                    if (res.ReceivedBytes >= EchoServer.ECHO_RESP.Length)
-                    {
-                        bool isEcho = true;
-                        for (int i = 0; i < EchoServer.ECHO_RESP.Length; i++)
+                        if (result.ReceivedBytes >= EchoServer.ECHO_RESP.Length)
                         {
-                            if (rcvBuffer[i] != EchoServer.ECHO_RESP[i])
+                            bool match = true;
+                            for (int j = 0; j < EchoServer.ECHO_RESP.Length; j++)
                             {
-                                isEcho = false;
-                                break;
+                                if (respBuf[j] != EchoServer.ECHO_RESP[j])
+                                {
+                                    match = false;
+                                    break;
+                                }
                             }
-                        }
 
-                        if (isEcho)
-                        {
-                            int nonceLen = res.ReceivedBytes - EchoServer.ECHO_RESP.Length;
-                            byte[] nonceReceived = new byte[nonceLen];
-                            Buffer.BlockCopy(rcvBuffer, EchoServer.ECHO_RESP.Length, nonceReceived, 0, nonceLen);
-                            string key = Convert.ToBase64String(nonceReceived);
-
-                            if (sent.TryGetValue(key, out long sendTicks))
+                            if (match)
                             {
-                                double rttMs = (Stopwatch.GetTimestamp() - sendTicks) * 1000.0 / Stopwatch.Frequency;
-                                rtts.Add(rttMs);
                                 received++;
-
-                                if (received == 1)
-                                {
-                                    logFn($"✓ First echo received! ({rttMs:F0} ms) Tunnel is waking up...", "ok");
-                                }
-                                else if (received == 2)
-                                {
-                                    logFn($"✓ Second echo received. Connection stabilizing...", "ok");
-                                }
+                                double ms = sw.Elapsed.TotalMilliseconds;
+                                rtts.Add(ms);
+                                logFn($"  Probe {i}/{probeCount}: ECHO OK! rtt={ms:F1}ms", "ok");
+                            }
+                            else
+                            {
+                                logFn($"  Probe {i}/{probeCount}: Received unknown data", "warn");
                             }
                         }
                     }
+                    catch (OperationCanceledException)
+                    {
+                        logFn($"  Probe {i}/{probeCount}: TIMEOUT (no response in 2.0s)", "err");
+                    }
                 }
-                catch (OperationCanceledException) { }
-                catch (SocketException ex) when (ex.SocketErrorCode == SocketError.ConnectionReset || ex.SocketErrorCode == SocketError.ConnectionRefused)
+                catch (Exception ex)
                 {
-                    logFn("✗ ICMP Port Unreachable. Tunnel endpoint is actively rejecting.", "err");
-                    icmpReject = true;
-                    break;
+                    logFn($"  Probe {i}/{probeCount}: Error sending - {ex.Message}", "err");
                 }
-                catch { }
+
+                if (i < probeCount)
+                {
+                    await Task.Delay(400);
+                }
             }
 
-            logFn("───────────────────────", "dim");
-            if (received >= maxSuccesses)
+            logFn("---------------------------------------", "dim");
+            if (received > 0)
             {
-                double avg = rtts.Average();
-                double mn = rtts.Min();
-                double mx = rtts.Max();
-                logFn($"✓ SUCCESS: {received} echoes received. Tunnel is LIVE and stable.", "ok");
-                logFn($"  RTT: avg {avg:F0} ms | min {mn:F0} ms | max {mx:F0} ms", "ok");
-                logFn("  You can now safely start your session.", "info");
-            }
-            else if (received > 0)
-            {
-                double avg = rtts.Average();
-                logFn($"△ PARTIAL: {received}/{maxSuccesses} echoes. Tunnel is unstable.", "warn");
-                logFn($"  RTT: avg {avg:F0} ms", "warn");
-                logFn("  You might experience lag or disconnects in-game.", "warn");
-            }
-            else if (icmpReject)
-            {
-                logFn("✗ FAILED: Tunnel port is closed or host firewall is blocking it.", "err");
+                double avgRtt = rtts.Count > 0 ? rtts.Average() : 0;
+                logFn($"ECHO SUCCESSFUL! Received {received}/{probeCount} responses (avg {avgRtt:F1}ms)", "ok");
+                logFn("Your tunnel is active and accepting incoming UDP traffic.", "ok");
             }
             else
             {
-                logFn("✗ FAILED: No echoes received within timeout.", "err");
-                logFn("  Possible causes:", "dim");
-                logFn("  1. Host has not started the Echo Server yet.", "dim");
-                logFn("  2. Tunnel is down or misconfigured.", "dim");
-                logFn("  3. Host firewall is blocking the tunnel agent.", "dim");
+                logFn($"ECHO FAILED: Received 0/{probeCount} responses.", "err");
+                logFn("Possible causes:", "warn");
+                logFn("  1. Host has not started session or Echo Server yet", "warn");
+                logFn("  2. Host firewall is blocking UDP port", "warn");
+                logFn("  3. Tunnel address or port is wrong", "warn");
             }
-        }
-
-        private static double GetElapsedSeconds(long startTimestamp)
-        {
-            return (Stopwatch.GetTimestamp() - startTimestamp) / (double)Stopwatch.Frequency;
         }
     }
 }
