@@ -170,7 +170,20 @@ namespace NepTunnel
 
         private void OnStudioFound(string path)
         {
-            _studioPath = path;
+            var cfg = ConfigManager.LoadConfig();
+            if (!string.IsNullOrEmpty(cfg.Studio) && File.Exists(cfg.Studio))
+            {
+                _studioPath = cfg.Studio;
+            }
+            else
+            {
+                _studioPath = path;
+                if (!string.IsNullOrEmpty(_studioPath))
+                {
+                    cfg.Studio = _studioPath;
+                    ConfigManager.SaveConfig(cfg);
+                }
+            }
             UpdateStudioStatusText();
             ShowMainMenuView();
         }
