@@ -23,6 +23,7 @@
     <EventSourceSupport>false</EventSourceSupport>
     <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
+    <DefaultItemExcludes>$(DefaultItemExcludes);recovered_src\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
