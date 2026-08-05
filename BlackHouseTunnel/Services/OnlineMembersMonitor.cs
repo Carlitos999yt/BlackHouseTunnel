@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using System.Windows.Threading;
 using BlackHouseTunnel.Models;
@@ -13,10 +14,12 @@ namespace BlackHouseTunnel.Services
         private readonly DispatcherTimer _timer;
         private readonly AppConfig _config;
         private readonly DiscordApiService _apiService;
+        private readonly DiscordUser _currentUser;
 
-        public OnlineMembersMonitor(AppConfig config)
+        public OnlineMembersMonitor(AppConfig config, DiscordUser currentUser)
         {
             _config = config;
+            _currentUser = currentUser;
             _apiService = new DiscordApiService();
             _timer = new DispatcherTimer
             {
@@ -43,10 +46,9 @@ namespace BlackHouseTunnel.Services
                 try
                 {
                     List<DiscordUser> members = await _apiService.GetGuildOnlineMembersAsync(_config.GuildId, _config.BotToken);
-                    if (members.Count == 0)
-                    {
-                        members = GetFallbackMembers();
-                    }
+                    
+                    members = members.Where(m => m.Id != _currentUser.Id && !m.Username.Equals(_currentUser.Username, StringComparison.OrdinalIgnoreCase)).ToList();
+                    members.Insert(0, _currentUser);
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
@@ -55,23 +57,12 @@ namespace BlackHouseTunnel.Services
                 }
                 catch
                 {
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        OnMembersUpdated?.Invoke(this, new List<DiscordUser> { _currentUser });
+                    });
                 }
             });
-        }
-
-        private List<DiscordUser> GetFallbackMembers()
-        {
-            return new List<DiscordUser>
-            {
-                new DiscordUser { Username = "carlitos999yt", ServerNick = "Carlitos", PrimaryRole = "Superior", PrimaryRoleColor = "#FFD700", IsPrivadito = true, IsStaffOrAdmin = true },
-                new DiscordUser { Username = "overlord_dev", ServerNick = "Overlord", PrimaryRole = "Reaper", PrimaryRoleColor = "#9B59B6", IsPrivadito = true },
-                new DiscordUser { Username = "alice_pro", ServerNick = "Alice", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = true },
-                new DiscordUser { Username = "melissachibiii12341", ServerNick = "MelissaChibiii12341", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = false },
-                new DiscordUser { Username = "elnegrojose", ServerNick = "El negro José", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
-                new DiscordUser { Username = "falconalejo", ServerNick = "Falconalejo", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
-                new DiscordUser { Username = "nassan", ServerNick = "nassan", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
-                new DiscordUser { Username = "zeta", ServerNick = "zeta", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false }
-            };
         }
     }
 }

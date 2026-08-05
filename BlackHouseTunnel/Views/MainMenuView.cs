@@ -40,7 +40,7 @@ namespace BlackHouseTunnel.Views
         public MainMenuView(DiscordUser user)
         {
             _user = user;
-            _membersMonitor = new OnlineMembersMonitor(ConfigManager.CurrentConfig);
+            _membersMonitor = new OnlineMembersMonitor(ConfigManager.CurrentConfig, _user);
             InitializeComponent();
             _membersMonitor.OnMembersUpdated += MembersMonitor_OnMembersUpdated;
             _membersMonitor.Start();

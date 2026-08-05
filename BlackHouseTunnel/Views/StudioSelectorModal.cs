@@ -2,10 +2,12 @@ using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.InteropServices;
 using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Media;
 using System.Windows.Media.Effects;
+using System.Windows.Media.Imaging;
 using BlackHouseTunnel.Services;
 
 namespace BlackHouseTunnel.Views
@@ -117,15 +119,44 @@ namespace BlackHouseTunnel.Views
                     headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
                     headerGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
+                    StackPanel titleWithIcon = new StackPanel { Orientation = Orientation.Horizontal };
+
+                    ImageSource? iconSrc = GetExecutableIcon(inst.Path);
+                    if (iconSrc != null)
+                    {
+                        Image iconImg = new Image
+                        {
+                            Source = iconSrc,
+                            Width = 22,
+                            Height = 22,
+                            Margin = new Thickness(0, 0, 8, 0),
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        titleWithIcon.Children.Add(iconImg);
+                    }
+                    else
+                    {
+                        TextBlock fallbackIcon = new TextBlock
+                        {
+                            Text = "🎮 ",
+                            FontSize = 14,
+                            VerticalAlignment = VerticalAlignment.Center
+                        };
+                        titleWithIcon.Children.Add(fallbackIcon);
+                    }
+
                     TextBlock titleTxt = new TextBlock
                     {
                         Text = inst.Name,
                         FontSize = 13,
                         FontWeight = FontWeights.Bold,
-                        Foreground = isSelected ? Brushes.White : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CCCCCC"))
+                        Foreground = isSelected ? Brushes.White : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#CCCCCC")),
+                        VerticalAlignment = VerticalAlignment.Center
                     };
-                    Grid.SetColumn(titleTxt, 0);
-                    headerGrid.Children.Add(titleTxt);
+                    titleWithIcon.Children.Add(titleTxt);
+
+                    Grid.SetColumn(titleWithIcon, 0);
+                    headerGrid.Children.Add(titleWithIcon);
 
                     StackPanel badgePanel = new StackPanel { Orientation = Orientation.Horizontal };
                     if (isSelected)
@@ -156,19 +187,19 @@ namespace BlackHouseTunnel.Views
                     TextBlock pathTxt = new TextBlock
                     {
                         Text = inst.Path,
-                        FontSize = 11,
+                        FontSize = 10,
                         Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
-                        TextTrimming = TextTrimming.CharacterEllipsis,
-                        Margin = new Thickness(0, 4, 0, 0)
+                        Margin = new Thickness(30, 4, 0, 0),
+                        TextTrimming = TextTrimming.CharacterEllipsis
                     };
                     itemStack.Children.Add(pathTxt);
+
                     itemCard.Child = itemStack;
 
-                    string targetPath = inst.Path;
-                    itemCard.MouseLeftButtonDown += (s, e) =>
+                    string selectedPath = inst.Path;
+                    itemCard.MouseDown += (s, e) =>
                     {
-                        OnStudioSelected?.Invoke(this, targetPath);
-                        OnCloseRequested?.Invoke(this, EventArgs.Empty);
+                        OnStudioSelected?.Invoke(this, selectedPath);
                     };
 
                     listStack.Children.Add(itemCard);
@@ -177,57 +208,109 @@ namespace BlackHouseTunnel.Views
 
             ScrollViewer listScroll = new ScrollViewer
             {
-                MaxHeight = 260,
+                MaxHeight = 300,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
-                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
-                Content = listStack,
-                Margin = new Thickness(0, 0, 0, 16)
+                Content = listStack
             };
             modalStack.Children.Add(listScroll);
 
-            Button closeBtn = new Button
+            Button cancelBtn = new Button
             {
-                Content = "Cerrar",
-                Width = 120,
+                Content = "Cancelar",
                 Height = 36,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Padding = new Thickness(20, 0, 20, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222234")),
                 Foreground = Brushes.White,
-                FontWeight = FontWeights.SemiBold,
+                FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Right,
+                Margin = new Thickness(0, 16, 0, 0)
             };
-            ControlTemplate btnTemplate = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-            FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            borderFactory.AppendChild(presenterFactory);
-            btnTemplate.VisualTree = borderFactory;
-            closeBtn.Template = btnTemplate;
-            closeBtn.Click += (s, e) => OnCloseRequested?.Invoke(this, EventArgs.Empty);
 
-            modalStack.Children.Add(closeBtn);
+            ControlTemplate cTemplate = new ControlTemplate(typeof(Button));
+            FrameworkElementFactory cBorder = new FrameworkElementFactory(typeof(Border));
+            cBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+            cBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            FrameworkElementFactory cPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            cPresenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            cPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            cBorder.AppendChild(cPresenter);
+            cTemplate.VisualTree = cBorder;
+            cancelBtn.Template = cTemplate;
+
+            cancelBtn.Click += (s, e) => OnCloseRequested?.Invoke(this, EventArgs.Empty);
+            modalStack.Children.Add(cancelBtn);
+
             modalCard.Child = modalStack;
             modalRoot.Children.Add(modalCard);
 
             this.Content = modalRoot;
         }
 
-        private Border CreateBadge(string text, string hexBg)
+        [DllImport("shell32.dll", CharSet = CharSet.Auto)]
+        private static extern IntPtr SHGetFileInfo(string pszPath, uint dwFileAttributes, ref SHFILEINFO psfi, uint cbFileInfo, uint uFlags);
+
+        [DllImport("user32.dll", SetLastError = true)]
+        [return: MarshalAs(UnmanagedType.Bool)]
+        private static extern bool DestroyIcon(IntPtr hIcon);
+
+        [StructLayout(LayoutKind.Sequential, CharSet = CharSet.Auto)]
+        private struct SHFILEINFO
         {
-            Border b = new Border
+            public IntPtr hIcon;
+            public int iIcon;
+            public uint dwAttributes;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 260)]
+            public string szDisplayName;
+            [MarshalAs(UnmanagedType.ByValTStr, SizeConst = 80)]
+            public string szTypeName;
+        }
+
+        private const uint SHGFI_ICON = 0x000000100;
+        private const uint SHGFI_SMALLICON = 0x000000001;
+
+        private ImageSource? GetExecutableIcon(string exePath)
+        {
+            try
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(hexBg)),
+                if (File.Exists(exePath))
+                {
+                    SHFILEINFO shinfo = new SHFILEINFO();
+                    IntPtr hImg = SHGetFileInfo(exePath, 0, ref shinfo, (uint)Marshal.SizeOf(shinfo), SHGFI_ICON | SHGFI_SMALLICON);
+                    if (shinfo.hIcon != IntPtr.Zero)
+                    {
+                        ImageSource img = System.Windows.Interop.Imaging.CreateBitmapSourceFromHIcon(
+                            shinfo.hIcon,
+                            Int32Rect.Empty,
+                            BitmapSizeOptions.FromEmptyOptions());
+                        DestroyIcon(shinfo.hIcon);
+                        return img;
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
+        private Border CreateBadge(string label, string colorHex)
+        {
+            return new Border
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)),
                 CornerRadius = new CornerRadius(4),
                 Padding = new Thickness(6, 2, 6, 2),
-                Margin = new Thickness(4, 0, 0, 0)
+                Margin = new Thickness(4, 0, 0, 0),
+                Child = new TextBlock
+                {
+                    Text = label,
+                    FontSize = 9,
+                    FontWeight = FontWeights.Bold,
+                    Foreground = Brushes.White
+                }
             };
-            TextBlock t = new TextBlock { Text = text, FontSize = 9, FontWeight = FontWeights.Bold, Foreground = Brushes.White };
-            b.Child = t;
-            return b;
         }
     }
 }
