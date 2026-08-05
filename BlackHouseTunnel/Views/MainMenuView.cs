@@ -21,6 +21,7 @@ namespace BlackHouseTunnel.Views
         private readonly DiscordUser _user;
         private readonly OnlineMembersMonitor _membersMonitor;
         private HostConsoleView? _activeHostConsoleView = null;
+        private string _pendingJoinAddress = "";
         private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
 
         private Grid _rootGrid = null!;
@@ -442,8 +443,24 @@ namespace BlackHouseTunnel.Views
             body.Children.Add(tunnelsHeader);
 
             WrapPanel tunnelGrid = new WrapPanel();
-            tunnelGrid.Children.Add(CreateTunnelCard("Servidor Principal BlackHouse", $"Host: {_user.DisplayNick}", "24 ms"));
-            tunnelGrid.Children.Add(CreateTunnelCard("Túnel Privadito Exclusivo", "Host: Sang", "18 ms", isPrivadito: true));
+            var activeTunnels = ActiveTunnelRegistry.GetVisibleTunnelsForUser(_user);
+
+            if (activeTunnels.Count == 0)
+            {
+                tunnelGrid.Children.Add(CreateTunnelCard("Servidor Principal BlackHouse", $"Host: {_user.DisplayNick}", "24 ms", remoteAddress: "127.0.0.1:55555"));
+                if (_user.IsPrivadito || _user.IsStaffOrAdmin)
+                {
+                    tunnelGrid.Children.Add(CreateTunnelCard("Túnel Privadito Exclusivo", "Host: Sang", "18 ms", isPrivadito: true, remoteAddress: "play.blackhouse.net:55556"));
+                }
+            }
+            else
+            {
+                foreach (var t in activeTunnels)
+                {
+                    bool isPriv = t.VisibilityMode == 2;
+                    tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", isPrivadito: isPriv, remoteAddress: t.RemoteAddress));
+                }
+            }
 
             body.Children.Add(tunnelGrid);
 
@@ -569,7 +586,7 @@ namespace BlackHouseTunnel.Views
             mapGrid.Children.Add(browseBtn);
             boxPanel.Children.Add(mapGrid);
 
-            // Field 7: Visibilidad & Permisos (para Staff / Hoster)
+            // Field 7: Visibilidad & Whitelist de Acceso (Global vs Servidor vs Privadito)
             ComboBox visCombo = new ComboBox
             {
                 Height = 38,
@@ -579,17 +596,26 @@ namespace BlackHouseTunnel.Views
                 Margin = new Thickness(0, 0, 0, 16)
             };
 
-            visCombo.Items.Add("🌐 Público (Todos los miembros de Discord)");
-            visCombo.Items.Add("🔒 Exclusivo Rol Privadito (Solo usuarios con rol Privadito)");
-            visCombo.Items.Add("🛡️ Whitelist Personalizada (Especificar IDs de Discord)");
-            visCombo.Items.Add("👤 Prueba Privada (Solo Yo)");
-            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 3);
+            visCombo.Items.Add("🌐 Global (Sin restricciones - Abierto a todos)");
+            visCombo.Items.Add("🛡️ Servidor (Solo miembros del Servidor de Discord)");
+            visCombo.Items.Add("🔒 Exclusivo Rol Privadito (Solo miembros con el Rol Privadito)");
+            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
 
-            if (_user.IsStaffOrAdmin || _user.IsHoster)
+            boxPanel.Children.Add(CreateLabel("🔒 Visibilidad & Control de Acceso"));
+            boxPanel.Children.Add(visCombo);
+
+            // Field 8: Checkbox Publicar en el Inicio
+            CheckBox publishCheck = new CheckBox
             {
-                boxPanel.Children.Add(CreateLabel("🔒 Visibilidad & Permisos de Acceso"));
-                boxPanel.Children.Add(visCombo);
-            }
+                Content = "📢 Publicar Túnel en la Pantalla de Inicio (Home)",
+                FontSize = 13,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
+                Margin = new Thickness(0, 8, 0, 16),
+                IsChecked = true,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            boxPanel.Children.Add(publishCheck);
 
             // Action Buttons Row (Import Scripts + Start Host)
             StackPanel btnRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 10, 0, 0) };
@@ -607,16 +633,7 @@ namespace BlackHouseTunnel.Views
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Margin = new Thickness(0, 0, 12, 0)
             };
-            ControlTemplate importTemplate = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory iBorder = new FrameworkElementFactory(typeof(Border));
-            iBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            iBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            FrameworkElementFactory iPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            iPresenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            iPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            iBorder.AppendChild(iPresenter);
-            importTemplate.VisualTree = iBorder;
-            importBtn.Template = importTemplate;
+            SetButtonCornerRadius(importBtn, 10);
 
             importBtn.Click += (s, e) =>
             {
@@ -646,16 +663,7 @@ namespace BlackHouseTunnel.Views
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand
             };
-            ControlTemplate startTemplate = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory sBorder = new FrameworkElementFactory(typeof(Border));
-            sBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            sBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            FrameworkElementFactory sPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            sPresenter.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            sPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            sBorder.AppendChild(sPresenter);
-            startTemplate.VisualTree = sBorder;
-            startHostBtn.Template = startTemplate;
+            SetButtonCornerRadius(startHostBtn, 10);
 
             startHostBtn.Click += (s, e) =>
             {
@@ -690,12 +698,25 @@ namespace BlackHouseTunnel.Views
                     RbxmBridgeServer.ActiveUid = targetUid;
                     RbxmBridgeServer.Start();
 
+                    if (publishCheck.IsChecked == true)
+                    {
+                        ActiveTunnelRegistry.PublishTunnel(new PublishedTunnel
+                        {
+                            ServerName = string.IsNullOrWhiteSpace(targetServerName) ? $"Servidor de {targetUsername}" : targetServerName,
+                            HostUsername = targetUsername,
+                            RemoteAddress = addr,
+                            VisibilityMode = visCombo.SelectedIndex
+                        });
+                    }
+
                     HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername);
                     _activeHostConsoleView = hostConsole;
+                    string hostUserToUnpublish = targetUsername;
                     hostConsole.OnStopHostRequested += (s2, e2) =>
                     {
                         UdpProxy.StopProxy();
                         RbxmBridgeServer.Stop();
+                        ActiveTunnelRegistry.UnpublishTunnel(hostUserToUnpublish);
                         _activeHostConsoleView = null;
                         SwitchTab("Host");
                     };
@@ -765,7 +786,9 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(userBox);
 
             boxPanel.Children.Add(CreateLabel("Dirección del Túnel (ej: manzana.gl.at.ply.gg:20573)"));
-            TextBox addrBox = CreateStyledTextBox("manzana.gl.at.ply.gg:20573");
+            string defaultAddr = !string.IsNullOrEmpty(_pendingJoinAddress) ? _pendingJoinAddress : "";
+            _pendingJoinAddress = "";
+            TextBox addrBox = CreateStyledTextBox(defaultAddr);
             boxPanel.Children.Add(addrBox);
 
             Button connectBtn = new Button
@@ -780,17 +803,7 @@ namespace BlackHouseTunnel.Views
                 Cursor = System.Windows.Input.Cursors.Hand,
                 Margin = new Thickness(0, 16, 0, 0)
             };
-
-            ControlTemplate template = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            borderFactory.AppendChild(presenterFactory);
-            template.VisualTree = borderFactory;
-            connectBtn.Template = template;
+            SetButtonCornerRadius(connectBtn, 10);
 
             connectBtn.Click += (s, e) =>
             {
@@ -799,15 +812,31 @@ namespace BlackHouseTunnel.Views
                     string studioPath = RobloxStudioService.GetStudioPath();
                     if (string.IsNullOrEmpty(studioPath))
                     {
-                        MessageBox.Show("No se encontró una instalación ejecutable de Roblox Studio en tu sistema.", "Error Roblox Studio", MessageBoxButton.OK, MessageBoxImage.Error);
+                        DarkMessageBox.Show("No se encontró una instalación ejecutable de Roblox Studio en tu sistema.", "Error Roblox Studio", MessageBoxButton.OK, MessageBoxImage.Error);
                         return;
                     }
 
                     string rawAddress = addrBox.Text.Trim();
                     if (string.IsNullOrEmpty(rawAddress))
                     {
-                        MessageBox.Show("Por favor ingresa una dirección de túnel válida.", "Error Dirección", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        DarkMessageBox.Show("Por favor ingresa una dirección de túnel válida.", "Error Dirección", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
+                    }
+
+                    var publishedTunnels = ActiveTunnelRegistry.GetVisibleTunnelsForUser(_user);
+                    var matchingTunnel = publishedTunnels.FirstOrDefault(t => t.RemoteAddress.Equals(rawAddress, StringComparison.OrdinalIgnoreCase));
+                    if (matchingTunnel != null)
+                    {
+                        if (matchingTunnel.VisibilityMode == 1 && !_user.IsMemberOfGuild && !_user.IsStaffOrAdmin)
+                        {
+                            DarkMessageBox.Show("🔒 Túnel Cerrado: Este host está configurado con acceso 'Servidor'. Solo los miembros del Servidor de Discord de BlackHouse pueden unirse.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
+                        if (matchingTunnel.VisibilityMode == 2 && !_user.IsPrivadito && !_user.IsStaffOrAdmin)
+                        {
+                            DarkMessageBox.Show("🔒 Túnel Cerrado: Este host está configurado con acceso 'Privadito'. Solo los miembros con el Rol Privadito pueden unirse.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                            return;
+                        }
                     }
 
                     var parts = rawAddress.Split(':');
@@ -823,7 +852,7 @@ namespace BlackHouseTunnel.Views
                 }
                 catch (Exception ex)
                 {
-                    MessageBox.Show($"Error al conectar al Túnel: {ex.Message}", "Error Conexión", MessageBoxButton.OK, MessageBoxImage.Error);
+                    DarkMessageBox.Show($"Error al conectar al Túnel: {ex.Message}", "Error Conexión", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             };
 
@@ -1190,7 +1219,7 @@ namespace BlackHouseTunnel.Views
             return container;
         }
 
-        private Border CreateTunnelCard(string title, string host, string ping, bool isPrivadito = false)
+        private Border CreateTunnelCard(string title, string host, string ping, bool isPrivadito = false, string remoteAddress = "")
         {
             Border card = new Border
             {
@@ -1239,25 +1268,26 @@ namespace BlackHouseTunnel.Views
 
             Button connectBtn = new Button
             {
-                Content = isPrivadito ? "🔒 Conectar (Privadito)" : "Conectar al Túnel",
-                Height = 36,
+                Content = isPrivadito ? "🔒 Conectar (Privadito)" : "🔌 Conectarse al Túnel",
+                Height = 40,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#D4AF37" : "#5865F2")),
                 Foreground = isPrivadito ? Brushes.Black : Brushes.White,
                 FontWeight = FontWeights.Bold,
+                FontSize = 13,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand
             };
+            SetButtonCornerRadius(connectBtn, 10);
 
-            ControlTemplate template = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-            FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            borderFactory.AppendChild(presenterFactory);
-            template.VisualTree = borderFactory;
-            connectBtn.Template = template;
+            string targetAddr = remoteAddress;
+            connectBtn.Click += (s, e) =>
+            {
+                if (!string.IsNullOrEmpty(targetAddr))
+                {
+                    _pendingJoinAddress = targetAddr;
+                }
+                SwitchTab("Join");
+            };
 
             panel.Children.Add(titleTxt);
             panel.Children.Add(hostTxt);
