@@ -1302,7 +1302,7 @@ namespace NepTunnel
 
             var addrStack = new StackPanel { Margin = new Thickness(8, 0, 0, 0) };
             addrStack.Children.Add(new TextBlock { Text = LocalizationService.Get("lbl_tunnel_addr_joiner"), FontSize = 11, Foreground = (SolidColorBrush)FindResource("MuteBrush") });
-            var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 2, 0, 0) };
+            var addrTb = new TextBox { Text = cfg.HostAddr, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 2, 0, 0) };
             addrStack.Children.Add(addrTb);
             Grid.SetColumn(addrStack, 1);
             fieldsRow.Children.Add(addrStack);
@@ -1559,8 +1559,7 @@ namespace NepTunnel
                     Dispatcher.Invoke(() =>
                     {
                         LogAppend(logBox.RichText, "● SERVER IS LIVE", "ok");
-                        LogAppend(logBox.RichText, $"Session info saved → {ConfigManager.LogFile}", "dim");
-                        Clipboard.SetText(addr);
+                        try { Clipboard.SetText(addr); } catch { }
                         joinLocalBtn.IsEnabled = true;
                         SetStatus(LocalizationService.Get("status_live"), (SolidColorBrush)FindResource("OkBrush"));
                     });

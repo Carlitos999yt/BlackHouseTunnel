@@ -218,7 +218,7 @@ namespace NepTunnel.Views
             var details = new[]
             {
                 (LocalizationService.Get("lbl_username"), !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos"),
-                (LocalizationService.Get("lbl_tunnel_addr"), cfg.Addr),
+                (LocalizationService.Get("lbl_tunnel_addr"), !string.IsNullOrEmpty(cfg.HostAddr) ? cfg.HostAddr : (cfg.JoinAddr ?? "")),
                 (LocalizationService.Get("lbl_server_port"), cfg.Port),
                 (LocalizationService.Get("lbl_uid"), cfg.Uid),
                 (LocalizationService.Get("lbl_proxy_port"), UdpProxy.PROXY_PORT.ToString()),

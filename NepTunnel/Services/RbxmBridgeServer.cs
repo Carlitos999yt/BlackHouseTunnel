@@ -75,7 +75,7 @@ public static class RbxmBridgeServer
 			try
 			{
 				HttpListenerContext context = await _listener.GetContextAsync();
-				Task.Run(delegate
+				_ = Task.Run(delegate
 				{
 					HandleRequest(context);
 				});
@@ -139,12 +139,12 @@ public static class RbxmBridgeServer
 				case "client":
 				case "next":
 				{
-					text3 = ((!ClientNicknamesQueue.TryDequeue(out string result2)) ? "Player" : result2);
+					text3 = (!ClientNicknamesQueue.TryDequeue(out string? result2) || result2 == null) ? "Player" : result2;
 					break;
 				}
 				default:
 				{
-					text3 = ((!ClientNicknamesQueue.TryDequeue(out string result)) ? (string.IsNullOrWhiteSpace(ActiveUsername) ? "Player" : ActiveUsername) : result);
+					text3 = (!ClientNicknamesQueue.TryDequeue(out string? result) || result == null) ? (string.IsNullOrWhiteSpace(ActiveUsername) ? "Player" : ActiveUsername) : result;
 					break;
 				}
 				}
@@ -165,7 +165,7 @@ public static class RbxmBridgeServer
 			}
 			case "/poll":
 			{
-				string bridgePending2;
+				string? bridgePending2;
 				lock (LockObj)
 				{
 					bridgePending2 = _bridgePending;
@@ -190,7 +190,7 @@ public static class RbxmBridgeServer
 			}
 			case "/download":
 			{
-				string bridgePending;
+				string? bridgePending;
 				lock (LockObj)
 				{
 					bridgePending = _bridgePending;
@@ -249,7 +249,7 @@ public static class RbxmBridgeServer
 			try
 			{
 				using StreamReader streamReader = new StreamReader(request.InputStream, request.ContentEncoding);
-				JsonNode jsonNode = JsonNode.Parse(streamReader.ReadToEnd());
+				JsonNode? jsonNode = JsonNode.Parse(streamReader.ReadToEnd());
 				if (text == "/queue")
 				{
 					string text5 = jsonNode?["path"]?.ToString() ?? "";

@@ -66,7 +66,8 @@ namespace NepTunnel.Views
                 Margin = new Thickness(0, 0, 0, 4)
             });
 
-            var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)findResource("NepTextBoxStyle"), Margin = new Thickness(0, 0, 0, 6) };
+            var initialJoinAddr = !string.IsNullOrEmpty(cfg.JoinAddr) ? cfg.JoinAddr : cfg.HostAddr;
+            var addrTb = new TextBox { Text = initialJoinAddr, Style = (Style)findResource("NepTextBoxStyle"), Margin = new Thickness(0, 0, 0, 6) };
             cardStack.Children.Add(addrTb);
 
             cardStack.Children.Add(new TextBlock
@@ -108,7 +109,7 @@ namespace NepTunnel.Views
 
             var connectBtn = new Button
             {
-                Content = IconFactory.CreateButtonContent("join", LocalizationService.Get("btn_connect_join"), 16),
+                Content = IconFactory.CreateButtonContent("join", LocalizationService.Get("btn_connect_launch"), 16),
                 Background = (SolidColorBrush)findResource("BlueBrush"),
                 Style = (Style)findResource("NepButtonStyle"),
                 Margin = new Thickness(6, 0, 6, 0)
@@ -125,7 +126,7 @@ namespace NepTunnel.Views
                     return;
                 }
                 var parts = addr.Split(':', 2);
-                if (!int.TryParse(parts[1], out int rp))
+                if (!int.TryParse(parts[1], out _))
                 {
                     errLbl.Text = "Port must be a number";
                     return;
@@ -133,7 +134,7 @@ namespace NepTunnel.Views
                 errLbl.Text = "";
 
                 cfg.Username = username;
-                cfg.Addr = addr;
+                cfg.JoinAddr = addr;
                 ConfigManager.SaveConfig(cfg);
 
                 onConnectClick(username, addr);

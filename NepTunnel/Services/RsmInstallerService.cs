@@ -149,7 +149,7 @@ public static class RsmInstallerService
 					string requestUri = "https://raw.githubusercontent.com/Carlitos999yt/roblox-studio/main/" + relPath;
 					log("\ud83d\udce5 Descargando reparación desde GitHub: " + relPath + "…", "info");
 					byte[] bytes = await httpClient.GetByteArrayAsync(requestUri);
-					string directoryName = Path.GetDirectoryName(destPath);
+					string? directoryName = Path.GetDirectoryName(destPath);
 					if (!string.IsNullOrEmpty(directoryName))
 					{
 						Directory.CreateDirectory(directoryName);
@@ -190,7 +190,7 @@ public static class RsmInstallerService
 		}
 		try
 		{
-			using RegistryKey registryKey = Registry.CurrentUser.OpenSubKey("Software", writable: true);
+			using RegistryKey? registryKey = Registry.CurrentUser.OpenSubKey("Software", writable: true);
 			if (registryKey != null)
 			{
 				try

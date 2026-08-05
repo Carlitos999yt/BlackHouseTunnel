@@ -80,7 +80,7 @@ namespace NepTunnel.Views
             // Tunnel Address
             var addrLbl = new TextBlock { Text = LocalizationService.Get("lbl_tunnel_addr"), FontSize = 14, Foreground = (SolidColorBrush)findResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
             Grid.SetRow(addrLbl, 3); Grid.SetColumn(addrLbl, 0); cardGrid.Children.Add(addrLbl);
-            var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)findResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
+            var addrTb = new TextBox { Text = cfg.HostAddr, Style = (Style)findResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
             Grid.SetRow(addrTb, 3); Grid.SetColumn(addrTb, 1); cardGrid.Children.Add(addrTb);
 
             // Map File (Optional)
@@ -137,7 +137,7 @@ namespace NepTunnel.Views
             {
                 cfg.Uid = uidTb.Text.Trim();
                 cfg.Port = portTb.Text.Trim();
-                cfg.Addr = addrTb.Text.Trim();
+                cfg.HostAddr = addrTb.Text.Trim();
                 cfg.Map = mapTb.Text.Trim();
                 cfg.Studio = studioPath;
                 ConfigManager.SaveConfig(cfg);
@@ -216,7 +216,7 @@ namespace NepTunnel.Views
                 cfg.Uid = uid;
                 cfg.Username = username;
                 cfg.Port = port;
-                cfg.Addr = addr;
+                cfg.HostAddr = addr;
                 cfg.Map = mapPath;
                 cfg.Studio = studioPath;
                 ConfigManager.SaveConfig(cfg);

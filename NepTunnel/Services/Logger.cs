@@ -69,7 +69,7 @@ public static class Logger
 			{
 				files = new DirectoryInfo(path).GetFiles("*.log");
 			}
-			FileInfo fileInfo = null;
+			FileInfo? fileInfo = null;
 			DateTime dateTime = DateTime.MinValue;
 			FileInfo[] array = files;
 			foreach (FileInfo fileInfo2 in array)

@@ -43,7 +43,7 @@ public static class MapInjector
 		}
 		try
 		{
-			string directoryName = Path.GetDirectoryName(runtimeServerPlace);
+			string? directoryName = Path.GetDirectoryName(runtimeServerPlace);
 			if (!string.IsNullOrEmpty(directoryName))
 			{
 				Directory.CreateDirectory(directoryName);
