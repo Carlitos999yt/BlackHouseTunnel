@@ -23,7 +23,7 @@
     <EventSourceSupport>false</EventSourceSupport>
     <MetadataUpdaterSupport>false</MetadataUpdaterSupport>
     <EnableUnsafeBinaryFormatterSerialization>false</EnableUnsafeBinaryFormatterSerialization>
-    <DefaultItemExcludes>$(DefaultItemExcludes);NepTunnel_VirtualMachine\**;Versiones_Mac\**;Archivos_Compilados_Y_Zips\**</DefaultItemExcludes>
+    <DefaultItemExcludes>$(DefaultItemExcludes);Versiones_Mac\**;Archivos_Compilados_Y_Zips\**</DefaultItemExcludes>
   </PropertyGroup>
 
   <ItemGroup>
