@@ -20,6 +20,8 @@ namespace BlackHouseTunnel.Views
 
         private readonly DiscordUser _user;
         private readonly OnlineMembersMonitor _membersMonitor;
+        private HostConsoleView? _activeHostConsoleView = null;
+        private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
 
         private Grid _rootGrid = null!;
         private Grid _dropdownOverlay = null!;
@@ -218,7 +220,14 @@ namespace BlackHouseTunnel.Views
                     _contentHostGrid.Children.Add(BuildHomeDashboardView());
                     break;
                 case "Host":
-                    _contentHostGrid.Children.Add(BuildHostView());
+                    if (_activeHostConsoleView != null)
+                    {
+                        _contentHostGrid.Children.Add(_activeHostConsoleView);
+                    }
+                    else
+                    {
+                        _contentHostGrid.Children.Add(BuildHostView());
+                    }
                     break;
                 case "Join":
                     _contentHostGrid.Children.Add(BuildJoinView());
@@ -403,7 +412,7 @@ namespace BlackHouseTunnel.Views
 
             TextBlock friendsHeader = new TextBlock
             {
-                Text = "Miembros en Línea (Actualización en Vivo 4s)",
+                Text = "Miembros en Línea",
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
@@ -682,7 +691,14 @@ namespace BlackHouseTunnel.Views
                     RbxmBridgeServer.Start();
 
                     HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername);
-                    hostConsole.OnStopHostRequested += (s2, e2) => SwitchTab("Host");
+                    _activeHostConsoleView = hostConsole;
+                    hostConsole.OnStopHostRequested += (s2, e2) =>
+                    {
+                        UdpProxy.StopProxy();
+                        RbxmBridgeServer.Stop();
+                        _activeHostConsoleView = null;
+                        SwitchTab("Host");
+                    };
 
                     _contentHostGrid.Children.Clear();
                     _contentHostGrid.Children.Add(hostConsole);
@@ -947,6 +963,40 @@ namespace BlackHouseTunnel.Views
             }
         }
 
+        private async void LoadAvatarImageAsync(string avatarUrl, Ellipse circle)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(avatarUrl))
+                {
+                    circle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2"));
+                    return;
+                }
+
+                byte[] data = await AvatarHttpClient.GetByteArrayAsync(avatarUrl);
+                using (var ms = new MemoryStream(data))
+                {
+                    var bmp = new BitmapImage();
+                    bmp.BeginInit();
+                    bmp.CacheOption = BitmapCacheOption.OnLoad;
+                    bmp.StreamSource = ms;
+                    bmp.EndInit();
+                    bmp.Freeze();
+                    App.Current.Dispatcher.Invoke(() =>
+                    {
+                        circle.Fill = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                    });
+                }
+            }
+            catch
+            {
+                App.Current.Dispatcher.Invoke(() =>
+                {
+                    circle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2"));
+                });
+            }
+        }
+
         private Border CreateOnlineFriendItem(DiscordUser member)
         {
             Border container = new Border
@@ -966,22 +1016,11 @@ namespace BlackHouseTunnel.Views
             {
                 Width = 48,
                 Height = 48,
-                HorizontalAlignment = HorizontalAlignment.Center
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2"))
             };
 
-            try
-            {
-                BitmapImage bmp = new BitmapImage();
-                bmp.BeginInit();
-                bmp.UriSource = new Uri(member.AvatarUrl, UriKind.Absolute);
-                bmp.CacheOption = BitmapCacheOption.OnLoad;
-                bmp.EndInit();
-                circle.Fill = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
-            }
-            catch
-            {
-                circle.Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2"));
-            }
+            LoadAvatarImageAsync(member.AvatarUrl, circle);
 
             Ellipse statusDot = new Ellipse
             {

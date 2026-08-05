@@ -70,24 +70,17 @@ namespace BlackHouseTunnel.Views
             };
             btnRow.Children.Add(testBtn);
 
-            Button forceKillBtn = CreateActionButton("⚡ Forzar Cierre Studio", "#D97706");
-            forceKillBtn.Click += (s, e) =>
-            {
-                var result = DarkMessageBox.Show("¿Deseas forzar la finalización de todos los procesos activos de Roblox Studio?", "Forzar Cierre Studio", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                if (result == MessageBoxResult.Yes)
-                {
-                    RobloxStudioService.StopAllStudioProcesses();
-                    _console?.AppendLog("✓ Todos los procesos de Roblox Studio han sido finalizados por fuerza.", "warn");
-                }
-            };
-            btnRow.Children.Add(forceKillBtn);
-
             Button stopBtn = CreateActionButton("⏹ Detener Host", "#ED4245");
             stopBtn.Click += (s, e) =>
             {
-                var result = DarkMessageBox.Show("¿Estás seguro de detener el Servidor Host activo?", "Detener Host", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var result = DarkMessageBox.Show("¿Estás seguro de detener el Servidor Host activo?\n\n(Al detener, se cerrará el Proxy UDP y el Servidor Puente).", "Detener Host", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
+                    var killResult = DarkMessageBox.Show("¿Deseas también forzar la finalización de todos los procesos activos de Roblox Studio?", "Forzar Cierre Studio", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                    if (killResult == MessageBoxResult.Yes)
+                    {
+                        RobloxStudioService.StopAllStudioProcesses();
+                    }
                     OnStopHostRequested?.Invoke(this, EventArgs.Empty);
                 }
             };

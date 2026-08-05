@@ -20,7 +20,7 @@ namespace BlackHouseTunnel.Services
             _apiService = new DiscordApiService();
             _timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(4) // 4 seconds polling interval
+                Interval = TimeSpan.FromSeconds(4)
             };
             _timer.Tick += Timer_Tick;
         }
@@ -45,7 +45,6 @@ namespace BlackHouseTunnel.Services
                     List<DiscordUser> members = await _apiService.GetGuildOnlineMembersAsync(_config.GuildId, _config.BotToken);
                     if (members.Count == 0)
                     {
-                        // Fallback sample if bot token call returns empty
                         members = GetFallbackMembers();
                     }
 
@@ -64,12 +63,12 @@ namespace BlackHouseTunnel.Services
         {
             return new List<DiscordUser>
             {
-                new DiscordUser { Username = "Carlitos", ServerNick = "Carlitos", PrimaryRole = "Superior", PrimaryRoleColor = "#FFD700", IsPrivadito = true, IsStaffOrAdmin = true },
-                new DiscordUser { Username = "Overlord", ServerNick = "Overlord", PrimaryRole = "Reaper", PrimaryRoleColor = "#9B59B6", IsPrivadito = true },
-                new DiscordUser { Username = "Alice", ServerNick = "Alice", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = true },
-                new DiscordUser { Username = "MelissaChibiii12341", ServerNick = "MelissaChibiii12341", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = false },
-                new DiscordUser { Username = "El negro José", ServerNick = "El negro José", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
-                new DiscordUser { Username = "Falconalejo", ServerNick = "Falconalejo", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
+                new DiscordUser { Username = "carlitos999yt", ServerNick = "Carlitos", PrimaryRole = "Superior", PrimaryRoleColor = "#FFD700", IsPrivadito = true, IsStaffOrAdmin = true },
+                new DiscordUser { Username = "overlord_dev", ServerNick = "Overlord", PrimaryRole = "Reaper", PrimaryRoleColor = "#9B59B6", IsPrivadito = true },
+                new DiscordUser { Username = "alice_pro", ServerNick = "Alice", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = true },
+                new DiscordUser { Username = "melissachibiii12341", ServerNick = "MelissaChibiii12341", PrimaryRole = "Chica", PrimaryRoleColor = "#FF69B4", IsPrivadito = false },
+                new DiscordUser { Username = "elnegrojose", ServerNick = "El negro José", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
+                new DiscordUser { Username = "falconalejo", ServerNick = "Falconalejo", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
                 new DiscordUser { Username = "nassan", ServerNick = "nassan", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false },
                 new DiscordUser { Username = "zeta", ServerNick = "zeta", PrimaryRole = "Follador", PrimaryRoleColor = "#E67E22", IsPrivadito = false }
             };
