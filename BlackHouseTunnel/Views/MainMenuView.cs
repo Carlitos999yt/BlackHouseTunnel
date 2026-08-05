@@ -836,8 +836,11 @@ namespace BlackHouseTunnel.Views
         }
 
         // TAB 4: SETTINGS VIEW
+        // TAB 7: SYSTEM SETTINGS VIEW
         private UIElement BuildSettingsView()
         {
+            var config = ConfigManager.CurrentConfig;
+
             ScrollViewer scroll = new ScrollViewer
             {
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
@@ -848,7 +851,7 @@ namespace BlackHouseTunnel.Views
 
             TextBlock title = new TextBlock
             {
-                Text = "⚙️ Ajustes & Configuración de BlackHouseTunnel",
+                Text = "⚙️ Configuraciones del Sistema",
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
@@ -868,24 +871,132 @@ namespace BlackHouseTunnel.Views
 
             StackPanel boxPanel = new StackPanel();
 
-            boxPanel.Children.Add(CreateLabel("Discord Client ID (🔒 Fijo - No modificable)"));
-            TextBox clientIdBox = CreateStyledTextBox(ConfigManager.CurrentConfig.ClientId);
-            clientIdBox.IsReadOnly = true;
-            clientIdBox.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#08080E"));
-            clientIdBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297"));
-            boxPanel.Children.Add(clientIdBox);
+            // Option 1: Language Selector
+            boxPanel.Children.Add(CreateLabel("🌐 Idioma de la Aplicación"));
+            ComboBox langCombo = new ComboBox
+            {
+                Height = 38,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
+                Foreground = Brushes.White,
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            langCombo.Items.Add("🇪🇸 Español (Spanish)");
+            langCombo.Items.Add("🇺🇸 English (Inglés)");
+            langCombo.Items.Add("🇧🇷 Português (Portugués)");
+            langCombo.SelectedIndex = config.Language.ToLowerInvariant() switch
+            {
+                "en" => 1,
+                "pt" => 2,
+                _ => 0
+            };
+            boxPanel.Children.Add(langCombo);
 
-            boxPanel.Children.Add(CreateLabel("Servidor Guild ID Exigido"));
-            TextBox guildIdBox = CreateStyledTextBox(ConfigManager.CurrentConfig.GuildId);
-            boxPanel.Children.Add(guildIdBox);
+            // Option 2: Visual Theme Selector (Dark vs Light)
+            boxPanel.Children.Add(CreateLabel("🎨 Tema de la Interfaz (Modo Claro / Oscuro)"));
+            ComboBox themeCombo = new ComboBox
+            {
+                Height = 38,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
+                Foreground = Brushes.White,
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            themeCombo.Items.Add("🌙 Oscuro Neón Púrpura (Tema por Defecto)");
+            themeCombo.Items.Add("☀️ Claro Moderno (Light Mode)");
+            themeCombo.Items.Add("🌌 Oscuro Noche Profunda");
+            themeCombo.SelectedIndex = config.ThemeMode switch
+            {
+                "Light" => 1,
+                "DeepDark" => 2,
+                _ => 0
+            };
+            boxPanel.Children.Add(themeCombo);
 
-            boxPanel.Children.Add(CreateLabel("Puerto del Servidor OAuth Local"));
-            TextBox portBox = CreateStyledTextBox(ConfigManager.CurrentConfig.LocalServerPort.ToString());
-            boxPanel.Children.Add(portBox);
+            // Option 3: Roblox Studio Version & Path Selector
+            boxPanel.Children.Add(CreateLabel("🎮 Ejecutable Activo de Roblox Studio"));
+            string currentStudio = !string.IsNullOrEmpty(config.SelectedStudioPath) && File.Exists(config.SelectedStudioPath)
+                ? config.SelectedStudioPath
+                : (RobloxStudioService.GetStudioPath() ?? "No detectado");
 
+            TextBox studioBox = CreateStyledTextBox(currentStudio);
+            studioBox.IsReadOnly = true;
+            studioBox.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#08080E"));
+            studioBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A0A0C0"));
+            boxPanel.Children.Add(studioBox);
+
+            StackPanel studioBtnsRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 20) };
+
+            Button scanStudioBtn = new Button
+            {
+                Content = "🎯 Seleccionar Versión de Studio...",
+                Height = 36,
+                Padding = new Thickness(14, 0, 14, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            SetButtonCornerRadius(scanStudioBtn, 8);
+
+            scanStudioBtn.Click += (s, e) =>
+            {
+                StudioSelectorModal modal = new StudioSelectorModal(studioBox.Text);
+                modal.OnStudioSelected += (s2, path) =>
+                {
+                    studioBox.Text = path;
+                    config.SelectedStudioPath = path;
+                    ConfigManager.SaveConfig(config);
+                    _dropdownOverlay.Children.Clear();
+                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                };
+                modal.OnCloseRequested += (s2, e2) =>
+                {
+                    _dropdownOverlay.Children.Clear();
+                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                };
+                _dropdownOverlay.Children.Clear();
+                _dropdownOverlay.Children.Add(modal);
+                _dropdownOverlay.Visibility = Visibility.Visible;
+            };
+            studioBtnsRow.Children.Add(scanStudioBtn);
+
+            Button browseStudioBtn = new Button
+            {
+                Content = "📁 Buscar Ejecutable...",
+                Height = 36,
+                Padding = new Thickness(14, 0, 14, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F32")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.SemiBold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            SetButtonCornerRadius(browseStudioBtn, 8);
+
+            browseStudioBtn.Click += (s, e) =>
+            {
+                Microsoft.Win32.OpenFileDialog dlg = new Microsoft.Win32.OpenFileDialog
+                {
+                    Title = "Seleccionar Ejecutable de Roblox Studio",
+                    Filter = "Roblox Studio (*.exe)|*.exe|Todos los archivos (*.*)|*.*"
+                };
+                if (dlg.ShowDialog() == true)
+                {
+                    studioBox.Text = dlg.FileName;
+                    config.SelectedStudioPath = dlg.FileName;
+                    ConfigManager.SaveConfig(config);
+                }
+            };
+            studioBtnsRow.Children.Add(browseStudioBtn);
+            boxPanel.Children.Add(studioBtnsRow);
+
+            // Save Settings Button
             Button saveBtn = new Button
             {
-                Content = "💾 Guardar Cambios de Configuración",
+                Content = "💾 Guardar Configuración del Sistema",
                 Height = 42,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
                 Foreground = Brushes.White,
@@ -893,26 +1004,29 @@ namespace BlackHouseTunnel.Views
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(0, 16, 0, 0)
+                Margin = new Thickness(0, 10, 0, 0)
             };
-
-            ControlTemplate template = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
-            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            borderFactory.AppendChild(presenterFactory);
-            template.VisualTree = borderFactory;
-            saveBtn.Template = template;
+            SetButtonCornerRadius(saveBtn, 10);
 
             saveBtn.Click += (s, e) =>
             {
-                ConfigManager.CurrentConfig.GuildId = guildIdBox.Text;
-                if (int.TryParse(portBox.Text, out int port)) ConfigManager.CurrentConfig.LocalServerPort = port;
-                ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
-                DarkMessageBox.Show("¡Configuración guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Guardado", MessageBoxButton.OK, MessageBoxImage.Information);
+                config.Language = langCombo.SelectedIndex switch
+                {
+                    1 => "en",
+                    2 => "pt",
+                    _ => "es"
+                };
+
+                config.ThemeMode = themeCombo.SelectedIndex switch
+                {
+                    1 => "Light",
+                    2 => "DeepDark",
+                    _ => "Dark"
+                };
+
+                config.SelectedStudioPath = studioBox.Text.Trim();
+                ConfigManager.SaveConfig(config);
+                DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
             };
 
             boxPanel.Children.Add(saveBtn);
@@ -921,6 +1035,20 @@ namespace BlackHouseTunnel.Views
 
             scroll.Content = panel;
             return scroll;
+        }
+
+        private void SetButtonCornerRadius(Button btn, double radius = 8)
+        {
+            ControlTemplate template = new ControlTemplate(typeof(Button));
+            FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
+            borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+            borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(radius));
+            FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
+            presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            presenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            borderFactory.AppendChild(presenterFactory);
+            template.VisualTree = borderFactory;
+            btn.Template = template;
         }
 
         private TextBlock CreateLabel(string text)

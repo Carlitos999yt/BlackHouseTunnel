@@ -9,6 +9,11 @@ namespace BlackHouseTunnel.Models
         public string BotToken { get; set; } = "";
         public int LocalServerPort { get; set; } = 5000;
 
+        // System Preferences
+        public string Language { get; set; } = "es";
+        public string ThemeMode { get; set; } = "Dark";
+        public string SelectedStudioPath { get; set; } = "";
+
         // Saved Host Form Fields
         public string SavedUserId { get; set; } = "";
         public string SavedUsername { get; set; } = "";
