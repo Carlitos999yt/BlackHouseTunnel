@@ -462,14 +462,11 @@ namespace BlackHouseTunnel.Views
                 Margin = new Thickness(0, 0, 0, 6)
             };
 
-            bool isAdvanced = _user.IsStaffOrAdmin || _user.IsHoster;
             TextBlock sub = new TextBlock
             {
-                Text = isAdvanced 
-                    ? "Modo Avanzado Activado (Permisos de Staff / Hoster detectados)." 
-                    : "Configuración completa de servidor túnel.",
+                Text = "Configuración completa de servidor túnel.",
                 FontSize = 13,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isAdvanced ? "#FFD700" : "#AAAAAA")),
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9494B8")),
                 Margin = new Thickness(0, 0, 0, 24)
             };
 
@@ -579,7 +576,7 @@ namespace BlackHouseTunnel.Views
             visCombo.Items.Add("👤 Prueba Privada (Solo Yo)");
             visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 3);
 
-            if (isAdvanced)
+            if (_user.IsStaffOrAdmin || _user.IsHoster)
             {
                 boxPanel.Children.Add(CreateLabel("🔒 Visibilidad & Permisos de Acceso"));
                 boxPanel.Children.Add(visCombo);

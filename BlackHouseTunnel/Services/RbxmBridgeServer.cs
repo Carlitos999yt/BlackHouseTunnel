@@ -38,26 +38,57 @@ namespace BlackHouseTunnel.Services
 
         public static bool Start()
         {
-            if (_isRunning)
+            if (_isRunning && _listener != null && _listener.IsListening)
             {
                 return true;
             }
+
+            Stop();
+
+            Directory.CreateDirectory(StagingDir);
+
+            for (int attempt = 1; attempt <= 3; attempt++)
+            {
+                try
+                {
+                    _listener = new HttpListener();
+                    _listener.Prefixes.Add($"http://127.0.0.1:{BRIDGE_PORT}/");
+                    _listener.Start();
+                    _isRunning = true;
+                    Task.Run(ListenLoop);
+                    Logger.Log($"[Bridge] Started HTTP Bridge Server on port {BRIDGE_PORT}.");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Stop();
+                    Logger.Log($"[Bridge] Start attempt {attempt} failed: {ex.Message}");
+                    if (attempt < 3)
+                    {
+                        System.Threading.Thread.Sleep(150);
+                    }
+                }
+            }
+
             try
             {
-                Directory.CreateDirectory(StagingDir);
-                _listener = new HttpListener();
-                _listener.Prefixes.Add($"http://127.0.0.1:{BRIDGE_PORT}/");
-                _listener.Start();
-                _isRunning = true;
-                Task.Run(ListenLoop);
-                return true;
+                using (var client = new System.Net.Http.HttpClient { Timeout = TimeSpan.FromMilliseconds(500) })
+                {
+                    var resp = client.GetAsync($"http://127.0.0.1:{BRIDGE_PORT}/identity").Result;
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        _isRunning = true;
+                        Logger.Log($"[Bridge] Detected existing active Bridge Server on port {BRIDGE_PORT}.");
+                        return true;
+                    }
+                }
             }
-            catch (Exception ex)
+            catch
             {
-                Console.WriteLine("[bridge] Start error: " + ex.Message);
-                _isRunning = false;
-                return false;
             }
+
+            _isRunning = false;
+            return false;
         }
 
         private static async Task ListenLoop()
