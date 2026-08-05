@@ -1,155 +1,215 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Window x:Class="NepTunnel.MainWindow" xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" Title="Nep Tunnel" Height="700" Width="736" MinHeight="560" MinWidth="600" Icon="icon.ico" Background="{StaticResource BgBrush}" WindowStartupLocation="CenterScreen" WindowStyle="SingleBorderWindow" SnapsToDevicePixels="True" UseLayoutRounding="True" TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType" xmlns:neptunnel="clr-namespace:NepTunnel;assembly=NepTunnel">
-  <WindowChrome.WindowChrome>
-    <WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="8" />
-  </WindowChrome.WindowChrome>
-  <FrameworkElement.Resources>
-    <ResourceDictionary>
-      <Style x:Key="NepButtonStyle" TargetType="{x:Type Button}">
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-        <Setter Property="FontFamily" Value="Segoe UI" />
-        <Setter Property="FontSize" Value="14" />
-        <Setter Property="FontWeight" Value="Bold" />
-        <Setter Property="Padding" Value="16,8" />
-        <Setter Property="FrameworkElement.Cursor" Value="Hand" />
-        <Setter Property="BorderThickness" Value="0" />
-        <Setter Property="Template">
-          <Setter.Value>
-            <ControlTemplate TargetType="{x:Type Button}">
-              <Border Name="border" Background="{TemplateBinding Control.Background}" CornerRadius="8" Padding="{TemplateBinding Control.Padding}">
-                <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-              <ControlTemplate.Triggers>
-                <Trigger Property="UIElement.IsMouseOver" Value="True">
-                  <Setter TargetName="border" Property="UIElement.Opacity" Value="0.82" />
-                </Trigger>
-                <Trigger Property="IsPressed" Value="True">
-                  <Setter TargetName="border" Property="UIElement.Opacity" Value="0.68" />
-                </Trigger>
-                <Trigger Property="IsEnabled" Value="False">
-                  <Setter TargetName="border" Property="UIElement.Opacity" Value="0.4" />
-                </Trigger>
-              </ControlTemplate.Triggers>
-            </ControlTemplate>
-          </Setter.Value>
-        </Setter>
-      </Style>
-      <Style x:Key="NepTextBoxStyle" TargetType="{x:Type TextBox}">
-        <Setter Property="Background" Value="{StaticResource Card2Brush}" />
-        <Setter Property="Foreground" Value="{StaticResource TextBrush}" />
-        <Setter Property="BorderBrush" Value="{StaticResource BordBrush}" />
-        <Setter Property="BorderThickness" Value="1" />
-        <Setter Property="Padding" Value="8,6" />
-        <Setter Property="FontSize" Value="13" />
-        <Setter Property="FontFamily" Value="Segoe UI" />
-        <Setter Property="Template">
-          <Setter.Value>
-            <ControlTemplate TargetType="{x:Type TextBox}">
-              <Border Background="{TemplateBinding Control.Background}" BorderBrush="{TemplateBinding Control.BorderBrush}" BorderThickness="{TemplateBinding Control.BorderThickness}" CornerRadius="6">
-                <ScrollViewer Name="PART_ContentHost" Margin="0" />
-              </Border>
-            </ControlTemplate>
-          </Setter.Value>
-        </Setter>
-      </Style>
-    </ResourceDictionary>
-  </FrameworkElement.Resources>
-  <Grid Name="RootMainGrid">
-    <Grid.RowDefinitions>
-      <RowDefinition Height="34" />
-      <RowDefinition Height="140" />
-      <RowDefinition Height="*" />
-      <RowDefinition Height="34" />
-    </Grid.RowDefinitions>
-    <Grid Row="0" Background="#06030B" ZIndex="100">
-      <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
-        <Image Source="bundled_assets/logo.png" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center" />
-        <TextBlock Text="Nep Tunnel" Foreground="{StaticResource TextBrush}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center" />
-      </StackPanel>
-      <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
-        <Button Name="WinMinBtn" Content="🗕" Style="{StaticResource WinCaptionButtonStyle}" Click="WinMinBtn_Click" />
-        <Button Name="WinMaxBtn" Content="🗖" Style="{StaticResource WinCaptionButtonStyle}" Click="WinMaxBtn_Click" />
-        <Button Name="WinCloseBtn" Content="✕" Style="{StaticResource WinCloseButtonStyle}" Click="WinCloseBtn_Click" />
-      </StackPanel>
-      <Border BorderBrush="{StaticResource BordBrush}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom" />
-    </Grid>
-    <Grid Row="1" ClipToBounds="True">
-      <Image Name="BannerImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center" />
-      <Rectangle>
-        <Shape.Fill>
-          <SolidColorBrush Color="#08040F" Opacity="0.55" />
-        </Shape.Fill>
-      </Rectangle>
-      <Rectangle VerticalAlignment="Bottom" Height="50">
-        <Shape.Fill>
-          <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
-            <GradientStop Color="#0008040F" Offset="0" />
-            <GradientStop Color="#FF08040F" Offset="1" />
-          </LinearGradientBrush>
-        </Shape.Fill>
-      </Rectangle>
-      <Rectangle Opacity="0.25">
-        <Shape.Fill>
-          <RadialGradientBrush Center="0.5,0.5" RadiusX="0.8" RadiusY="0.8">
-            <GradientStop Color="#8B5CF6" Offset="0" />
-            <GradientStop Color="#08040F" Offset="1" />
-          </RadialGradientBrush>
-        </Shape.Fill>
-      </Rectangle>
-      <StackPanel VerticalAlignment="Center" Margin="24,0,0,0">
-        <TextBlock Text="NEP TUNNEL" Foreground="{StaticResource TextBrush}" FontSize="22" FontWeight="Bold" />
-        <TextBlock Text="Roblox Studio  ·  Local Test" Foreground="{StaticResource MuteBrush}" FontSize="12" Margin="2,3,0,0" />
-      </StackPanel>
-      <TextBlock Text="v2.3" Foreground="{StaticResource MuteBrush}" FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Bottom" Margin="0,0,16,12" />
-      <Border BorderBrush="{StaticResource BordBrush}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom" />
-    </Grid>
-    <Grid Name="ViewContainer" Row="2" ClipToBounds="True" />
-    <Border Grid.Row="3" Background="{StaticResource Card2Brush}" BorderBrush="{StaticResource BordBrush}" BorderThickness="0,1,0,0">
-      <Grid>
-        <TextBlock Name="StatusLabel" Text="Starting…" Foreground="{StaticResource MuteBrush}" FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0" />
-        <Button Name="LangBtn" Content="🌐 English" Foreground="{StaticResource GlowBrush}" Background="#00FFFFFF" BorderThickness="0" FontSize="12" FontWeight="Bold" HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" Cursor="Hand" FocusVisualStyle="{x:Null}" Click="LangBtn_Click">
-          <Control.Template>
-            <ControlTemplate TargetType="{x:Type Button}">
-              <Border Name="border" Background="#00FFFFFF" Padding="4,2">
-                <ContentPresenter Name="cp" HorizontalAlignment="Center" VerticalAlignment="Center" />
-              </Border>
-              <ControlTemplate.Triggers>
-                <Trigger Property="UIElement.IsMouseOver" Value="True">
-                  <Setter Property="Control.Foreground" Value="#F0E6FF" />
-                </Trigger>
-                <Trigger Property="ButtonBase.IsPressed" Value="True">
-                  <Setter Property="Control.Foreground" Value="#8B5CF6" />
-                </Trigger>
-              </ControlTemplate.Triggers>
-            </ControlTemplate>
-          </Control.Template>
-        </Button>
-      </Grid>
-    </Border>
-    <Grid Name="AlertOverlayGrid" RowSpan="4" Background="#CC08040F" Visibility="Collapsed" ZIndex="1000">
-      <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BordBrush}" BorderThickness="1" CornerRadius="14" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24">
-        <StackPanel>
-          <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
-            <TextBlock Text="⚠" Foreground="{StaticResource WarnBrush}" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center" />
-            <TextBlock Name="AlertTitleTxt" Text="Stop Session?" Foreground="{StaticResource TextBrush}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center" />
-          </StackPanel>
-          <TextBlock Name="AlertMessageTxt" Text="Are you sure you want to stop the server? Active Roblox Studio instances will be closed." Foreground="{StaticResource MuteBrush}" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,20" />
-          <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
-            <Button Name="AlertCancelBtn" Content="Cancel" Background="{StaticResource Card2Brush}" Style="{StaticResource NepButtonStyle}" Padding="16,8" Margin="0,0,10,0" />
-            <Button Name="AlertConfirmBtn" Content="Stop Session" Background="{StaticResource ErrBrush}" Style="{StaticResource NepButtonStyle}" Padding="16,8" />
-          </StackPanel>
-        </StackPanel>
-      </Border>
-    </Grid>
-    <Grid Name="ImageModalOverlay" RowSpan="4" Background="#F0040209" Visibility="Collapsed" ZIndex="2000" MouseDown="CloseImageModal_Click">
-      <Grid Margin="24">
-        <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BordBrush}" BorderThickness="1" CornerRadius="12" Padding="12" HorizontalAlignment="Center" VerticalAlignment="Center">
-          <Grid>
-            <Image Name="ZoomedImageControl" Stretch="Uniform" MaxHeight="560" MaxWidth="680" />
-            <Button Content="✕" Style="{StaticResource WinCloseButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Click="CloseImageModal_Click" />
-          </Grid>
+<Window x:Class="NepTunnel.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Nep Tunnel" Height="700" Width="736" MinHeight="560" MinWidth="600"
+        Icon="icon.ico"
+        Background="{StaticResource BgBrush}" WindowStartupLocation="CenterScreen"
+        WindowStyle="SingleBorderWindow"
+        SnapsToDevicePixels="True" UseLayoutRounding="True"
+        TextOptions.TextFormattingMode="Display" TextOptions.TextRenderingMode="ClearType">
+
+    <WindowChrome.WindowChrome>
+        <WindowChrome CaptionHeight="34" ResizeBorderThickness="6" GlassFrameThickness="0" CornerRadius="8"/>
+    </WindowChrome.WindowChrome>
+    
+    <Window.Resources>
+        <!-- Custom Button Style -->
+        <Style x:Key="NepButtonStyle" TargetType="Button">
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="FontSize" Value="14"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+            <Setter Property="Padding" Value="16,8"/>
+            <Setter Property="Cursor" Value="Hand"/>
+            <Setter Property="BorderThickness" Value="0"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="border" Background="{TemplateBinding Background}" 
+                                CornerRadius="8" Padding="{TemplateBinding Padding}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.82"/>
+                            </Trigger>
+                            <Trigger Property="IsPressed" Value="True">
+                                <Setter TargetName="border" Property="Opacity" Value="0.68"/>
+                            </Trigger>
+                            <Trigger Property="IsEnabled" Value="False">
+                                <Setter TargetName="border" Property="Opacity" Value="0.4"/>
+                            </Trigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
+        <!-- Custom TextBox Style -->
+        <Style x:Key="NepTextBoxStyle" TargetType="TextBox">
+            <Setter Property="Background" Value="{StaticResource Card2Brush}"/>
+            <Setter Property="Foreground" Value="{StaticResource TextBrush}"/>
+            <Setter Property="BorderBrush" Value="{StaticResource BordBrush}"/>
+            <Setter Property="BorderThickness" Value="1"/>
+            <Setter Property="Padding" Value="8,6"/>
+            <Setter Property="FontSize" Value="13"/>
+            <Setter Property="FontFamily" Value="Segoe UI"/>
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="TextBox">
+                        <Border Background="{TemplateBinding Background}" 
+                                BorderBrush="{TemplateBinding BorderBrush}" 
+                                BorderThickness="{TemplateBinding BorderThickness}" 
+                                CornerRadius="6">
+                            <ScrollViewer x:Name="PART_ContentHost" Margin="0"/>
+                        </Border>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+    </Window.Resources>
+
+    <Grid x:Name="RootMainGrid">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="34"/>
+            <RowDefinition Height="140"/>
+            <RowDefinition Height="*"/>
+            <RowDefinition Height="34"/>
+        </Grid.RowDefinitions>
+
+        <!-- Custom Dark Window Title Bar -->
+        <Grid Grid.Row="0" Background="#06030B" Panel.ZIndex="100">
+            <StackPanel Orientation="Horizontal" VerticalAlignment="Center" Margin="12,0,0,0">
+                <Image Source="bundled_assets/logo.png" Width="18" Height="18" Margin="0,0,8,0" VerticalAlignment="Center"/>
+                <TextBlock Text="Nep Tunnel" Foreground="{StaticResource TextBrush}" FontSize="12" FontWeight="Bold" VerticalAlignment="Center"/>
+            </StackPanel>
+
+            <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" WindowChrome.IsHitTestVisibleInChrome="True">
+                <Button x:Name="WinMinBtn" Content="🗕" Style="{StaticResource WinCaptionButtonStyle}" Click="WinMinBtn_Click"/>
+                <Button x:Name="WinMaxBtn" Content="🗖" Style="{StaticResource WinCaptionButtonStyle}" Click="WinMaxBtn_Click"/>
+                <Button x:Name="WinCloseBtn" Content="✕" Style="{StaticResource WinCloseButtonStyle}" Click="WinCloseBtn_Click"/>
+            </StackPanel>
+            
+            <Border BorderBrush="{StaticResource BordBrush}" BorderThickness="0,0,0,1" VerticalAlignment="Bottom"/>
+        </Grid>
+
+        <!-- Banner Header Container -->
+        <Grid Grid.Row="1" ClipToBounds="True">
+            <!-- Background Image -->
+            <Image x:Name="BannerImage" Stretch="UniformToFill" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+            
+            <!-- Dark Overlay Color Gradient -->
+            <Rectangle>
+                <Rectangle.Fill>
+                    <SolidColorBrush Color="#08040F" Opacity="0.55"/>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- Bottom Dark Fade Gradient -->
+            <Rectangle VerticalAlignment="Bottom" Height="50">
+                <Rectangle.Fill>
+                    <LinearGradientBrush StartPoint="0,0" EndPoint="0,1">
+                        <GradientStop Color="#0008040F" Offset="0"/>
+                        <GradientStop Color="#FF08040F" Offset="1"/>
+                    </LinearGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- Purple Tint Ambient Gradient -->
+            <Rectangle Opacity="0.25">
+                <Rectangle.Fill>
+                    <RadialGradientBrush Center="0.5,0.5" RadiusX="0.8" RadiusY="0.8">
+                        <GradientStop Color="#8B5CF6" Offset="0"/>
+                        <GradientStop Color="#08040F" Offset="1"/>
+                    </RadialGradientBrush>
+                </Rectangle.Fill>
+            </Rectangle>
+
+            <!-- Banner Titles -->
+            <StackPanel VerticalAlignment="Center" Margin="24,0,0,0">
+                <TextBlock Text="NEP TUNNEL" Foreground="{StaticResource TextBrush}" 
+                           FontSize="22" FontWeight="Bold"/>
+                <TextBlock Text="Roblox Studio  ·  Local Test" Foreground="{StaticResource MuteBrush}" 
+                           FontSize="12" Margin="2,3,0,0"/>
+            </StackPanel>
+            
+            <TextBlock Text="v2.3" Foreground="{StaticResource MuteBrush}" 
+                       FontSize="11" HorizontalAlignment="Right" VerticalAlignment="Bottom" 
+                       Margin="0,0,16,12"/>
+            
+            <Border BorderBrush="{StaticResource BordBrush}" BorderThickness="0,0,0,1" 
+                    VerticalAlignment="Bottom"/>
+        </Grid>
+
+        <!-- Main Viewport Container for View Slide Transitions -->
+        <Grid Grid.Row="2" x:Name="ViewContainer" ClipToBounds="True">
+            <!-- Dynamic Views injected in code behind -->
+        </Grid>
+
+        <!-- Status Bar with Language Button -->
+        <Border Grid.Row="3" Background="{StaticResource Card2Brush}" 
+                BorderBrush="{StaticResource BordBrush}" BorderThickness="0,1,0,0">
+            <Grid>
+                <TextBlock x:Name="StatusLabel" Text="Starting…" Foreground="{StaticResource MuteBrush}" 
+                           FontSize="12" VerticalAlignment="Center" Margin="14,0,0,0"/>
+
+                <!-- Language Selector Button (Clean Text Only, No Focus Box or Background Glow) -->
+                <Button x:Name="LangBtn" Content="🌐 English" Foreground="{StaticResource GlowBrush}" 
+                        Background="Transparent" BorderThickness="0" FontSize="12" FontWeight="Bold"
+                        FocusVisualStyle="{x:Null}"
+                        HorizontalAlignment="Right" VerticalAlignment="Center" Margin="0,0,14,0" 
+                        Cursor="Hand" Click="LangBtn_Click">
+                    <Button.Template>
+                        <ControlTemplate TargetType="Button">
+                            <Border x:Name="border" Background="Transparent" Padding="4,2">
+                                <ContentPresenter x:Name="cp" HorizontalAlignment="Center" VerticalAlignment="Center"/>
+                            </Border>
+                            <ControlTemplate.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Foreground" Value="#F0E6FF"/>
+                                </Trigger>
+                                <Trigger Property="IsPressed" Value="True">
+                                    <Setter Property="Foreground" Value="#8B5CF6"/>
+                                </Trigger>
+                            </ControlTemplate.Triggers>
+                        </ControlTemplate>
+                    </Button.Template>
+                </Button>
+            </Grid>
         </Border>
-      </Grid>
+
+        <!-- Custom Dark Alert Confirmation Modal Overlay -->
+        <Grid x:Name="AlertOverlayGrid" Grid.RowSpan="4" Background="#CC08040F" Visibility="Collapsed" Panel.ZIndex="1000">
+            <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BordBrush}" BorderThickness="1"
+                    CornerRadius="14" Width="440" HorizontalAlignment="Center" VerticalAlignment="Center" Padding="24">
+                <StackPanel>
+                    <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
+                        <TextBlock Text="⚠" Foreground="{StaticResource WarnBrush}" FontSize="20" Margin="0,0,10,0" VerticalAlignment="Center"/>
+                        <TextBlock x:Name="AlertTitleTxt" Text="Stop Session?" Foreground="{StaticResource TextBrush}" FontSize="17" FontWeight="Bold" VerticalAlignment="Center"/>
+                    </StackPanel>
+                    
+                    <TextBlock x:Name="AlertMessageTxt" Text="Are you sure you want to stop the server? Active Roblox Studio instances will be closed." 
+                               Foreground="{StaticResource MuteBrush}" FontSize="13" TextWrapping="Wrap" Margin="0,0,0,20"/>
+                    
+                    <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+                        <Button x:Name="AlertCancelBtn" Content="Cancel" Background="{StaticResource Card2Brush}" Style="{StaticResource NepButtonStyle}" Padding="16,8" Margin="0,0,10,0"/>
+                        <Button x:Name="AlertConfirmBtn" Content="Stop Session" Background="{StaticResource ErrBrush}" Style="{StaticResource NepButtonStyle}" Padding="16,8"/>
+                    </StackPanel>
+                </StackPanel>
+            </Border>
+        </Grid>
+
+        <!-- Custom Dark Image Zoom Modal Overlay -->
+        <Grid x:Name="ImageModalOverlay" Grid.RowSpan="4" Background="#F0040209" Visibility="Collapsed" Panel.ZIndex="2000" MouseDown="CloseImageModal_Click">
+            <Grid Margin="24">
+                <Border Background="{StaticResource CardBrush}" BorderBrush="{StaticResource BordBrush}" BorderThickness="1"
+                        CornerRadius="12" Padding="12" HorizontalAlignment="Center" VerticalAlignment="Center">
+                    <Grid>
+                        <Image x:Name="ZoomedImageControl" Stretch="Uniform" MaxHeight="560" MaxWidth="680"/>
+                        <Button Content="✕" Style="{StaticResource WinCloseButtonStyle}" HorizontalAlignment="Right" VerticalAlignment="Top" Margin="0,-4,-4,0" Click="CloseImageModal_Click"/>
+                    </Grid>
+                </Border>
+            </Grid>
+        </Grid>
     </Grid>
-  </Grid>
 </Window>
