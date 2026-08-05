@@ -24,6 +24,35 @@ Re-architected from Python to C# (.NET 8 WPF), NepTunnel delivers ultra-low late
 
 ---
 
+### Architecture & Reusable Modules
+
+The codebase is fully decoupled into independent, reusable modules for open-source maintenance and easy reuse in future projects:
+
+```
+NepTunnel/
+├── 📁 Views/                 <-- UI Presentation Components
+│   ├── MainMenuView.cs       # Main Dashboard & Studio Status UI
+│   ├── HostViews.cs          # Server Hosting Setup & Controls
+│   ├── JoinViews.cs          # Client Join Setup & Controls
+│   └── ToolViews.cs          # Tutorial Carousel & Modals
+│
+├── 📁 Services/              <-- Core Business Logic & Protocol Engine
+│   ├── RobloxStudioService.cs# Studio Detection, CLI Execution (-task StartServer/StartClient)
+│   ├── UdpProxy.cs           # Low-Latency High-Performance UDP Proxy Engine
+│   ├── RbxmBridgeServer.cs   # HTTP Bridge Server (port 7878) for Studio Plugin IPC
+│   ├── ConfigManager.cs      # System AppData Storage & Local Config Migration
+│   ├── PluginInstaller.cs    # Roblox Studio Plugin Auto-Installer
+│   ├── ScriptInjector.cs    # Automatic Script Injection Service
+│   ├── LocalizationService.cs# Trilingual Dictionary (ES, EN, PT)
+│   ├── EchoService.cs        # UDP Echo Test Server & Client
+│   └── IconFactory.cs        # Vector SVG Icon Builder
+│
+├── App.xaml / App.xaml.cs    # WPF Application Entry Point & Resource Dictionary
+└── MainWindow.xaml.cs       # Lightweight Event Router & View Navigator
+```
+
+---
+
 ## 💖 Special Thanks & Credits
 
 - **Lead Developer**: [Carlitos999yt](https://github.com/Carlitos999yt) & Antigravity AI
@@ -42,12 +71,14 @@ Re-architected from Python to C# (.NET 8 WPF), NepTunnel delivers ultra-low late
 ```bash
 # Clone repository
 git clone https://github.com/Carlitos999yt/NepTunnel.git
-cd NepTunnel
+cd NepTunnel/NepTunnel
 
 # Build project
 dotnet build NepTunnel.csproj
 
 # Publish single-file executable
+dotnet publish NepTunnel.csproj -c Release -r win-x64 --self-contained true -p:PublishSingleFile=true
+```
 dotnet publish NepTunnel.csproj -c Release -r win-x64 -o "SingleFile_EXE_Output"
 ```
 
