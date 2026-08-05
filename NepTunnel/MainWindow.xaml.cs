@@ -17,6 +17,7 @@ using System.Windows.Shapes;
 using Path = System.IO.Path;
 using Microsoft.Win32;
 using NepTunnel.Services;
+using NepTunnel.Views;
 
 namespace NepTunnel
 {
@@ -623,241 +624,23 @@ namespace NepTunnel
             UpdateStudioStatusText();
 
             var cfg = ConfigManager.LoadConfig();
-
             var mainGrid = new Grid { Background = (SolidColorBrush)FindResource("BgBrush") };
-            var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            var stack = new StackPanel { Margin = new Thickness(28, 20, 28, 20) };
 
-            // Card Frame
-            var card = new Border
-            {
-                Background = (SolidColorBrush)FindResource("CardBrush"),
-                BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(20, 16, 20, 16),
-                Margin = new Thickness(0, 0, 0, 16)
-            };
+            var menuElement = MainMenuView.Create(
+                cfg,
+                _studioPath,
+                onHostClick: () => ShowHostConfigView(),
+                onJoinClick: () => ShowJoinConfigView(),
+                onEchoClick: () => ShowEchoTestView(),
+                onRbxmClick: () => ShowRbxmImporterView(),
+                onRsmClick: () => ShowRsmAssistantView(),
+                onStudioChanged: (newPath) => { _studioPath = newPath; cfg.Studio = newPath; ConfigManager.SaveConfig(cfg); },
+                onShowStudioSelector: (lbl) => ShowStudioSelectorModal(lbl),
+                setStatus: (msg, brush) => SetStatus(msg, brush),
+                findResource: (resKey) => FindResource(resKey)
+            );
 
-            var cardStack = new StackPanel();
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("main_title"),
-                FontSize = 16,
-                FontWeight = FontWeights.Bold,
-                Foreground = (SolidColorBrush)FindResource("TextBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("main_subtitle"),
-                FontSize = 13,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 2, 0, 16)
-            });
-
-            // Row 1 Action Buttons
-            var row1 = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 10)
-            };
-
-            var hostBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("host", LocalizationService.Get("btn_host"), 18),
-                Background = (SolidColorBrush)FindResource("AccBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            hostBtn.Click += (s, e) => ShowHostConfigView();
-            row1.Children.Add(hostBtn);
-
-            var joinBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("join", LocalizationService.Get("btn_join"), 18),
-                Background = (SolidColorBrush)FindResource("BlueBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            joinBtn.Click += (s, e) => ShowJoinConfigView();
-            row1.Children.Add(joinBtn);
-
-            cardStack.Children.Add(row1);
-
-            // Row 2 Action Buttons
-            var row2 = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 0, 0, 4)
-            };
-
-            var echoBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("echo", LocalizationService.Get("btn_echo"), 18),
-                Background = (SolidColorBrush)FindResource("TealBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            echoBtn.Click += (s, e) => ShowEchoTestView();
-            row2.Children.Add(echoBtn);
-
-            var rbxmBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("map", LocalizationService.Get("btn_rbxm"), 18),
-                Background = new SolidColorBrush(Color.FromRgb(0x7C, 0x3A, 0xED)),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            rbxmBtn.Click += (s, e) => ShowRbxmImporterView();
-            row2.Children.Add(rbxmBtn);
-
-            var rsmBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("folder", LocalizationService.Get("btn_rsm_assistant"), 18),
-                Background = new SolidColorBrush(Color.FromRgb(0xD9, 0x46, 0xEF)),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(8, 0, 8, 0)
-            };
-            rsmBtn.Click += (s, e) => ShowRsmAssistantView();
-            row2.Children.Add(rsmBtn);
-
-            cardStack.Children.Add(row2);
-
-            card.Child = cardStack;
-            stack.Children.Add(card);
-
-            // Divider Line
-            var divider = new Border
-            {
-                BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                BorderThickness = new Thickness(0, 0, 0, 1),
-                Margin = new Thickness(0, 4, 0, 16)
-            };
-            stack.Children.Add(divider);
-
-            // Info Section with Larger Typography
-            var infoStack = new StackPanel { Margin = new Thickness(4, 0, 4, 0) };
-
-            // Studio Path Row
-            var studioRow = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-            studioRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
-            studioRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            studioRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            var studioKey = new TextBlock { Text = LocalizationService.Get("lbl_studio"), FontSize = 15, FontWeight = FontWeights.Bold, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(studioKey, 0); studioRow.Children.Add(studioKey);
-
-            var studioLbl = new TextBlock
-            {
-                Text = !string.IsNullOrEmpty(_studioPath) ? _studioPath : "Not found",
-                FontSize = 14,
-                TextTrimming = TextTrimming.CharacterEllipsis,
-                Foreground = !string.IsNullOrEmpty(_studioPath) ? (SolidColorBrush)FindResource("GlowBrush") : (SolidColorBrush)FindResource("ErrBrush"),
-                VerticalAlignment = VerticalAlignment.Center,
-                Margin = new Thickness(0, 0, 12, 0)
-            };
-            Grid.SetColumn(studioLbl, 1); studioRow.Children.Add(studioLbl);
-
-            var actionBtnsStack = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
-
-            var browseBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("folder", LocalizationService.Get("browse"), 14),
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Padding = new Thickness(10, 4, 10, 4),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            browseBtn.Click += (s, e) =>
-            {
-                var dialog = new OpenFileDialog
-                {
-                    Title = "Select RobloxStudioBeta.exe",
-                    Filter = "Executable (*.exe)|*.exe|All files (*.*)|*.*"
-                };
-                if (dialog.ShowDialog() == true)
-                {
-                    _studioPath = dialog.FileName;
-                    studioLbl.Text = _studioPath;
-                    studioLbl.Foreground = (SolidColorBrush)FindResource("GlowBrush");
-                    SetStatus($"Studio set  ·  {_studioPath}", (SolidColorBrush)FindResource("OkBrush"));
-                }
-            };
-            actionBtnsStack.Children.Add(browseBtn);
-
-            var dotsBtn = new Button
-            {
-                Content = "•••",
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Padding = new Thickness(8, 4, 8, 4),
-                Margin = new Thickness(6, 0, 0, 0),
-                FontWeight = FontWeights.Bold,
-                VerticalAlignment = VerticalAlignment.Center,
-                ToolTip = "Instalaciones de Roblox Studio Detectadas"
-            };
-            dotsBtn.Click += (s, e) => ShowStudioSelectorModal(studioLbl);
-            actionBtnsStack.Children.Add(dotsBtn);
-
-            Grid.SetColumn(actionBtnsStack, 2); studioRow.Children.Add(actionBtnsStack);
-            infoStack.Children.Add(studioRow);
-
-            // Detail Rows with Larger Typography
-            string osName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Windows" :
-                           RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";
-
-            var details = new[]
-            {
-                (LocalizationService.Get("lbl_username"), !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos"),
-                (LocalizationService.Get("lbl_tunnel_addr"), cfg.Addr),
-                (LocalizationService.Get("lbl_server_port"), cfg.Port),
-                (LocalizationService.Get("lbl_uid"), cfg.Uid),
-                (LocalizationService.Get("lbl_proxy_port"), UdpProxy.PROXY_PORT.ToString()),
-                (LocalizationService.Get("lbl_platform"), osName)
-            };
-
-            foreach (var (lbl, val) in details)
-            {
-                var r = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-                r.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
-                r.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-                var k = new TextBlock { Text = lbl, FontSize = 15, FontWeight = FontWeights.Bold, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetColumn(k, 0); r.Children.Add(k);
-
-                var v = new TextBlock { Text = val, FontSize = 14, Foreground = (SolidColorBrush)FindResource("GlowBrush"), VerticalAlignment = VerticalAlignment.Center };
-                Grid.SetColumn(v, 1); r.Children.Add(v);
-
-                infoStack.Children.Add(r);
-            }
-
-            // Studio Bridge Status Row
-            var bridgeRow = new Grid { Margin = new Thickness(0, 4, 0, 4) };
-            bridgeRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(170) });
-            bridgeRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            var bridgeKey = new TextBlock { Text = LocalizationService.Get("lbl_bridge"), FontSize = 15, FontWeight = FontWeights.Bold, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetColumn(bridgeKey, 0); bridgeRow.Children.Add(bridgeKey);
-
-            var bridgeVal = new TextBlock
-            {
-                Text = RbxmBridgeServer.IsRunning ? $"● port {RbxmBridgeServer.BRIDGE_PORT}" : "✗ failed to start",
-                FontSize = 14,
-                Foreground = RbxmBridgeServer.IsRunning ? (SolidColorBrush)FindResource("OkBrush") : (SolidColorBrush)FindResource("ErrBrush"),
-                VerticalAlignment = VerticalAlignment.Center
-            };
-            Grid.SetColumn(bridgeVal, 1); bridgeRow.Children.Add(bridgeVal);
-            infoStack.Children.Add(bridgeRow);
-
-            stack.Children.Add(infoStack);
-            scroll.Content = stack;
-            mainGrid.Children.Add(scroll);
-
+            mainGrid.Children.Add(menuElement);
             NavigateTo(mainGrid, direction);
         }
         #endregion
@@ -876,138 +659,13 @@ namespace NepTunnel
         #region View 3: Tutorial & Help View
         private void ShowTutorialView()
         {
-            var grid = new Grid { Background = (SolidColorBrush)FindResource("BgBrush") };
-            var scroll = new ScrollViewer { VerticalScrollBarVisibility = ScrollBarVisibility.Auto };
-            var stack = new StackPanel { Margin = new Thickness(24, 16, 24, 16) };
+            var tutElement = ToolViews.CreateTutorialView(
+                onBackClick: () => ShowMainMenuView("right"),
+                onOpenImageModal: (bitmap) => OpenImageModal(bitmap),
+                findResource: (resKey) => FindResource(resKey)
+            );
 
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("tut_title"),
-                FontSize = 18,
-                FontWeight = FontWeights.Bold,
-                Foreground = (SolidColorBrush)FindResource("TextBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("tut_sub"),
-                FontSize = 13,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 2, 0, 16)
-            });
-
-            for (int i = 1; i <= 9; i++)
-            {
-                string titleKey = $"tut_s{i}_t";
-                string descKey = $"tut_s{i}_d";
-
-                var card = new Border
-                {
-                    Background = (SolidColorBrush)FindResource("CardBrush"),
-                    BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                    BorderThickness = new Thickness(1),
-                    CornerRadius = new CornerRadius(10),
-                    Padding = new Thickness(16),
-                    Margin = new Thickness(0, 0, 0, 14)
-                };
-
-                var stepStack = new StackPanel();
-                stepStack.Children.Add(new TextBlock
-                {
-                    Text = LocalizationService.Get(titleKey),
-                    FontSize = 15,
-                    FontWeight = FontWeights.Bold,
-                    Foreground = (SolidColorBrush)FindResource("GlowBrush"),
-                    Margin = new Thickness(0, 0, 0, 4)
-                });
-
-                stepStack.Children.Add(new TextBlock
-                {
-                    Text = LocalizationService.Get(descKey),
-                    FontSize = 13,
-                    Foreground = (SolidColorBrush)FindResource("TextBrush"),
-                    TextWrapping = TextWrapping.Wrap,
-                    Margin = new Thickness(0, 0, 0, 10)
-                });
-
-                // Embedded Screenshot Image (Supports WPF Assembly Pack URI & Local File)
-                BitmapImage? bitmap = null;
-
-                try
-                {
-                    var packUri = new Uri($"pack://application:,,,/bundled_assets/tut_{i}.png", UriKind.Absolute);
-                    bitmap = new BitmapImage();
-                    bitmap.BeginInit();
-                    bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                    bitmap.UriSource = packUri;
-                    bitmap.EndInit();
-                }
-                catch { bitmap = null; }
-
-                if (bitmap == null)
-                {
-                    string imgFileName = $"bundled_assets/tut_{i}.png";
-                    if (File.Exists(imgFileName))
-                    {
-                        try
-                        {
-                            var imgUri = new Uri(Path.GetFullPath(imgFileName), UriKind.Absolute);
-                            bitmap = new BitmapImage();
-                            bitmap.BeginInit();
-                            bitmap.CacheOption = BitmapCacheOption.OnLoad;
-                            bitmap.UriSource = imgUri;
-                            bitmap.EndInit();
-                        }
-                        catch { bitmap = null; }
-                    }
-                }
-
-                if (bitmap != null)
-                {
-                    var imgControl = new Image
-                    {
-                        Source = bitmap,
-                        MaxHeight = 320,
-                        Stretch = Stretch.Uniform,
-                        HorizontalAlignment = HorizontalAlignment.Center,
-                        Cursor = System.Windows.Input.Cursors.Hand,
-                        Margin = new Thickness(0, 4, 0, 4),
-                        ToolTip = "Click to enlarge / Haz clic para maximizar"
-                    };
-                    imgControl.MouseDown += (s, e) => OpenImageModal(bitmap);
-
-                    var imgBorder = new Border
-                    {
-                        Background = (SolidColorBrush)FindResource("Card2Brush"),
-                        BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                        BorderThickness = new Thickness(1),
-                        CornerRadius = new CornerRadius(6),
-                        Padding = new Thickness(4),
-                        Child = imgControl
-                    };
-                    stepStack.Children.Add(imgBorder);
-                }
-
-                card.Child = stepStack;
-                stack.Children.Add(card);
-            }
-
-            var backBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("back", LocalizationService.Get("back"), 14),
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 10, 0, 10)
-            };
-            backBtn.Click += (s, e) => ShowHostConfigView();
-            stack.Children.Add(backBtn);
-
-            scroll.Content = stack;
-            grid.Children.Add(scroll);
-            NavigateTo(grid, "left");
+            NavigateTo((UIElement)tutElement, "left");
         }
         #endregion
 
@@ -1252,6 +910,8 @@ namespace NepTunnel
             NavigateTo(grid, "left");
         }
         #endregion
+
+
 
         #region View: RSM Assistant View
         private void ShowRsmAssistantView()
@@ -1758,217 +1418,16 @@ namespace NepTunnel
         {
             var cfg = ConfigManager.LoadConfig();
 
-            var grid = new Grid { Background = (SolidColorBrush)FindResource("BgBrush") };
-            var stack = new StackPanel { Margin = new Thickness(24, 12, 24, 12) };
+            var hostElement = HostViews.CreateConfigView(
+                cfg,
+                _studioPath,
+                onBackClick: () => ShowMainMenuView("right"),
+                onTutorialClick: () => ShowTutorialView(),
+                onLaunchServerClick: (uid, port, addr, mapPath, username) => ShowHostRunningView(uid, port, addr, mapPath, username),
+                findResource: (resKey) => FindResource(resKey)
+            );
 
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("host_title"),
-                FontSize = 18,
-                FontWeight = FontWeights.Bold,
-                Foreground = (SolidColorBrush)FindResource("TextBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("host_sub"),
-                FontSize = 13,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 2, 0, 12)
-            });
-
-            var card = new Border
-            {
-                Background = (SolidColorBrush)FindResource("CardBrush"),
-                BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(16)
-            };
-
-            var cardGrid = new Grid();
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            cardGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-
-            cardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(140) });
-            cardGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-
-            // User ID
-            var uidLbl = new TextBlock { Text = LocalizationService.Get("lbl_uid"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(uidLbl, 0); Grid.SetColumn(uidLbl, 0); cardGrid.Children.Add(uidLbl);
-            var uidTb = new TextBox { Text = cfg.Uid, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(uidTb, 0); Grid.SetColumn(uidTb, 1); cardGrid.Children.Add(uidTb);
-
-            // My Username / Nickname
-            var userLbl = new TextBlock { Text = LocalizationService.Get("lbl_username"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(userLbl, 1); Grid.SetColumn(userLbl, 0); cardGrid.Children.Add(userLbl);
-            var userTb = new TextBox { Text = !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos", Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(userTb, 1); Grid.SetColumn(userTb, 1); cardGrid.Children.Add(userTb);
-
-            // Server Local Port
-            var portLbl = new TextBlock { Text = LocalizationService.Get("lbl_server_port"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(portLbl, 2); Grid.SetColumn(portLbl, 0); cardGrid.Children.Add(portLbl);
-            var portTb = new TextBox { Text = cfg.Port, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(portTb, 2); Grid.SetColumn(portTb, 1); cardGrid.Children.Add(portTb);
-
-            // Tunnel Address
-            var addrLbl = new TextBlock { Text = LocalizationService.Get("lbl_tunnel_addr"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(addrLbl, 3); Grid.SetColumn(addrLbl, 0); cardGrid.Children.Add(addrLbl);
-            var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 0, 3) };
-            Grid.SetRow(addrTb, 3); Grid.SetColumn(addrTb, 1); cardGrid.Children.Add(addrTb);
-
-            // Map File (Optional)
-            var mapLbl = new TextBlock { Text = LocalizationService.Get("lbl_map_file"), FontSize = 14, Foreground = (SolidColorBrush)FindResource("MuteBrush"), VerticalAlignment = VerticalAlignment.Center };
-            Grid.SetRow(mapLbl, 4); Grid.SetColumn(mapLbl, 0); cardGrid.Children.Add(mapLbl);
-
-            var mapStack = new Grid();
-            mapStack.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            mapStack.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-            var mapTb = new TextBox { Text = cfg.Map, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 3, 6, 3) };
-            Grid.SetColumn(mapTb, 0); mapStack.Children.Add(mapTb);
-
-            var mapBrowseBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("folder", LocalizationService.Get("browse"), 14),
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Padding = new Thickness(10, 4, 10, 4)
-            };
-            mapBrowseBtn.Click += (s, e) =>
-            {
-                var dlg = new OpenFileDialog
-                {
-                    Title = "Select Roblox Map",
-                    Filter = "Roblox Place (*.rbxl;*.rbxlx)|*.rbxl;*.rbxlx|All files (*.*)|*.*"
-                };
-                if (dlg.ShowDialog() == true)
-                {
-                    mapTb.Text = dlg.FileName;
-                }
-            };
-            Grid.SetColumn(mapBrowseBtn, 1); mapStack.Children.Add(mapBrowseBtn);
-            Grid.SetRow(mapStack, 4); Grid.SetColumn(mapStack, 1); cardGrid.Children.Add(mapStack);
-
-            card.Child = cardGrid;
-            stack.Children.Add(card);
-
-            // Action Buttons Bar at Bottom (Atrás | Tutorial | Lanzar Servidor)
-            var btnRow = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 16, 0, 0)
-            };
-
-            var backBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("back", LocalizationService.Get("back"), 14),
-                Background = (SolidColorBrush)FindResource("CardBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            backBtn.Click += (s, e) =>
-            {
-                cfg.Uid = uidTb.Text.Trim();
-                cfg.Port = portTb.Text.Trim();
-                cfg.Addr = addrTb.Text.Trim();
-                cfg.Map = mapTb.Text.Trim();
-                cfg.Studio = _studioPath;
-                ConfigManager.SaveConfig(cfg);
-                ShowMainMenuView("right");
-            };
-            btnRow.Children.Add(backBtn);
-
-            // Tutorial Button at Bottom of Host Config View
-            var tutBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("test", LocalizationService.Get("btn_tutorial"), 14),
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            tutBtn.Click += (s, e) => ShowTutorialView();
-            btnRow.Children.Add(tutBtn);
-
-            // Import / Update Scripts Action Button
-            var importScriptsBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("file-code", "Importar / Actualizar Scripts", 14),
-                Background = (SolidColorBrush)FindResource("Card2Brush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            importScriptsBtn.Click += (s, e) =>
-            {
-                try
-                {
-                    RbxmBridgeServer.ForceScriptImport = true;
-                    RbxmBridgeServer.ScriptsImported = true;
-                    PluginInstaller.EnsurePluginInstalled(out string _);
-                    MessageBox.Show("✓ Scripts importados/actualizados correctamente en Roblox Studio.\n\nLos nuevos scripts oficiales del tabulador han sido insertados.", "✓ Importación de Scripts", MessageBoxButton.OK, MessageBoxImage.Information);
-                }
-                catch (Exception ex)
-                {
-                    MessageBox.Show("No se pudieron importar los scripts: " + ex.Message, "✗ Error de Importación", MessageBoxButton.OK, MessageBoxImage.Error);
-                }
-            };
-            btnRow.Children.Add(importScriptsBtn);
-
-            var launchBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("play", LocalizationService.Get("btn_launch_server"), 16),
-                Background = (SolidColorBrush)FindResource("AccBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            launchBtn.Click += (s, e) =>
-            {
-                string uid = uidTb.Text.Trim();
-                string port = portTb.Text.Trim();
-                string addr = addrTb.Text.Trim();
-                string mapPath = mapTb.Text.Trim();
-
-                if (string.IsNullOrEmpty(uid) || string.IsNullOrEmpty(port) || string.IsNullOrEmpty(addr))
-                {
-                    MessageBox.Show("All fields are required.", "Missing Fields", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (!int.TryParse(port, out _))
-                {
-                    MessageBox.Show("Port must be a number.", "Invalid Port", MessageBoxButton.OK, MessageBoxImage.Warning);
-                    return;
-                }
-                if (string.IsNullOrEmpty(_studioPath))
-                {
-                    string osName = RuntimeInformation.IsOSPlatform(OSPlatform.Windows) ? "Windows" :
-                                   RuntimeInformation.IsOSPlatform(OSPlatform.OSX) ? "macOS" : "Linux";
-                    MessageBox.Show($"Roblox Studio was not found on {osName}.\nPlease ensure Roblox Studio is installed.", "Studio Not Found", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-
-                string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Carlitos";
-
-                cfg.Uid = uid;
-                cfg.Username = username;
-                cfg.Port = port;
-                cfg.Addr = addr;
-                cfg.Map = mapPath;
-                cfg.Studio = _studioPath;
-                ConfigManager.SaveConfig(cfg);
-
-                ShowHostRunningView(uid, port, addr, mapPath, username);
-            };
-            btnRow.Children.Add(launchBtn);
-            stack.Children.Add(btnRow);
-
-            grid.Children.Add(stack);
-            NavigateTo(grid, "left");
+            NavigateTo((UIElement)hostElement, "left");
         }
         #endregion
 
@@ -2121,142 +1580,21 @@ namespace NepTunnel
         #region View 8: Join Config View
         private void ShowJoinConfigView()
         {
-            var grid = new Grid { Background = (SolidColorBrush)FindResource("BgBrush") };
-            var stack = new StackPanel { Margin = new Thickness(24, 12, 24, 12) };
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("join_title"),
-                FontSize = 18,
-                FontWeight = FontWeights.Bold,
-                Foreground = (SolidColorBrush)FindResource("TextBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center
-            });
-
-            stack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("join_sub"),
-                FontSize = 13,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 2, 0, 12)
-            });
-
-            var card = new Border
-            {
-                Background = (SolidColorBrush)FindResource("CardBrush"),
-                BorderBrush = (SolidColorBrush)FindResource("BordBrush"),
-                BorderThickness = new Thickness(1),
-                CornerRadius = new CornerRadius(12),
-                Padding = new Thickness(16)
-            };
-
             var cfg = ConfigManager.LoadConfig();
 
-            var cardStack = new StackPanel();
-
-            // My Username / Nick Field
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("lbl_username"),
-                FontSize = 14,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                Margin = new Thickness(0, 0, 0, 4)
-            });
-
-            var userTb = new TextBox { Text = !string.IsNullOrEmpty(cfg.Username) ? cfg.Username : "Carlitos", Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 0, 0, 8) };
-            cardStack.Children.Add(userTb);
-
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("lbl_tunnel_input"),
-                FontSize = 14,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush"),
-                Margin = new Thickness(0, 0, 0, 4)
-            });
-
-            var addrTb = new TextBox { Text = cfg.Addr, Style = (Style)FindResource("NepTextBoxStyle"), Margin = new Thickness(0, 0, 0, 6) };
-            cardStack.Children.Add(addrTb);
-
-            cardStack.Children.Add(new TextBlock
-            {
-                Text = LocalizationService.Get("lbl_proxy_hint"),
-                FontSize = 12,
-                Foreground = (SolidColorBrush)FindResource("MuteBrush")
-            });
-
-            var errLbl = new TextBlock
-            {
-                Text = "",
-                FontSize = 12,
-                Foreground = (SolidColorBrush)FindResource("ErrBrush"),
-                Margin = new Thickness(0, 4, 0, 0)
-            };
-            cardStack.Children.Add(errLbl);
-
-            card.Child = cardStack;
-            stack.Children.Add(card);
-
-            // Action buttons
-            var btnRow = new StackPanel
-            {
-                Orientation = Orientation.Horizontal,
-                HorizontalAlignment = HorizontalAlignment.Center,
-                Margin = new Thickness(0, 16, 0, 0)
-            };
-
-            var backBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("back", LocalizationService.Get("back"), 14),
-                Background = (SolidColorBrush)FindResource("CardBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            backBtn.Click += (s, e) => ShowMainMenuView("right");
-            btnRow.Children.Add(backBtn);
-
-            var connectBtn = new Button
-            {
-                Content = IconFactory.CreateButtonContent("join", LocalizationService.Get("btn_connect_launch"), 16),
-                Background = (SolidColorBrush)FindResource("BlueBrush"),
-                Style = (Style)FindResource("NepButtonStyle"),
-                Margin = new Thickness(6, 0, 6, 0)
-            };
-            connectBtn.Click += (s, e) =>
-            {
-                string username = userTb.Text.Trim();
-                if (string.IsNullOrWhiteSpace(username)) username = "Carlitos";
-                string addr = addrTb.Text.Trim();
-                if (string.IsNullOrEmpty(addr) || !addr.Contains(':'))
+            var joinElement = JoinViews.CreateConfigView(
+                cfg,
+                onBackClick: () => ShowMainMenuView("right"),
+                onConnectClick: (username, addr) =>
                 {
-                    errLbl.Text = "Format must be host:port";
-                    return;
-                }
-                var parts = addr.Split(':', 2);
-                if (!int.TryParse(parts[1], out int rp))
-                {
-                    errLbl.Text = "Port must be a number";
-                    return;
-                }
-                if (string.IsNullOrEmpty(_studioPath))
-                {
-                    MessageBox.Show("Roblox Studio was not found.", "Studio Not Found", MessageBoxButton.OK, MessageBoxImage.Error);
-                    return;
-                }
-                errLbl.Text = "";
+                    var parts = addr.Split(':', 2);
+                    int rp = int.Parse(parts[1]);
+                    ShowJoinRunningView(parts[0], rp, username);
+                },
+                findResource: (resKey) => FindResource(resKey)
+            );
 
-                cfg.Username = username;
-                cfg.Addr = addr;
-                ConfigManager.SaveConfig(cfg);
-
-                ShowJoinRunningView(parts[0], rp, username);
-            };
-            btnRow.Children.Add(connectBtn);
-
-            stack.Children.Add(btnRow);
-            grid.Children.Add(stack);
-
-            NavigateTo(grid, "left");
+            NavigateTo((UIElement)joinElement, "left");
         }
         #endregion
 
