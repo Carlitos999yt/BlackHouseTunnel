@@ -53,9 +53,15 @@ NepTunnel/
 
 ---
 
+## 👥 Authors & Core Contributors
+
+- **Carlitos999yt**: Lead Project Creator & Architect ([GitHub Profile](https://github.com/Carlitos999yt))
+- **Antigravity AI (Gemini 3.6 Flash / Google DeepMind)**: AI Pair Programmer & Lead System Co-Architect
+
+---
+
 ## 💖 Special Thanks & Credits
 
-- **Lead Developer**: [Carlitos999yt](https://github.com/Carlitos999yt) & Antigravity AI
 - **⭐ Beta Tester Extraordinaire**: **`leshe♡`** *(Special thanks for invaluable testing, feedback, and bug reports!)*
 - **Roblox Studio Mod Manager Engine**: [MaximumADHD](https://github.com/MaximumADHD/Roblox-Studio-Mod-Manager) (`StudioBootstrapper`)
 
