@@ -21,6 +21,7 @@ namespace BlackHouseTunnel.Views
         private readonly DiscordUser _user;
         private readonly OnlineMembersMonitor _membersMonitor;
         private HostConsoleView? _activeHostConsoleView = null;
+        private JoinConsoleView? _activeJoinConsoleView = null;
         private string _pendingJoinAddress = "";
         private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
 
@@ -41,6 +42,7 @@ namespace BlackHouseTunnel.Views
         private Button _btnSettings = null!;
 
         public bool HasActiveHost => _activeHostConsoleView != null;
+        public bool HasActiveJoin => _activeJoinConsoleView != null;
 
         public MainMenuView(DiscordUser user)
         {
@@ -235,7 +237,14 @@ namespace BlackHouseTunnel.Views
                     }
                     break;
                 case "Join":
-                    _contentHostGrid.Children.Add(BuildJoinView());
+                    if (_activeJoinConsoleView != null)
+                    {
+                        _contentHostGrid.Children.Add(_activeJoinConsoleView);
+                    }
+                    else
+                    {
+                        _contentHostGrid.Children.Add(BuildJoinView());
+                    }
                     break;
                 case "Rbxm":
                     _contentHostGrid.Children.Add(new RbxmImporterView());
@@ -414,7 +423,44 @@ namespace BlackHouseTunnel.Views
             };
 
             bannerPanel.Children.Add(welcomeTitle);
-            banner.Child = bannerPanel;
+            bannerPanel.Children.Add(welcomeSub);
+
+            if (_activeHostConsoleView != null)
+            {
+                Button hostActiveBtn = new Button
+                {
+                    Content = "🟢 TÚNEL HOST EN EJECUCIÓN (SERVIDOR) — Haz clic aquí para ver la sesión activa",
+                    Height = 38,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                    Foreground = Brushes.White,
+                    FontSize = 13,
+                    FontWeight = FontWeights.Bold,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    Margin = new Thickness(0, 14, 0, 0)
+                };
+                SetButtonCornerRadius(hostActiveBtn, 8);
+                hostActiveBtn.Click += (s, e) => SwitchTab("Host");
+                bannerPanel.Children.Add(hostActiveBtn);
+            }
+            else if (_activeJoinConsoleView != null)
+            {
+                Button joinActiveBtn = new Button
+                {
+                    Content = "🟢 TÚNEL DE CONEXIÓN EN EJECUCIÓN (CLIENTE) — Haz clic aquí para ver la sesión activa",
+                    Height = 38,
+                    Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                    Foreground = Brushes.White,
+                    FontSize = 13,
+                    FontWeight = FontWeights.Bold,
+                    BorderThickness = new Thickness(0),
+                    Cursor = System.Windows.Input.Cursors.Hand,
+                    Margin = new Thickness(0, 14, 0, 0)
+                };
+                SetButtonCornerRadius(joinActiveBtn, 8);
+                joinActiveBtn.Click += (s, e) => SwitchTab("Join");
+                bannerPanel.Children.Add(joinActiveBtn);
+            }
             body.Children.Add(banner);
 
             TextBlock friendsHeader = new TextBlock
@@ -944,7 +990,12 @@ namespace BlackHouseTunnel.Views
                     string username = string.IsNullOrWhiteSpace(userBox.Text) ? _user.DisplayNick : userBox.Text.Trim();
 
                     JoinConsoleView joinConsole = new JoinConsoleView(studioPath, dstHost, dstPort, username);
-                    joinConsole.OnDisconnectRequested += (s2, e2) => SwitchTab("Join");
+                    _activeJoinConsoleView = joinConsole;
+                    joinConsole.OnDisconnectRequested += (s2, e2) =>
+                    {
+                        _activeJoinConsoleView = null;
+                        SwitchTab("Join");
+                    };
 
                     _contentHostGrid.Children.Clear();
                     _contentHostGrid.Children.Add(joinConsole);
@@ -1464,6 +1515,22 @@ namespace BlackHouseTunnel.Views
             string targetAddr = remoteAddress;
             connectBtn.Click += (s, e) =>
             {
+                if (_activeJoinConsoleView != null)
+                {
+                    var result = DarkMessageBox.Show("Ya tienes un túnel de conexión activo. ¿Deseas desconectarte del actual para unirte a este nuevo túnel?", "Túnel Activo", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                    if (result == MessageBoxResult.Yes)
+                    {
+                        UdpProxy.StopProxy();
+                        RobloxStudioService.ForceKillAllStudioProcesses();
+                        _activeJoinConsoleView = null;
+                    }
+                    else
+                    {
+                        SwitchTab("Join");
+                        return;
+                    }
+                }
+
                 if (!string.IsNullOrEmpty(targetAddr))
                 {
                     _pendingJoinAddress = targetAddr;
