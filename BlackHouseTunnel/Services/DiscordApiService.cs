@@ -405,7 +405,9 @@ namespace BlackHouseTunnel.Services
 
                                 if (embed.TryGetProperty("color", out var colVal))
                                 {
-                                    if (colVal.GetInt32() == 16766720) visMode = 2;
+                                    int col = colVal.GetInt32();
+                                    if (col == 16766720) visMode = 2; // Gold color for Privadito
+                                    else if (col == 5793266) visMode = 1; // Discord Blurple for Servidor
                                 }
 
                                 if (embed.TryGetProperty("fields", out var fieldsArr) && fieldsArr.ValueKind == JsonValueKind.Array)
@@ -415,13 +417,28 @@ namespace BlackHouseTunnel.Services
                                         string fName = field.GetProperty("name").GetString() ?? "";
                                         string fVal = field.GetProperty("value").GetString() ?? "";
 
-                                        if (fName.Contains("Creado")) hostUser = fVal;
-                                        else if (fName.Contains("Dirección")) remoteAddr = fVal.Replace("`", "").Trim();
-                                        else if (fName.Contains("Dirigido"))
+                                        if (fName.Contains("Creado") || fName.Contains("Hosteado"))
                                         {
-                                            if (fVal.Contains("Privado")) visMode = 2;
-                                            else if (fVal.Contains("Servidor")) visMode = 1;
-                                            else visMode = 0;
+                                            hostUser = fVal;
+                                        }
+                                        else if (fName.Contains("Dirección") || fName.Contains("Túnel"))
+                                        {
+                                            remoteAddr = fVal.Replace("`", "").Trim();
+                                        }
+                                        else if (fName.Contains("Dirigido") || fName.Contains("Alcance"))
+                                        {
+                                            if (fVal.Contains("Privado", StringComparison.OrdinalIgnoreCase) || fVal.Contains("Privadito", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                visMode = 2;
+                                            }
+                                            else if (fVal.Contains("Servidor", StringComparison.OrdinalIgnoreCase))
+                                            {
+                                                visMode = 1;
+                                            }
+                                            else
+                                            {
+                                                visMode = 0;
+                                            }
                                         }
                                     }
                                 }

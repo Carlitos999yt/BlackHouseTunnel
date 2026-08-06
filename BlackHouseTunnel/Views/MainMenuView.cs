@@ -468,8 +468,7 @@ namespace BlackHouseTunnel.Views
                     {
                         foreach (var t in activeTunnels)
                         {
-                            bool isPriv = t.VisibilityMode == 2;
-                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", isPrivadito: isPriv, remoteAddress: t.RemoteAddress));
+                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", visibilityMode: t.VisibilityMode, remoteAddress: t.RemoteAddress));
                         }
                     }
                 });
@@ -1369,14 +1368,25 @@ namespace BlackHouseTunnel.Views
             return container;
         }
 
-        private Border CreateTunnelCard(string title, string host, string ping, bool isPrivadito = false, string remoteAddress = "")
+        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "")
         {
+            bool isPrivadito = visibilityMode == 2;
+            bool isServidor = visibilityMode == 1;
+
+            string borderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#1F1F30");
+            string badgeBgHex = isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1A1A2E");
+            string badgeBorderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#3F3F66");
+            string badgeTextHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#A5A6F6");
+            string badgeLabel = isPrivadito ? "🔒 Privadito (Rol Exclusivo)" : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)");
+            string btnBgHex = isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#5865F2");
+            string btnText = isPrivadito ? "🔒 Conectarse (Privadito)" : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel");
+
             Border card = new Border
             {
                 Width = 290,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#1F1F30")),
-                BorderThickness = new Thickness(isPrivadito ? 1.8 : 1.2),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(borderHex)),
+                BorderThickness = new Thickness(isPrivadito || isServidor ? 1.8 : 1.2),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(16),
                 Margin = new Thickness(0, 0, 16, 16)
@@ -1388,8 +1398,8 @@ namespace BlackHouseTunnel.Views
             Border badge = new Border
             {
                 HorizontalAlignment = HorizontalAlignment.Left,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#3A2E00" : "#1A1A2E")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#3F3F66")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(badgeBgHex)),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(badgeBorderHex)),
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(6),
                 Padding = new Thickness(8, 3, 8, 3),
@@ -1397,10 +1407,10 @@ namespace BlackHouseTunnel.Views
             };
             TextBlock badgeTxt = new TextBlock
             {
-                Text = isPrivadito ? "🔒 Privadito (Rol Exclusivo)" : "🌐 Host Público",
+                Text = badgeLabel,
                 FontSize = 11,
                 FontWeight = FontWeights.Bold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#A5A6F6"))
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(badgeTextHex))
             };
             badge.Child = badgeTxt;
             panel.Children.Add(badge);
@@ -1440,9 +1450,9 @@ namespace BlackHouseTunnel.Views
 
             Button connectBtn = new Button
             {
-                Content = isPrivadito ? "🔒 Conectarse al Túnel" : "🔌 Conectarse al Túnel",
+                Content = btnText,
                 Height = 40,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#F59E0B" : "#5865F2")),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(btnBgHex)),
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 FontSize = 13,
