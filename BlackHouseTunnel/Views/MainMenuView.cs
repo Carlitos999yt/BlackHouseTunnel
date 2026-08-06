@@ -1402,17 +1402,15 @@ namespace BlackHouseTunnel.Views
             {
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#14141E")),
                 BorderBrush = new SolidColorBrush(roleColor),
-                BorderThickness = new Thickness(1.2),
+                BorderThickness = new Thickness(1.5),
                 CornerRadius = new CornerRadius(16),
                 Padding = new Thickness(8),
-                Effect = new DropShadowEffect
-                {
-                    Color = roleColor,
-                    BlurRadius = 14,
-                    Opacity = 0.35,
-                    ShadowDepth = 0
-                }
+                UseLayoutRounding = true,
+                SnapsToDevicePixels = true
             };
+            TextOptions.SetTextFormattingMode(cardBorder, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(cardBorder, TextRenderingMode.ClearType);
+            RenderOptions.SetBitmapScalingMode(cardBorder, BitmapScalingMode.HighQuality);
 
             StackPanel contentPanel = new StackPanel
             {

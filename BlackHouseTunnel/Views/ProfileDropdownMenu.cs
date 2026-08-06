@@ -29,20 +29,18 @@ namespace BlackHouseTunnel.Views
             {
                 Width = 220,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12121B")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2C2C40")),
-                BorderThickness = new Thickness(1),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A54")),
+                BorderThickness = new Thickness(1.5),
                 CornerRadius = new CornerRadius(14),
-                Padding = new Thickness(8),
+                Padding = new Thickness(10),
                 Opacity = 0,
-                RenderTransformOrigin = new Point(1, 0),
-                Effect = new DropShadowEffect
-                {
-                    Color = (Color)ColorConverter.ConvertFromString("#5865F2"),
-                    BlurRadius = 25,
-                    Opacity = 0.35,
-                    ShadowDepth = 4
-                }
+                UseLayoutRounding = true,
+                SnapsToDevicePixels = true,
+                RenderTransformOrigin = new Point(1, 0)
             };
+            TextOptions.SetTextFormattingMode(_menuBorder, TextFormattingMode.Display);
+            TextOptions.SetTextRenderingMode(_menuBorder, TextRenderingMode.ClearType);
+            RenderOptions.SetBitmapScalingMode(_menuBorder, BitmapScalingMode.HighQuality);
 
             ScaleTransform scaleTransform = new ScaleTransform(0.85, 0.85);
             _menuBorder.RenderTransform = scaleTransform;
