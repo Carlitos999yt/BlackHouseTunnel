@@ -23,19 +23,36 @@ namespace BlackHouseTunnel.Services
         {
             int port = _config.LocalServerPort > 0 ? _config.LocalServerPort : 5000;
             string redirectUri = !string.IsNullOrWhiteSpace(_config.RedirectUri) ? _config.RedirectUri : $"http://localhost:{port}/callback";
-            string listenerPrefix = redirectUri.EndsWith("/") ? redirectUri : redirectUri + "/";
 
             using var listener = new HttpListener();
             try
             {
-                listener.Prefixes.Add(listenerPrefix);
+                listener.Prefixes.Add($"http://localhost:{port}/callback/");
+                listener.Prefixes.Add($"http://127.0.0.1:{port}/callback/");
                 listener.Start();
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"[DiscordAuthService] HttpListener Error: {ex.Message}");
-                // Fallback to dynamic port if 5000 is occupied
-                return null;
+                try
+                {
+                    listener.Prefixes.Clear();
+                    listener.Prefixes.Add($"http://localhost:{port}/callback/");
+                    listener.Start();
+                }
+                catch (Exception ex)
+                {
+                    Debug.WriteLine($"[DiscordAuthService] HttpListener Error: {ex.Message}");
+                    System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                    {
+                        DarkMessageBox.Show($"No se pudo iniciar el servidor local de inicio de sesión en http://localhost:{port}/callback/.\n\n" +
+                                            $"Causa: El puerto {port} está ocupado por otra aplicación en tu PC o bloqueado por el Antivirus/Firewall de Windows.\n\n" +
+                                            $"Solución: Cierra aplicaciones en segundo plano que usen el puerto {port} o permite la conexión en el Firewall.",
+                                            "Error Receptor Local",
+                                            System.Windows.MessageBoxButton.OK,
+                                            System.Windows.MessageBoxImage.Error);
+                    });
+                    return null;
+                }
             }
 
             string oauthUrl = $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read";
@@ -52,12 +69,34 @@ namespace BlackHouseTunnel.Services
             catch (Exception ex)
             {
                 Debug.WriteLine($"[DiscordAuthService] Failed to open browser: {ex.Message}");
-                listener.Stop();
+                try { listener.Stop(); } catch { }
                 return null;
             }
 
-            // Wait for incoming HTTP request
-            var context = await listener.GetContextAsync();
+            // Wait for incoming HTTP request with 2-minute timeout
+            HttpListenerContext context;
+            try
+            {
+                var getContextTask = listener.GetContextAsync();
+                var timeoutTask = Task.Delay(120000); // 2 minutes
+
+                var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
+                if (completedTask == timeoutTask)
+                {
+                    Debug.WriteLine("[DiscordAuthService] Auth Timed Out (2 minutes).");
+                    try { listener.Stop(); } catch { }
+                    return null;
+                }
+
+                context = await getContextTask;
+            }
+            catch (Exception ex)
+            {
+                Debug.WriteLine($"[DiscordAuthService] GetContext Exception: {ex.Message}");
+                try { listener.Stop(); } catch { }
+                return null;
+            }
+
             var req = context.Request;
             var resp = context.Response;
 
