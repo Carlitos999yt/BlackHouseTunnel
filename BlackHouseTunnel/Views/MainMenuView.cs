@@ -413,17 +413,10 @@ namespace BlackHouseTunnel.Views
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
-                Margin = new Thickness(0, 0, 0, 6)
-            };
-            TextBlock welcomeSub = new TextBlock
-            {
-                Text = $"Tu cuenta ({_user.Handle}) está autenticada. Rol principal: {_user.PrimaryRole}. {(_user.IsPrivadito ? " (Rol Privadito Activo 🔒)" : "")}",
-                FontSize = 14,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAA0"))
+                Margin = new Thickness(0, 0, 0, 0)
             };
 
             bannerPanel.Children.Add(welcomeTitle);
-            bannerPanel.Children.Add(welcomeSub);
 
             if (_activeHostConsoleView != null)
             {
