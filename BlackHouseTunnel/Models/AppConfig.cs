@@ -21,7 +21,7 @@ namespace BlackHouseTunnel.Models
             set => ProtectedBotToken = BlackHouseTunnel.Services.TokenProtector.Protect(value);
         }
 
-        public string ChannelId { get; set; } = "1531027757365203015";
+        public string ChannelId { get; set; } = "1529169033482600659";
         public int LocalServerPort { get; set; } = 5000;
 
         // System Preferences

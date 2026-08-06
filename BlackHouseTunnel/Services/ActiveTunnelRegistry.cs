@@ -32,7 +32,7 @@ namespace BlackHouseTunnel.Services
         {
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
-            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
             string? msgId = null;
 
             if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
@@ -56,7 +56,7 @@ namespace BlackHouseTunnel.Services
         {
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
-            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
 
             if (!string.IsNullOrWhiteSpace(messageId) && !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
@@ -80,7 +80,7 @@ namespace BlackHouseTunnel.Services
         {
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
-            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
             List<PublishedTunnel> channelTunnels = new List<PublishedTunnel>();
 
             if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))

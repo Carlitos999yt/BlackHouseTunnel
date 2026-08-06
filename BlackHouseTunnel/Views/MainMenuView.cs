@@ -1138,7 +1138,7 @@ namespace BlackHouseTunnel.Views
             if (_user.IsCanHostOrManage)
             {
                 channelLabel = CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)");
-                channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1531027757365203015" : config.ChannelId);
+                channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1529169033482600659" : config.ChannelId);
                 channelBox.Margin = new Thickness(0, 0, 0, 20);
                 boxPanel.Children.Add(channelLabel);
                 boxPanel.Children.Add(channelBox);
@@ -1178,7 +1178,7 @@ namespace BlackHouseTunnel.Views
                 config.SelectedStudioPath = studioBox.Text.Trim();
                 if (_user.IsCanHostOrManage && channelBox != null)
                 {
-                    config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1531027757365203015" : channelBox.Text.Trim();
+                    config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1529169033482600659" : channelBox.Text.Trim();
                 }
                 ConfigManager.SaveConfig(config);
                 DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
