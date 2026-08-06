@@ -407,7 +407,6 @@ namespace BlackHouseTunnel.Views
             };
 
             bannerPanel.Children.Add(welcomeTitle);
-            bannerPanel.Children.Add(welcomeSub);
             banner.Child = bannerPanel;
             body.Children.Add(banner);
 
