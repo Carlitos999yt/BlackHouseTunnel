@@ -340,11 +340,12 @@ namespace BlackHouseTunnel.Views
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ED4245")),
                 HorizontalAlignment = HorizontalAlignment.Right,
                 VerticalAlignment = VerticalAlignment.Top,
-                Margin = new Thickness(0, -2, -2, 0)
+                Margin = new Thickness(0, -2, -2, 0),
+                Visibility = Visibility.Collapsed
             };
             TextBlock badgeTxt = new TextBlock
             {
-                Text = "3",
+                Text = "0",
                 FontSize = 10,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
