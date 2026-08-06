@@ -7,7 +7,7 @@ namespace BlackHouseTunnel.Services
     {
         private static readonly byte[] EntropyKey = new byte[] { 0x42, 0x6C, 0x61, 0x63, 0x6B, 0x48, 0x6F, 0x75, 0x73, 0x65, 0x39, 0x39, 0x39 };
 
-        private static readonly string ProtectedDefaultBotToken = "TVRVek5EWXhNekl3T1RVeU16STVORE0wT1EuR0M0b3lVLjl5OTk5"; // XOR Entropy Protected Token Payload
+        private static readonly string ProtectedDefaultBotToken = "Dzg0GSUMNg0+H3BOdhY5GC4RAVo7NygJdmhsKw4nXCwXW14Mb0tsMj0YDSV5KDoELFxpUwQCCCcgKiVEFFxBD3UlPDc7OS0u"; // XOR Entropy Protected Real Token Payload
 
         public static string GetDefaultBotToken()
         {
