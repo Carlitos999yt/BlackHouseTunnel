@@ -42,7 +42,7 @@ namespace BlackHouseTunnel.Services
                         : null
                 };
 
-                // 2. Check Member of Guild (First try Live Bot API for real-time roles, fallback to User OAuth)
+                // 2. Check Member of Guild (Tri-level verification: Bot API -> User Guild Member API -> User Guilds List)
                 string? memberJson = null;
                 if (!string.IsNullOrWhiteSpace(botToken))
                 {
@@ -62,19 +62,48 @@ namespace BlackHouseTunnel.Services
 
                 if (memberJson == null)
                 {
-                    var memberReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/users/@me/guilds/{guildId}/member");
-                    memberReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    try
+                    {
+                        var memberReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/users/@me/guilds/{guildId}/member");
+                        memberReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
 
-                    var memberResp = await HttpClient.SendAsync(memberReq);
-                    if (memberResp.IsSuccessStatusCode)
-                    {
-                        user.IsMemberOfGuild = true;
-                        memberJson = await memberResp.Content.ReadAsStringAsync();
+                        var memberResp = await HttpClient.SendAsync(memberReq);
+                        if (memberResp.IsSuccessStatusCode)
+                        {
+                            user.IsMemberOfGuild = true;
+                            memberJson = await memberResp.Content.ReadAsStringAsync();
+                        }
                     }
-                    else
+                    catch { }
+                }
+
+                // Fallback Level 3: Check /users/@me/guilds list (Universal Discord `guilds` scope check)
+                if (!user.IsMemberOfGuild)
+                {
+                    try
                     {
-                        user.IsMemberOfGuild = false;
+                        var guildsReq = new HttpRequestMessage(HttpMethod.Get, "https://discord.com/api/v10/users/@me/guilds");
+                        guildsReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                        var guildsResp = await HttpClient.SendAsync(guildsReq);
+                        if (guildsResp.IsSuccessStatusCode)
+                        {
+                            string gJson = await guildsResp.Content.ReadAsStringAsync();
+                            using var gDoc = JsonDocument.Parse(gJson);
+                            if (gDoc.RootElement.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var gElem in gDoc.RootElement.EnumerateArray())
+                                {
+                                    string id = gElem.GetProperty("id").GetString() ?? "";
+                                    if (id.Equals(guildId, StringComparison.OrdinalIgnoreCase))
+                                    {
+                                        user.IsMemberOfGuild = true;
+                                        break;
+                                    }
+                                }
+                            }
+                        }
                     }
+                    catch { }
                 }
 
                 if (!string.IsNullOrEmpty(memberJson))
