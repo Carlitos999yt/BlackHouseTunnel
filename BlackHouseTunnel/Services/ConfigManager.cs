@@ -36,6 +36,12 @@ namespace BlackHouseTunnel.Services
                     var config = JsonSerializer.Deserialize<AppConfig>(json);
                     if (config != null)
                     {
+                        // Auto-migrate old channel ID to the new channel ID 1529169033482600659
+                        if (config.ChannelId == "1531027757365203015" || string.IsNullOrWhiteSpace(config.ChannelId))
+                        {
+                            config.ChannelId = "1529169033482600659";
+                            SaveConfig(config);
+                        }
                         CurrentConfig = config;
                         return;
                     }
