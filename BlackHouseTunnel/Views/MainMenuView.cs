@@ -1121,23 +1121,16 @@ namespace BlackHouseTunnel.Views
             studioBtnsRow.Children.Add(browseStudioBtn);
             boxPanel.Children.Add(studioBtnsRow);
 
-            // Option 4: Discord Channel ID & Bot Token (Staff / Superior / Hoster Only)
+            // Option 4: Discord Channel ID (Staff / Superior / Hoster Only)
             TextBlock? channelLabel = null;
             TextBox? channelBox = null;
-            TextBox? botTokenBox = null;
             if (_user.IsCanHostOrManage)
             {
                 channelLabel = CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)");
                 channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1531027757365203015" : config.ChannelId);
-                channelBox.Margin = new Thickness(0, 0, 0, 16);
+                channelBox.Margin = new Thickness(0, 0, 0, 20);
                 boxPanel.Children.Add(channelLabel);
                 boxPanel.Children.Add(channelBox);
-
-                var botLabel = CreateLabel("🤖 Token del Bot de Discord (Cifrado Automático)");
-                botTokenBox = CreateStyledTextBox(config.BotToken);
-                botTokenBox.Margin = new Thickness(0, 0, 0, 20);
-                boxPanel.Children.Add(botLabel);
-                boxPanel.Children.Add(botTokenBox);
             }
 
             // Save Settings Button
@@ -1172,13 +1165,9 @@ namespace BlackHouseTunnel.Views
                 };
 
                 config.SelectedStudioPath = studioBox.Text.Trim();
-                if (_user.IsCanHostOrManage && channelBox != null && botTokenBox != null)
+                if (_user.IsCanHostOrManage && channelBox != null)
                 {
                     config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1531027757365203015" : channelBox.Text.Trim();
-                    if (!string.IsNullOrWhiteSpace(botTokenBox.Text))
-                    {
-                        config.BotToken = botTokenBox.Text.Trim();
-                    }
                 }
                 ConfigManager.SaveConfig(config);
                 DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
