@@ -1370,13 +1370,35 @@ namespace BlackHouseTunnel.Views
                 Width = 290,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
                 BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#1F1F30")),
-                BorderThickness = new Thickness(1.2),
+                BorderThickness = new Thickness(isPrivadito ? 1.8 : 1.2),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(16),
                 Margin = new Thickness(0, 0, 16, 16)
             };
 
             StackPanel panel = new StackPanel();
+
+            // Scope Tag Badge at top
+            Border badge = new Border
+            {
+                HorizontalAlignment = HorizontalAlignment.Left,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#3A2E00" : "#1A1A2E")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#3F3F66")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(6),
+                Padding = new Thickness(8, 3, 8, 3),
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            TextBlock badgeTxt = new TextBlock
+            {
+                Text = isPrivadito ? "🔒 Privadito (Rol Exclusivo)" : "🌐 Host Público",
+                FontSize = 11,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#FFD700" : "#A5A6F6"))
+            };
+            badge.Child = badgeTxt;
+            panel.Children.Add(badge);
+
             TextBlock titleTxt = new TextBlock
             {
                 Text = title,
@@ -1412,10 +1434,10 @@ namespace BlackHouseTunnel.Views
 
             Button connectBtn = new Button
             {
-                Content = isPrivadito ? "🔒 Conectar (Privadito)" : "🔌 Conectarse al Túnel",
+                Content = isPrivadito ? "🔒 Conectarse al Túnel" : "🔌 Conectarse al Túnel",
                 Height = 40,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#D4AF37" : "#5865F2")),
-                Foreground = isPrivadito ? Brushes.Black : Brushes.White,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(isPrivadito ? "#F59E0B" : "#5865F2")),
+                Foreground = Brushes.White,
                 FontWeight = FontWeights.Bold,
                 FontSize = 13,
                 BorderThickness = new Thickness(0),
