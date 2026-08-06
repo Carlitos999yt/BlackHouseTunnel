@@ -41,18 +41,44 @@ namespace BlackHouseTunnel.Services
 
         private void Timer_Tick(object? sender, EventArgs e)
         {
+            OnlinePresenceRegistry.RegisterHeartbeat(_currentUser);
+
             Task.Run(async () =>
             {
                 try
                 {
-                    List<DiscordUser> members = await _apiService.GetGuildOnlineMembersAsync(_config.GuildId, _config.BotToken);
-                    
-                    members = members.Where(m => m.Id != _currentUser.Id && !m.Username.Equals(_currentUser.Username, StringComparison.OrdinalIgnoreCase)).ToList();
-                    members.Insert(0, _currentUser);
+                    List<DiscordUser> resultList = new List<DiscordUser>();
+
+                    List<DiscordUser> guildMembers = await _apiService.GetGuildOnlineMembersAsync(_config.GuildId, _config.BotToken);
+                    if (guildMembers.Count == 0 && !string.IsNullOrWhiteSpace(_config.GuildId))
+                    {
+                        guildMembers = await _apiService.GetGuildWidgetMembersAsync(_config.GuildId);
+                    }
+
+                    List<DiscordUser> appUsers = OnlinePresenceRegistry.GetActiveAppUsers();
+
+                    foreach (var u in appUsers)
+                    {
+                        if (!resultList.Any(r => r.Username.Equals(u.Username, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            resultList.Add(u);
+                        }
+                    }
+
+                    foreach (var g in guildMembers)
+                    {
+                        if (!resultList.Any(r => r.Username.Equals(g.Username, StringComparison.OrdinalIgnoreCase)))
+                        {
+                            resultList.Add(g);
+                        }
+                    }
+
+                    resultList.RemoveAll(m => m.Username.Equals(_currentUser.Username, StringComparison.OrdinalIgnoreCase));
+                    resultList.Insert(0, _currentUser);
 
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        OnMembersUpdated?.Invoke(this, members);
+                        OnMembersUpdated?.Invoke(this, resultList);
                     });
                 }
                 catch

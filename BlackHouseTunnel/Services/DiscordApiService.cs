@@ -262,6 +262,47 @@ namespace BlackHouseTunnel.Services
             }
         }
 
+        public async Task<List<DiscordUser>> GetGuildWidgetMembersAsync(string guildId)
+        {
+            var list = new List<DiscordUser>();
+            if (string.IsNullOrWhiteSpace(guildId)) return list;
+
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/guilds/{guildId}/widget.json");
+                var resp = await HttpClient.SendAsync(req);
+                if (resp.IsSuccessStatusCode)
+                {
+                    string json = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("members", out var membersArr) && membersArr.ValueKind == JsonValueKind.Array)
+                    {
+                        foreach (var m in membersArr.EnumerateArray())
+                        {
+                            string uname = m.GetProperty("username").GetString() ?? "";
+                            string avatarUrl = m.TryGetProperty("avatar_url", out var av) && av.ValueKind != JsonValueKind.Null ? av.GetString() ?? "" : "";
+
+                            if (!string.IsNullOrEmpty(uname))
+                            {
+                                var dUser = new DiscordUser
+                                {
+                                    Username = uname,
+                                    ServerNick = uname,
+                                    GlobalName = uname,
+                                    DirectAvatarUrl = avatarUrl
+                                };
+                                list.Add(dUser);
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
+
         public async Task<string?> PostTunnelEmbedToChannelAsync(string channelId, string botToken, PublishedTunnel tunnel)
         {
             if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return null;

@@ -11,6 +11,7 @@ namespace BlackHouseTunnel.Models
         public string GlobalName { get; set; } = string.Empty;
         public string Discriminator { get; set; } = "0";
         public string? AvatarHash { get; set; } = null;
+        public string? DirectAvatarUrl { get; set; } = null;
         public bool IsMemberOfGuild { get; set; } = false;
         public List<string> RoleIds { get; set; } = new();
         public List<string> RoleNames { get; set; } = new();
@@ -26,6 +27,10 @@ namespace BlackHouseTunnel.Models
         {
             get
             {
+                if (!string.IsNullOrEmpty(DirectAvatarUrl))
+                {
+                    return DirectAvatarUrl;
+                }
                 if (!string.IsNullOrEmpty(AvatarHash) && !string.IsNullOrEmpty(Id))
                 {
                     string ext = AvatarHash.StartsWith("a_") ? "gif" : "png";
