@@ -1,12 +1,20 @@
+using System.Text.Json.Serialization;
+
 namespace BlackHouseTunnel.Models
 {
     public class AppConfig
     {
         public string ClientId { get; set; } = "1534613209523294349";
+
+        [JsonIgnore]
         public string ClientSecret { get; set; } = "";
+
         public string RedirectUri { get; set; } = "http://localhost:5000/callback";
         public string GuildId { get; set; } = "";
+
+        [JsonIgnore]
         public string BotToken { get; set; } = "";
+
         public string ChannelId { get; set; } = "1531027757365203015";
         public int LocalServerPort { get; set; } = 5000;
 
