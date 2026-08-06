@@ -30,6 +30,7 @@ namespace BlackHouseTunnel.Views
         private Border _notifBadge = null!;
         private Grid _contentHostGrid = null!;
         private StackPanel _friendsRowPanel = null!;
+        private bool _autoConnectPending = false;
 
         private Button _btnHome = null!;
         private Button _btnHost = null!;
@@ -957,6 +958,15 @@ namespace BlackHouseTunnel.Views
             box.Child = boxPanel;
             panel.Children.Add(box);
 
+            if (_autoConnectPending)
+            {
+                _autoConnectPending = false;
+                Dispatcher.BeginInvoke(new Action(() =>
+                {
+                    connectBtn.RaiseEvent(new RoutedEventArgs(System.Windows.Controls.Primitives.ButtonBase.ClickEvent));
+                }), System.Windows.Threading.DispatcherPriority.Loaded);
+            }
+
             scroll.Content = panel;
             return scroll;
         }
@@ -1456,6 +1466,7 @@ namespace BlackHouseTunnel.Views
                 if (!string.IsNullOrEmpty(targetAddr))
                 {
                     _pendingJoinAddress = targetAddr;
+                    _autoConnectPending = true;
                 }
                 SwitchTab("Join");
             };
