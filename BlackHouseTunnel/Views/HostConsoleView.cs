@@ -100,7 +100,7 @@ namespace BlackHouseTunnel.Views
                 }
                 else if (publishRequested)
                 {
-                    _console.AppendLog("⚠️ ADVERTENCIA: No se pudo enviar el anuncio a Discord. Ingresa tu Token de Bot de Discord en la pestaña Ajustes.", "err");
+                    _console.AppendLog("⚠️ ADVERTENCIA: No se pudo enviar el anuncio a Discord. Revisa que el Bot tenga permisos de 'Enviar Mensajes' e 'Insertar Enlaces' en el canal seleccionado.", "err");
                 }
 
                 if (!string.IsNullOrEmpty(mapPath) && File.Exists(mapPath))
