@@ -14,7 +14,7 @@ namespace BlackHouseTunnel.Views
 
         private readonly LiveLogConsoleView _console;
 
-        public HostConsoleView(string studioPath, string uid, string port, string addr, string mapPath, string username)
+        public HostConsoleView(string studioPath, string uid, string port, string addr, string mapPath, string username, string? discordMsgId = null, bool publishRequested = false)
         {
             string parentGuid = Guid.NewGuid().ToString().ToUpper();
             string playGuid = Guid.NewGuid().ToString().ToUpper();
@@ -45,18 +45,13 @@ namespace BlackHouseTunnel.Views
             // Action Bar
             StackPanel btnRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
 
-            Button joinLocalBtn = CreateActionButton("👤 Unirse Localmente", "#F59E0B");
+            Button joinLocalBtn = CreateActionButton("🎮 Unirse al Host Local", "#10B981");
             joinLocalBtn.IsEnabled = false;
             joinLocalBtn.Click += (s, e) =>
             {
-                try
+                if (!string.IsNullOrEmpty(studioPath) && File.Exists(studioPath))
                 {
-                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", port, parentGuid, playGuid, "StudioPlayer_Host", username);
-                    _console?.AppendLog($"Cliente local ejecutado como '{username}'.", "info");
-                }
-                catch (Exception ex)
-                {
-                    _console?.AppendLog($"Error al lanzar cliente local: {ex.Message}", "err");
+                    RobloxStudioService.LaunchClient(studioPath, port, uid, parentGuid, playGuid, username);
                 }
             };
             btnRow.Children.Add(joinLocalBtn);
@@ -98,6 +93,15 @@ namespace BlackHouseTunnel.Views
                 _console.AppendLog($"Play   GUID: {playGuid}", "dim");
                 _console.AppendLog($"Puerto UDP : {port}", "info");
                 _console.AppendLog($"Túnel Remoto: {addr}", "info");
+
+                if (!string.IsNullOrEmpty(discordMsgId))
+                {
+                    _console.AppendLog($"📢 Anuncio de Host publicado con ÉXITO en Discord (ID Mensaje: {discordMsgId})", "ok");
+                }
+                else if (publishRequested)
+                {
+                    _console.AppendLog("⚠️ ADVERTENCIA: No se pudo enviar el anuncio a Discord. Ingresa tu Token de Bot de Discord en la pestaña Ajustes.", "err");
+                }
 
                 if (!string.IsNullOrEmpty(mapPath) && File.Exists(mapPath))
                 {

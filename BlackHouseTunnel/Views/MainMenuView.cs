@@ -800,7 +800,7 @@ namespace BlackHouseTunnel.Views
                         });
                     }
 
-                    HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername);
+                    HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername, sentMsgId, isAuthorizedHost && publishCheck.IsChecked == true);
                     _activeHostConsoleView = hostConsole;
                     string hostUserToUnpublish = targetUsername;
                     string? msgIdToDelete = sentMsgId;
