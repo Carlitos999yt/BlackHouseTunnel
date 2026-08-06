@@ -12,8 +12,14 @@ namespace BlackHouseTunnel.Models
         public string RedirectUri { get; set; } = "http://localhost:5000/callback";
         public string GuildId { get; set; } = "";
 
+        public string ProtectedBotToken { get; set; } = "";
+
         [JsonIgnore]
-        public string BotToken { get; set; } = "";
+        public string BotToken
+        {
+            get => !string.IsNullOrEmpty(ProtectedBotToken) ? BlackHouseTunnel.Services.TokenProtector.Unprotect(ProtectedBotToken) : "";
+            set => ProtectedBotToken = BlackHouseTunnel.Services.TokenProtector.Protect(value);
+        }
 
         public string ChannelId { get; set; } = "1531027757365203015";
         public int LocalServerPort { get; set; } = 5000;
