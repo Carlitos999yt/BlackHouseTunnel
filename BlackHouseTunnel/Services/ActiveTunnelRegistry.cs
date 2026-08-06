@@ -96,11 +96,20 @@ namespace BlackHouseTunnel.Services
 
                 foreach (var ct in channelTunnels)
                 {
-                    if (!localList.Any(l => l.RemoteAddress.Equals(ct.RemoteAddress, StringComparison.OrdinalIgnoreCase)))
+                    var existing = localList.FirstOrDefault(l => l.RemoteAddress.Equals(ct.RemoteAddress, StringComparison.OrdinalIgnoreCase) || l.HostUsername.Equals(ct.HostUsername, StringComparison.OrdinalIgnoreCase));
+                    if (existing != null)
+                    {
+                        existing.VisibilityMode = ct.VisibilityMode;
+                        existing.ServerName = ct.ServerName;
+                        existing.HostUsername = ct.HostUsername;
+                        existing.DiscordMessageId = ct.Id;
+                    }
+                    else
                     {
                         localList.Add(ct);
                     }
                 }
+                SaveTunnels(localList);
 
                 return localList.Where(t =>
                 {
