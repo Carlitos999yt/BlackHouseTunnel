@@ -386,7 +386,7 @@ namespace BlackHouseTunnel.Services
 
             try
             {
-                var req = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/channels/{channelId}/messages?limit=50");
+                var req = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/channels/{channelId}/messages?limit=100");
                 req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
                 var resp = await HttpClient.SendAsync(req);
 
@@ -396,14 +396,17 @@ namespace BlackHouseTunnel.Services
                     using var doc = JsonDocument.Parse(json);
                     foreach (var msgElem in doc.RootElement.EnumerateArray())
                     {
-                        if (msgElem.TryGetProperty("embeds", out var embedsArr) && embedsArr.ValueKind == JsonValueKind.Array)
+                        // Exclusively check messages sent by Discord Bots
+                        if (msgElem.TryGetProperty("author", out var authorElem) && authorElem.TryGetProperty("bot", out var isBotElem) && isBotElem.GetBoolean())
                         {
-                            foreach (var embed in embedsArr.EnumerateArray())
+                            if (msgElem.TryGetProperty("embeds", out var embedsArr) && embedsArr.ValueKind == JsonValueKind.Array)
                             {
-                                string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
-                                if (!title.StartsWith("🖥️ Servidor de Host:")) continue;
+                                foreach (var embed in embedsArr.EnumerateArray())
+                                {
+                                    string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                                    if (!title.Contains("Servidor de Host", StringComparison.OrdinalIgnoreCase)) continue;
 
-                                string serverName = title.Replace("🖥️ Servidor de Host:", "").Trim();
+                                    string serverName = title.Replace("🖥️ Servidor de Host:", "").Replace("Servidor de Host:", "").Trim();
                                 string hostUser = "";
                                 string remoteAddr = "";
                                 int visMode = 0;
@@ -448,16 +451,17 @@ namespace BlackHouseTunnel.Services
                                     }
                                 }
 
-                                if (!string.IsNullOrEmpty(remoteAddr))
-                                {
-                                    list.Add(new PublishedTunnel
+                                    if (!string.IsNullOrEmpty(remoteAddr))
                                     {
-                                        Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
-                                        ServerName = serverName,
-                                        HostUsername = hostUser,
-                                        RemoteAddress = remoteAddr,
-                                        VisibilityMode = visMode
-                                    });
+                                        list.Add(new PublishedTunnel
+                                        {
+                                            Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
+                                            ServerName = serverName,
+                                            HostUsername = hostUser,
+                                            RemoteAddress = remoteAddr,
+                                            VisibilityMode = visMode
+                                        });
+                                    }
                                 }
                             }
                         }
