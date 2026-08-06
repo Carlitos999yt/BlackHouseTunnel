@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
 using System.Net.Http;
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -55,10 +56,10 @@ namespace BlackHouseTunnel.Services
                 }
             }
 
-            bool useCodeFlow = !string.IsNullOrWhiteSpace(_config.ClientSecret);
-            string oauthUrl = useCodeFlow
-                ? $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read"
-                : $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=token&scope=identify%20guilds%20guilds.members.read";
+            // Generate PKCE Verifier & Challenge for standard OAuth 1-click prompt
+            var (codeVerifier, codeChallenge) = GeneratePkce();
+
+            string oauthUrl = $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read&code_challenge={codeChallenge}&code_challenge_method=S256";
 
             try
             {
@@ -75,17 +76,10 @@ namespace BlackHouseTunnel.Services
                 return null;
             }
 
-            if (useCodeFlow)
-            {
-                return await HandleCodeFlowAsync(listener, redirectUri);
-            }
-            else
-            {
-                return await HandleImplicitFlowAsync(listener);
-            }
+            return await HandleCodeFlowWithPkceAsync(listener, redirectUri, codeVerifier);
         }
 
-        private async Task<string?> HandleCodeFlowAsync(HttpListener listener, string redirectUri)
+        private async Task<string?> HandleCodeFlowWithPkceAsync(HttpListener listener, string redirectUri, string codeVerifier)
         {
             HttpListenerContext context;
             try
@@ -118,81 +112,7 @@ namespace BlackHouseTunnel.Services
             if (string.IsNullOrEmpty(code)) return null;
 
             string usedRedirectUri = req.Url != null ? req.Url.GetLeftPart(UriPartial.Path).TrimEnd('/') : redirectUri.TrimEnd('/');
-            return await ExchangeCodeForTokenAsync(code, usedRedirectUri);
-        }
-
-        private async Task<string?> HandleImplicitFlowAsync(HttpListener listener)
-        {
-            string? tokenFound = null;
-            DateTime endTime = DateTime.Now.AddMinutes(2);
-
-            while (DateTime.Now < endTime && tokenFound == null)
-            {
-                HttpListenerContext context;
-                try
-                {
-                    var getContextTask = listener.GetContextAsync();
-                    var timeoutTask = Task.Delay((int)(endTime - DateTime.Now).TotalMilliseconds);
-
-                    var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
-                    if (completedTask == timeoutTask) break;
-
-                    context = await getContextTask;
-                }
-                catch
-                {
-                    break;
-                }
-
-                var req = context.Request;
-                var resp = context.Response;
-
-                if (req.Url != null && req.Url.AbsolutePath.Contains("/token"))
-                {
-                    tokenFound = req.QueryString["access_token"];
-                    SendSuccessHtml(resp);
-                    try { listener.Stop(); } catch { }
-                    break;
-                }
-                else
-                {
-                    // Serve JS script to forward hash parameters to /token query
-                    string jsBridgeHtml = @"
-<!DOCTYPE html>
-<html>
-<head>
-    <meta charset='utf-8'/>
-    <title>BlackHouseTunnel - Autenticación</title>
-    <script>
-        if (window.location.hash) {
-            var hash = window.location.hash.substring(1);
-            window.location.href = window.location.protocol + '//' + window.location.host + '/callback/token?' + hash;
-        }
-    </script>
-    <style>
-        body { background-color: #0d0d11; color: #ffffff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; justify-content: center; align-items: center; margin: 0; }
-        .card { background: #181820; padding: 40px; border-radius: 16px; border: 1px solid #5865F2; box-shadow: 0 0 30px rgba(88, 101, 242, 0.4); text-align: center; max-width: 400px; }
-        h1 { color: #5865F2; font-size: 22px; margin-bottom: 10px; }
-        p { color: #aaaaaa; font-size: 14px; }
-    </style>
-</head>
-<body>
-    <div class='card'>
-        <h1>Procesando Autenticación...</h1>
-        <p>Por favor espera un segundo mientras nos conectamos con <strong>BlackHouseTunnel</strong>.</p>
-    </div>
-</body>
-</html>";
-                    byte[] buffer = Encoding.UTF8.GetBytes(jsBridgeHtml);
-                    resp.ContentLength64 = buffer.Length;
-                    resp.ContentType = "text/html";
-                    await resp.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-                    resp.OutputStream.Close();
-                }
-            }
-
-            try { listener.Stop(); } catch { }
-            return tokenFound;
+            return await ExchangeCodeForTokenPkceAsync(code, usedRedirectUri, codeVerifier);
         }
 
         private void SendSuccessHtml(HttpListenerResponse resp)
@@ -229,7 +149,7 @@ namespace BlackHouseTunnel.Services
             catch { }
         }
 
-        private async Task<string?> ExchangeCodeForTokenAsync(string code, string redirectUri)
+        private async Task<string?> ExchangeCodeForTokenPkceAsync(string code, string redirectUri, string codeVerifier)
         {
             try
             {
@@ -239,7 +159,8 @@ namespace BlackHouseTunnel.Services
                     { "client_id", _config.ClientId },
                     { "grant_type", "authorization_code" },
                     { "code", code },
-                    { "redirect_uri", redirectUri }
+                    { "redirect_uri", redirectUri },
+                    { "code_verifier", codeVerifier }
                 };
 
                 if (!string.IsNullOrWhiteSpace(_config.ClientSecret))
@@ -279,6 +200,28 @@ namespace BlackHouseTunnel.Services
                 Debug.WriteLine($"[DiscordAuthService] Exchange Exception: {ex.Message}");
                 return null;
             }
+        }
+
+        private static (string codeVerifier, string codeChallenge) GeneratePkce()
+        {
+            byte[] bytes = new byte[32];
+            using (var rng = RandomNumberGenerator.Create())
+            {
+                rng.GetBytes(bytes);
+            }
+            string codeVerifier = Base64UrlEncode(bytes);
+            using (var sha256 = SHA256.Create())
+            {
+                byte[] challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
+                string codeChallenge = Base64UrlEncode(challengeBytes);
+                return (codeVerifier, codeChallenge);
+            }
+        }
+
+        private static string Base64UrlEncode(byte[] input)
+        {
+            string base64 = Convert.ToBase64String(input);
+            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
         }
     }
 }
