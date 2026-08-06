@@ -814,6 +814,7 @@ namespace BlackHouseTunnel.Views
                     {
                         UdpProxy.StopProxy();
                         RbxmBridgeServer.Stop();
+                        RobloxStudioService.ForceKillAllStudioProcesses();
                         Task.Run(() => ActiveTunnelRegistry.UnpublishTunnelAsync(hostUserToUnpublish, msgIdToDelete));
                         _activeHostConsoleView = null;
                         SwitchTab("Host");

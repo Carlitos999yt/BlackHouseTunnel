@@ -71,7 +71,7 @@ namespace BlackHouseTunnel.Views
                 var result = DarkMessageBox.Show("¿Estás seguro de detener el Servidor Host activo?\n\n(Se cerrará el túnel y se forzará el cierre de Roblox Studio automáticamente).", "Detener Host", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    RobloxStudioService.StopAllStudioProcesses();
+                    RobloxStudioService.ForceKillAllStudioProcesses();
                     OnStopHostRequested?.Invoke(this, EventArgs.Empty);
                 }
             };

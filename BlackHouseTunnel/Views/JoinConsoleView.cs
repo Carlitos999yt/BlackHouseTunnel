@@ -55,6 +55,7 @@ namespace BlackHouseTunnel.Views
                 if (result == MessageBoxResult.Yes)
                 {
                     UdpProxy.StopProxy();
+                    RobloxStudioService.ForceKillAllStudioProcesses();
                     OnDisconnectRequested?.Invoke(this, EventArgs.Empty);
                 }
             };
@@ -110,6 +111,7 @@ namespace BlackHouseTunnel.Views
                 {
                     _console.AppendLog($"Error al lanzar Roblox Studio: {ex.Message}", "err");
                     UdpProxy.StopProxy();
+                    RobloxStudioService.ForceKillAllStudioProcesses();
                 }
             });
         }

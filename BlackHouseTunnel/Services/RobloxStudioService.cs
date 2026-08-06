@@ -322,6 +322,11 @@ namespace BlackHouseTunnel.Services
 
         public static void StopAllStudioProcesses()
         {
+            ForceKillAllStudioProcesses();
+        }
+
+        public static void ForceKillAllStudioProcesses()
+        {
             lock (_procLock)
             {
                 foreach (var proc in _spawnedProcesses)
@@ -330,16 +335,25 @@ namespace BlackHouseTunnel.Services
                     {
                         if (!proc.HasExited)
                         {
-                            proc.CloseMainWindow();
-                            if (!proc.WaitForExit(1500))
-                            {
-                                proc.Kill(entireProcessTree: true);
-                            }
+                            proc.Kill(entireProcessTree: true);
                         }
                     }
                     catch { }
                 }
                 _spawnedProcesses.Clear();
+
+                try
+                {
+                    foreach (var p in Process.GetProcessesByName("RobloxStudioBeta"))
+                    {
+                        try
+                        {
+                            p.Kill(entireProcessTree: true);
+                        }
+                        catch { }
+                    }
+                }
+                catch { }
             }
         }
     }
