@@ -22,6 +22,8 @@ namespace BlackHouseTunnel.Models
         public bool IsPrivadito { get; set; } = false;
         public bool IsHoster { get; set; } = false;
         public bool IsStaffOrAdmin { get; set; } = false;
+        public bool IsSuperior => PrimaryRole.Equals("Superior", System.StringComparison.OrdinalIgnoreCase) || RoleNames.Any(r => r.ToLowerInvariant().Contains("superior"));
+        public bool IsCanHostOrManage => IsStaffOrAdmin || IsSuperior || IsHoster;
 
         public string AvatarUrl
         {

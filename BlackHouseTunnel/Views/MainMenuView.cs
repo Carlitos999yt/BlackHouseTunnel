@@ -694,6 +694,16 @@ namespace BlackHouseTunnel.Views
             chkTemplate.Triggers.Add(checkedTrigger);
             chkTemplate.Triggers.Add(uncheckedTrigger);
             publishCheck.Template = chkTemplate;
+
+            bool isAuthorizedHost = _user.IsCanHostOrManage;
+            if (!isAuthorizedHost)
+            {
+                namePanel.Visibility = Visibility.Collapsed;
+                visPanel.Visibility = Visibility.Collapsed;
+                publishCheck.Visibility = Visibility.Collapsed;
+                publishCheck.IsChecked = false;
+            }
+
             boxPanel.Children.Add(publishCheck);
 
             // Action Buttons Row (Import Scripts + Start Host)
@@ -769,7 +779,8 @@ namespace BlackHouseTunnel.Views
                     ConfigManager.CurrentConfig.SavedUdpPort = targetPort;
                     ConfigManager.CurrentConfig.SavedRemoteHostAddress = addr;
                     ConfigManager.CurrentConfig.SavedMapPath = mapPath;
-                    ConfigManager.CurrentConfig.SavedVisibilityOptionIndex = visCombo.SelectedIndex;
+                    int targetVisMode = isAuthorizedHost ? visCombo.SelectedIndex : 0;
+                    ConfigManager.CurrentConfig.SavedVisibilityOptionIndex = targetVisMode;
                     ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
 
                     PluginInstaller.EnsurePluginInstalled(out string pluginMsg);
@@ -778,14 +789,14 @@ namespace BlackHouseTunnel.Views
                     RbxmBridgeServer.Start();
 
                     string? sentMsgId = null;
-                    if (publishCheck.IsChecked == true)
+                    if (isAuthorizedHost && publishCheck.IsChecked == true)
                     {
                         sentMsgId = await ActiveTunnelRegistry.PublishTunnelAsync(new PublishedTunnel
                         {
                             ServerName = string.IsNullOrWhiteSpace(targetServerName) ? $"Servidor de {targetUsername}" : targetServerName,
                             HostUsername = targetUsername,
                             RemoteAddress = addr,
-                            VisibilityMode = visCombo.SelectedIndex
+                            VisibilityMode = targetVisMode
                         });
                     }
 
@@ -1105,11 +1116,17 @@ namespace BlackHouseTunnel.Views
             studioBtnsRow.Children.Add(browseStudioBtn);
             boxPanel.Children.Add(studioBtnsRow);
 
-            // Option 4: Discord Channel ID for Published Tunnel Embeds
-            boxPanel.Children.Add(CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)"));
-            TextBox channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1531027757365203015" : config.ChannelId);
-            channelBox.Margin = new Thickness(0, 0, 0, 20);
-            boxPanel.Children.Add(channelBox);
+            // Option 4: Discord Channel ID for Published Tunnel Embeds (Staff / Superior / Hoster Only)
+            TextBlock? channelLabel = null;
+            TextBox? channelBox = null;
+            if (_user.IsCanHostOrManage)
+            {
+                channelLabel = CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)");
+                channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1531027757365203015" : config.ChannelId);
+                channelBox.Margin = new Thickness(0, 0, 0, 20);
+                boxPanel.Children.Add(channelLabel);
+                boxPanel.Children.Add(channelBox);
+            }
 
             // Save Settings Button
             Button saveBtn = new Button
@@ -1143,7 +1160,10 @@ namespace BlackHouseTunnel.Views
                 };
 
                 config.SelectedStudioPath = studioBox.Text.Trim();
-                config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1531027757365203015" : channelBox.Text.Trim();
+                if (_user.IsCanHostOrManage && channelBox != null)
+                {
+                    config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1531027757365203015" : channelBox.Text.Trim();
+                }
                 ConfigManager.SaveConfig(config);
                 DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
             };
