@@ -55,11 +55,13 @@ namespace BlackHouseTunnel.Services
                 }
             }
 
-            string oauthUrl = $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read";
+            bool useCodeFlow = !string.IsNullOrWhiteSpace(_config.ClientSecret);
+            string oauthUrl = useCodeFlow
+                ? $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read"
+                : $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=token&scope=identify%20guilds%20guilds.members.read";
 
             try
             {
-                // Open browser
                 Process.Start(new ProcessStartInfo
                 {
                     FileName = oauthUrl,
@@ -73,7 +75,18 @@ namespace BlackHouseTunnel.Services
                 return null;
             }
 
-            // Wait for incoming HTTP request with 2-minute timeout
+            if (useCodeFlow)
+            {
+                return await HandleCodeFlowAsync(listener, redirectUri);
+            }
+            else
+            {
+                return await HandleImplicitFlowAsync(listener);
+            }
+        }
+
+        private async Task<string?> HandleCodeFlowAsync(HttpListener listener, string redirectUri)
+        {
             HttpListenerContext context;
             try
             {
@@ -83,27 +96,110 @@ namespace BlackHouseTunnel.Services
                 var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
                 if (completedTask == timeoutTask)
                 {
-                    Debug.WriteLine("[DiscordAuthService] Auth Timed Out (2 minutes).");
                     try { listener.Stop(); } catch { }
                     return null;
                 }
 
                 context = await getContextTask;
             }
-            catch (Exception ex)
+            catch
             {
-                Debug.WriteLine($"[DiscordAuthService] GetContext Exception: {ex.Message}");
                 try { listener.Stop(); } catch { }
                 return null;
             }
 
             var req = context.Request;
             var resp = context.Response;
-
             string? code = req.QueryString["code"];
 
-            // Send friendly HTML response to browser
-            string htmlResponse = @"
+            SendSuccessHtml(resp);
+            try { listener.Stop(); } catch { }
+
+            if (string.IsNullOrEmpty(code)) return null;
+
+            string usedRedirectUri = req.Url != null ? req.Url.GetLeftPart(UriPartial.Path).TrimEnd('/') : redirectUri.TrimEnd('/');
+            return await ExchangeCodeForTokenAsync(code, usedRedirectUri);
+        }
+
+        private async Task<string?> HandleImplicitFlowAsync(HttpListener listener)
+        {
+            string? tokenFound = null;
+            DateTime endTime = DateTime.Now.AddMinutes(2);
+
+            while (DateTime.Now < endTime && tokenFound == null)
+            {
+                HttpListenerContext context;
+                try
+                {
+                    var getContextTask = listener.GetContextAsync();
+                    var timeoutTask = Task.Delay((int)(endTime - DateTime.Now).TotalMilliseconds);
+
+                    var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
+                    if (completedTask == timeoutTask) break;
+
+                    context = await getContextTask;
+                }
+                catch
+                {
+                    break;
+                }
+
+                var req = context.Request;
+                var resp = context.Response;
+
+                if (req.Url != null && req.Url.AbsolutePath.Contains("/token"))
+                {
+                    tokenFound = req.QueryString["access_token"];
+                    SendSuccessHtml(resp);
+                    try { listener.Stop(); } catch { }
+                    break;
+                }
+                else
+                {
+                    // Serve JS script to forward hash parameters to /token query
+                    string jsBridgeHtml = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'/>
+    <title>BlackHouseTunnel - Autenticación</title>
+    <script>
+        if (window.location.hash) {
+            var hash = window.location.hash.substring(1);
+            window.location.href = window.location.protocol + '//' + window.location.host + '/callback/token?' + hash;
+        }
+    </script>
+    <style>
+        body { background-color: #0d0d11; color: #ffffff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; justify-content: center; align-items: center; margin: 0; }
+        .card { background: #181820; padding: 40px; border-radius: 16px; border: 1px solid #5865F2; box-shadow: 0 0 30px rgba(88, 101, 242, 0.4); text-align: center; max-width: 400px; }
+        h1 { color: #5865F2; font-size: 22px; margin-bottom: 10px; }
+        p { color: #aaaaaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <h1>Procesando Autenticación...</h1>
+        <p>Por favor espera un segundo mientras nos conectamos con <strong>BlackHouseTunnel</strong>.</p>
+    </div>
+</body>
+</html>";
+                    byte[] buffer = Encoding.UTF8.GetBytes(jsBridgeHtml);
+                    resp.ContentLength64 = buffer.Length;
+                    resp.ContentType = "text/html";
+                    await resp.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    resp.OutputStream.Close();
+                }
+            }
+
+            try { listener.Stop(); } catch { }
+            return tokenFound;
+        }
+
+        private void SendSuccessHtml(HttpListenerResponse resp)
+        {
+            try
+            {
+                string htmlResponse = @"
 <!DOCTYPE html>
 <html>
 <head>
@@ -124,23 +220,13 @@ namespace BlackHouseTunnel.Services
     </div>
 </body>
 </html>";
-
-            byte[] buffer = Encoding.UTF8.GetBytes(htmlResponse);
-            resp.ContentLength64 = buffer.Length;
-            resp.ContentType = "text/html";
-            await resp.OutputStream.WriteAsync(buffer, 0, buffer.Length);
-            resp.OutputStream.Close();
-            listener.Stop();
-
-            if (string.IsNullOrEmpty(code))
-            {
-                return null;
+                byte[] buffer = Encoding.UTF8.GetBytes(htmlResponse);
+                resp.ContentLength64 = buffer.Length;
+                resp.ContentType = "text/html";
+                resp.OutputStream.Write(buffer, 0, buffer.Length);
+                resp.OutputStream.Close();
             }
-
-            string usedRedirectUri = req.Url != null ? req.Url.GetLeftPart(UriPartial.Path).TrimEnd('/') : redirectUri.TrimEnd('/');
-
-            // Exchange code for access token
-            return await ExchangeCodeForTokenAsync(code, usedRedirectUri);
+            catch { }
         }
 
         private async Task<string?> ExchangeCodeForTokenAsync(string code, string redirectUri)
