@@ -481,7 +481,7 @@ namespace BlackHouseTunnel.Views
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
 
-            StackPanel panel = new StackPanel { Margin = new Thickness(32), MaxWidth = 650, HorizontalAlignment = HorizontalAlignment.Left };
+            StackPanel panel = new StackPanel { Margin = new Thickness(32), MaxWidth = 780, HorizontalAlignment = HorizontalAlignment.Left };
 
             TextBlock title = new TextBlock
             {
@@ -666,7 +666,6 @@ namespace BlackHouseTunnel.Views
             chkMark.SetValue(TextBlock.ForegroundProperty, Brushes.White);
             chkMark.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
             chkMark.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
-            chkMark.SetValue(TextBlock.VisibilityProperty, Visibility.Visible);
             chkBoxBorder.AppendChild(chkMark);
 
             FrameworkElementFactory chkContent = new FrameworkElementFactory(typeof(ContentPresenter));
@@ -678,6 +677,19 @@ namespace BlackHouseTunnel.Views
             chkStack.AppendChild(chkContent);
 
             chkTemplate.VisualTree = chkStack;
+
+            Trigger checkedTrigger = new Trigger { Property = CheckBox.IsCheckedProperty, Value = true };
+            checkedTrigger.Setters.Add(new Setter(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")), "BoxBorder"));
+            checkedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")), "BoxBorder"));
+            checkedTrigger.Setters.Add(new Setter(TextBlock.VisibilityProperty, Visibility.Visible, "CheckMark"));
+
+            Trigger uncheckedTrigger = new Trigger { Property = CheckBox.IsCheckedProperty, Value = false };
+            uncheckedTrigger.Setters.Add(new Setter(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")), "BoxBorder"));
+            uncheckedTrigger.Setters.Add(new Setter(Border.BorderBrushProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A54")), "BoxBorder"));
+            uncheckedTrigger.Setters.Add(new Setter(TextBlock.VisibilityProperty, Visibility.Collapsed, "CheckMark"));
+
+            chkTemplate.Triggers.Add(checkedTrigger);
+            chkTemplate.Triggers.Add(uncheckedTrigger);
             publishCheck.Template = chkTemplate;
             boxPanel.Children.Add(publishCheck);
 
@@ -1162,18 +1174,38 @@ namespace BlackHouseTunnel.Views
 
         private TextBox CreateStyledTextBox(string defaultText)
         {
-            return new TextBox
+            TextBox tb = new TextBox
             {
                 Text = defaultText,
-                Height = 36,
+                Height = 38,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12121A")),
                 Foreground = Brushes.White,
                 BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A2A3E")),
                 BorderThickness = new Thickness(1),
-                Padding = new Thickness(8, 6, 8, 6),
+                Padding = new Thickness(10, 6, 10, 6),
                 FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 10)
+                Margin = new Thickness(0, 0, 0, 10),
+                VerticalContentAlignment = VerticalAlignment.Center
             };
+
+            ControlTemplate template = new ControlTemplate(typeof(TextBox));
+            FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+            border.Name = "border";
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(TextBox.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(TextBox.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(TextBox.BorderThicknessProperty));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+
+            FrameworkElementFactory scrollViewer = new FrameworkElementFactory(typeof(ScrollViewer));
+            scrollViewer.Name = "PART_ContentHost";
+            scrollViewer.SetValue(ScrollViewer.MarginProperty, new Thickness(4, 0, 4, 0));
+            scrollViewer.SetValue(ScrollViewer.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+            border.AppendChild(scrollViewer);
+            template.VisualTree = border;
+            tb.Template = template;
+
+            return tb;
         }
 
         private void MembersMonitor_OnMembersUpdated(object? sender, List<DiscordUser> members)
