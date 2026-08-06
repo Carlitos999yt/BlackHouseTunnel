@@ -461,6 +461,7 @@ namespace BlackHouseTunnel.Views
                 joinActiveBtn.Click += (s, e) => SwitchTab("Join");
                 bannerPanel.Children.Add(joinActiveBtn);
             }
+            banner.Child = bannerPanel;
             body.Children.Add(banner);
 
             TextBlock friendsHeader = new TextBlock
