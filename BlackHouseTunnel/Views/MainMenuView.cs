@@ -448,26 +448,32 @@ namespace BlackHouseTunnel.Views
             body.Children.Add(tunnelsHeader);
 
             WrapPanel tunnelGrid = new WrapPanel();
-            var activeTunnels = ActiveTunnelRegistry.GetVisibleTunnelsForUser(_user);
-
-            if (activeTunnels.Count == 0)
+            Task.Run(async () =>
             {
-                tunnelGrid.Children.Add(new TextBlock
+                var activeTunnels = await ActiveTunnelRegistry.GetVisibleTunnelsForUserAsync(_user);
+                Dispatcher.Invoke(() =>
                 {
-                    Text = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
-                    FontSize = 13,
-                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
-                    Margin = new Thickness(0, 10, 0, 20)
+                    tunnelGrid.Children.Clear();
+                    if (activeTunnels.Count == 0)
+                    {
+                        tunnelGrid.Children.Add(new TextBlock
+                        {
+                            Text = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
+                            FontSize = 13,
+                            Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
+                            Margin = new Thickness(0, 10, 0, 20)
+                        });
+                    }
+                    else
+                    {
+                        foreach (var t in activeTunnels)
+                        {
+                            bool isPriv = t.VisibilityMode == 2;
+                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", isPrivadito: isPriv, remoteAddress: t.RemoteAddress));
+                        }
+                    }
                 });
-            }
-            else
-            {
-                foreach (var t in activeTunnels)
-                {
-                    bool isPriv = t.VisibilityMode == 2;
-                    tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", isPrivadito: isPriv, remoteAddress: t.RemoteAddress));
-                }
-            }
+            });
 
             body.Children.Add(tunnelGrid);
 
