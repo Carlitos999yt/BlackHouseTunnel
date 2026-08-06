@@ -447,11 +447,13 @@ namespace BlackHouseTunnel.Views
 
             if (activeTunnels.Count == 0)
             {
-                tunnelGrid.Children.Add(CreateTunnelCard("Servidor Principal BlackHouse", $"Host: {_user.DisplayNick}", "24 ms", remoteAddress: "127.0.0.1:55555"));
-                if (_user.IsPrivadito || _user.IsStaffOrAdmin)
+                tunnelGrid.Children.Add(new TextBlock
                 {
-                    tunnelGrid.Children.Add(CreateTunnelCard("Túnel Privadito Exclusivo", "Host: Sang", "18 ms", isPrivadito: true, remoteAddress: "play.blackhouse.net:55556"));
-                }
+                    Text = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
+                    FontSize = 13,
+                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
+                    Margin = new Thickness(0, 10, 0, 20)
+                });
             }
             else
             {
@@ -665,7 +667,7 @@ namespace BlackHouseTunnel.Views
             };
             SetButtonCornerRadius(startHostBtn, 10);
 
-            startHostBtn.Click += (s, e) =>
+            startHostBtn.Click += async (s, e) =>
             {
                 try
                 {
@@ -698,9 +700,10 @@ namespace BlackHouseTunnel.Views
                     RbxmBridgeServer.ActiveUid = targetUid;
                     RbxmBridgeServer.Start();
 
+                    string? sentMsgId = null;
                     if (publishCheck.IsChecked == true)
                     {
-                        ActiveTunnelRegistry.PublishTunnel(new PublishedTunnel
+                        sentMsgId = await ActiveTunnelRegistry.PublishTunnelAsync(new PublishedTunnel
                         {
                             ServerName = string.IsNullOrWhiteSpace(targetServerName) ? $"Servidor de {targetUsername}" : targetServerName,
                             HostUsername = targetUsername,
@@ -712,11 +715,12 @@ namespace BlackHouseTunnel.Views
                     HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername);
                     _activeHostConsoleView = hostConsole;
                     string hostUserToUnpublish = targetUsername;
+                    string? msgIdToDelete = sentMsgId;
                     hostConsole.OnStopHostRequested += (s2, e2) =>
                     {
                         UdpProxy.StopProxy();
                         RbxmBridgeServer.Stop();
-                        ActiveTunnelRegistry.UnpublishTunnel(hostUserToUnpublish);
+                        Task.Run(() => ActiveTunnelRegistry.UnpublishTunnelAsync(hostUserToUnpublish, msgIdToDelete));
                         _activeHostConsoleView = null;
                         SwitchTab("Host");
                     };

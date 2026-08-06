@@ -261,5 +261,150 @@ namespace BlackHouseTunnel.Services
                 user.PrimaryRoleColor = "#5865F2";
             }
         }
+
+        public async Task<string?> PostTunnelEmbedToChannelAsync(string channelId, string botToken, PublishedTunnel tunnel)
+        {
+            if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return null;
+
+            try
+            {
+                int color = tunnel.VisibilityMode == 2 ? 16766720 : 5793266;
+                string scopeText = tunnel.VisibilityMode switch
+                {
+                    1 => "🛡️ Host para todo el Servidor",
+                    2 => "🔒 Host Privado (Solo Privadito)",
+                    _ => "🌐 Host Abierto (Público Global)"
+                };
+
+                var embedObj = new
+                {
+                    embeds = new[]
+                    {
+                        new
+                        {
+                            title = $"🖥️ Servidor de Host: {tunnel.ServerName}",
+                            description = "🚀 **Túnel de Servidor Activo en BlackHouseTunnel**",
+                            color = color,
+                            fields = new[]
+                            {
+                                new { name = "👤 Creado / Hosteado por", value = tunnel.HostUsername, inline = true },
+                                new { name = "🔌 Dirección de Playit / Túnel", value = $"`{tunnel.RemoteAddress}`", inline = true },
+                                new { name = "🎯 Dirigido a / Alcance", value = scopeText, inline = false }
+                            },
+                            footer = new { text = "BlackHouseTunnel • Sincronización en Vivo" },
+                            timestamp = DateTime.UtcNow.ToString("o")
+                        }
+                    }
+                };
+
+                string jsonPayload = JsonSerializer.Serialize(embedObj);
+                var req = new HttpRequestMessage(HttpMethod.Post, $"https://discord.com/api/v10/channels/{channelId}/messages");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                req.Content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
+
+                var resp = await HttpClient.SendAsync(req);
+                if (resp.IsSuccessStatusCode)
+                {
+                    string respJson = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(respJson);
+                    return doc.RootElement.GetProperty("id").GetString();
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
+        public async Task<bool> DeleteTunnelEmbedAsync(string channelId, string botToken, string messageId)
+        {
+            if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken) || string.IsNullOrWhiteSpace(messageId)) return false;
+
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Delete, $"https://discord.com/api/v10/channels/{channelId}/messages/{messageId}");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                var resp = await HttpClient.SendAsync(req);
+                return resp.IsSuccessStatusCode;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<List<PublishedTunnel>> FetchChannelTunnelEmbedsAsync(string channelId, string botToken)
+        {
+            var list = new List<PublishedTunnel>();
+            if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return list;
+
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/channels/{channelId}/messages?limit=50");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                var resp = await HttpClient.SendAsync(req);
+
+                if (resp.IsSuccessStatusCode)
+                {
+                    string json = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    foreach (var msgElem in doc.RootElement.EnumerateArray())
+                    {
+                        if (msgElem.TryGetProperty("embeds", out var embedsArr) && embedsArr.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var embed in embedsArr.EnumerateArray())
+                            {
+                                string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                                if (!title.StartsWith("🖥️ Servidor de Host:")) continue;
+
+                                string serverName = title.Replace("🖥️ Servidor de Host:", "").Trim();
+                                string hostUser = "";
+                                string remoteAddr = "";
+                                int visMode = 0;
+
+                                if (embed.TryGetProperty("color", out var colVal))
+                                {
+                                    if (colVal.GetInt32() == 16766720) visMode = 2;
+                                }
+
+                                if (embed.TryGetProperty("fields", out var fieldsArr) && fieldsArr.ValueKind == JsonValueKind.Array)
+                                {
+                                    foreach (var field in fieldsArr.EnumerateArray())
+                                    {
+                                        string fName = field.GetProperty("name").GetString() ?? "";
+                                        string fVal = field.GetProperty("value").GetString() ?? "";
+
+                                        if (fName.Contains("Creado")) hostUser = fVal;
+                                        else if (fName.Contains("Dirección")) remoteAddr = fVal.Replace("`", "").Trim();
+                                        else if (fName.Contains("Dirigido"))
+                                        {
+                                            if (fVal.Contains("Privado")) visMode = 2;
+                                            else if (fVal.Contains("Servidor")) visMode = 1;
+                                            else visMode = 0;
+                                        }
+                                    }
+                                }
+
+                                if (!string.IsNullOrEmpty(remoteAddr))
+                                {
+                                    list.Add(new PublishedTunnel
+                                    {
+                                        Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
+                                        ServerName = serverName,
+                                        HostUsername = hostUser,
+                                        RemoteAddress = remoteAddr,
+                                        VisibilityMode = visMode
+                                    });
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            catch
+            {
+            }
+            return list;
+        }
     }
 }
