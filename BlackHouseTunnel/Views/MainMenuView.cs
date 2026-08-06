@@ -1373,12 +1373,12 @@ namespace BlackHouseTunnel.Views
             bool isPrivadito = visibilityMode == 2;
             bool isServidor = visibilityMode == 1;
 
-            string borderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#1F1F30");
-            string badgeBgHex = isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1A1A2E");
-            string badgeBorderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#3F3F66");
-            string badgeTextHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#A5A6F6");
+            string borderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
+            string badgeBgHex = isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937");
+            string badgeBorderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
+            string badgeTextHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF");
             string badgeLabel = isPrivadito ? "🔒 Privadito (Rol Exclusivo)" : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)");
-            string btnBgHex = isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#5865F2");
+            string btnBgHex = isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563");
             string btnText = isPrivadito ? "🔒 Conectarse (Privadito)" : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel");
 
             Border card = new Border

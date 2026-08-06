@@ -309,7 +309,12 @@ namespace BlackHouseTunnel.Services
 
             try
             {
-                int color = tunnel.VisibilityMode == 2 ? 16766720 : 5793266;
+                int color = tunnel.VisibilityMode switch
+                {
+                    2 => 16766720, // Gold (Privadito)
+                    1 => 5793266,  // Blurple/Cyan (Servidor)
+                    _ => 7045760   // Dark Slate Gray (Global / Público)
+                };
                 string scopeText = tunnel.VisibilityMode switch
                 {
                     1 => "🛡️ Host para todo el Servidor",
