@@ -27,6 +27,7 @@ namespace BlackHouseTunnel.Views
         private Grid _rootGrid = null!;
         private Grid _dropdownOverlay = null!;
         private Border _notificationsDrawer = null!;
+        private Border _notifBadge = null!;
         private Grid _contentHostGrid = null!;
         private StackPanel _friendsRowPanel = null!;
 
@@ -350,6 +351,8 @@ namespace BlackHouseTunnel.Views
             };
             badge.Child = badgeTxt;
 
+            _notifBadge = badge;
+
             bellContainer.Children.Add(bellBtn);
             bellContainer.Children.Add(badge);
             rightHeaderActions.Children.Add(bellContainer);
@@ -511,33 +514,80 @@ namespace BlackHouseTunnel.Views
 
             StackPanel boxPanel = new StackPanel();
 
-            // Field 1: ID de Usuario de Roblox (UID) - Defecto VACÍO salvo guardado
-            boxPanel.Children.Add(CreateLabel("ID de Usuario de Roblox (User ID / UID)"));
+            // 2-Column Form Grid Layout
+            Grid formGrid = new Grid();
+            formGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            formGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
+            formGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+
+            // Col 0, Row 0: ID de Usuario (UID)
+            StackPanel uidPanel = new StackPanel();
+            uidPanel.Children.Add(CreateLabel("ID de Usuario de Roblox (User ID / UID)"));
             TextBox uidBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUserId);
-            boxPanel.Children.Add(uidBox);
+            uidPanel.Children.Add(uidBox);
+            Grid.SetRow(uidPanel, 0); Grid.SetColumn(uidPanel, 0);
+            formGrid.Children.Add(uidPanel);
 
-            // Field 2: Apodo / Username - Defecto VACÍO salvo guardado
-            boxPanel.Children.Add(CreateLabel("Apodo en el Servidor (Username)"));
-            TextBox userBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUsername);
-            boxPanel.Children.Add(userBox);
+            // Col 2, Row 0: Apodo en el Servidor (Username)
+            StackPanel userPanel = new StackPanel();
+            userPanel.Children.Add(CreateLabel("Apodo en el Servidor (Username)"));
+            string defaultUser = !string.IsNullOrWhiteSpace(ConfigManager.CurrentConfig.SavedUsername) ? ConfigManager.CurrentConfig.SavedUsername : _user.DisplayNick;
+            TextBox userBox = CreateStyledTextBox(defaultUser);
+            userPanel.Children.Add(userBox);
+            Grid.SetRow(userPanel, 0); Grid.SetColumn(userPanel, 2);
+            formGrid.Children.Add(userPanel);
 
-            // Field 3: Nombre del Servidor Túnel - Defecto VACÍO salvo guardado
-            boxPanel.Children.Add(CreateLabel("Nombre del Servidor Túnel"));
+            // Col 0, Row 1: Nombre del Servidor Túnel
+            StackPanel namePanel = new StackPanel();
+            namePanel.Children.Add(CreateLabel("Nombre del Servidor Túnel"));
             TextBox nameBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedServerName);
-            boxPanel.Children.Add(nameBox);
+            namePanel.Children.Add(nameBox);
+            Grid.SetRow(namePanel, 1); Grid.SetColumn(namePanel, 0);
+            formGrid.Children.Add(namePanel);
 
-            // Field 4: Puerto Local UDP (Único por defecto: 55555)
-            boxPanel.Children.Add(CreateLabel("Puerto Local UDP"));
+            // Col 2, Row 1: Puerto Local UDP
+            StackPanel portPanel = new StackPanel();
+            portPanel.Children.Add(CreateLabel("Puerto Local UDP"));
             TextBox portBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUdpPort.ToString());
-            boxPanel.Children.Add(portBox);
+            portPanel.Children.Add(portBox);
+            Grid.SetRow(portPanel, 1); Grid.SetColumn(portPanel, 2);
+            formGrid.Children.Add(portPanel);
 
-            // Field 5: Dirección del Túnel Remoto - Defecto VACÍO salvo guardado
-            boxPanel.Children.Add(CreateLabel("Dirección del Túnel Remoto (Host Address)"));
+            // Col 0, Row 2: Dirección del Túnel Remoto
+            StackPanel addrPanel = new StackPanel();
+            addrPanel.Children.Add(CreateLabel("Dirección del Túnel Remoto (Host Address)"));
             TextBox addrBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedRemoteHostAddress);
-            boxPanel.Children.Add(addrBox);
+            addrPanel.Children.Add(addrBox);
+            Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
+            formGrid.Children.Add(addrPanel);
 
-            // Field 6: Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]
-            boxPanel.Children.Add(CreateLabel("Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]"));
+            // Col 2, Row 2: Visibilidad & Whitelist de Acceso
+            StackPanel visPanel = new StackPanel();
+            visPanel.Children.Add(CreateLabel("🔒 Visibilidad & Control de Acceso"));
+            ComboBox visCombo = new ComboBox
+            {
+                Height = 38,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
+                Foreground = Brushes.White,
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            visCombo.Items.Add("🌐 Global (Sin restricciones - Abierto a todos)");
+            visCombo.Items.Add("🛡️ Servidor (Solo miembros del Servidor de Discord)");
+            visCombo.Items.Add("🔒 Exclusivo Rol Privadito (Solo miembros con el Rol Privadito)");
+            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
+            visPanel.Children.Add(visCombo);
+            Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
+            formGrid.Children.Add(visPanel);
+
+            // Row 3: Archivo de Mapa Roblox (Full width across 2 columns)
+            StackPanel mapPanel = new StackPanel();
+            mapPanel.Children.Add(CreateLabel("Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]"));
             Grid mapGrid = new Grid();
             mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -549,26 +599,16 @@ namespace BlackHouseTunnel.Views
             Button browseBtn = new Button
             {
                 Content = "📁 Examinar...",
-                Height = 36,
-                Padding = new Thickness(12, 0, 12, 0),
+                Height = 38,
+                Padding = new Thickness(16, 0, 16, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
                 Foreground = Brushes.White,
                 FontWeight = FontWeights.SemiBold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(8, 0, 0, 10)
+                Margin = new Thickness(10, 0, 0, 10)
             };
-            ControlTemplate browseTemplate = new ControlTemplate(typeof(Button));
-            FrameworkElementFactory bBorderFactory = new FrameworkElementFactory(typeof(Border));
-            bBorderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
-            bBorderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
-            FrameworkElementFactory bPresenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
-            bPresenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
-            bPresenterFactory.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            bBorderFactory.AppendChild(bPresenterFactory);
-            browseTemplate.VisualTree = bBorderFactory;
-            browseBtn.Template = browseTemplate;
-
+            SetButtonCornerRadius(browseBtn, 10);
             browseBtn.Click += (s, e) =>
             {
                 OpenFileDialog dlg = new OpenFileDialog
@@ -585,37 +625,60 @@ namespace BlackHouseTunnel.Views
             };
             Grid.SetColumn(browseBtn, 1);
             mapGrid.Children.Add(browseBtn);
-            boxPanel.Children.Add(mapGrid);
+            mapPanel.Children.Add(mapGrid);
 
-            // Field 7: Visibilidad & Whitelist de Acceso (Global vs Servidor vs Privadito)
-            ComboBox visCombo = new ComboBox
-            {
-                Height = 38,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
-                Foreground = Brushes.White,
-                FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 16)
-            };
+            Grid.SetRow(mapPanel, 3); Grid.SetColumn(mapPanel, 0); Grid.SetColumnSpan(mapPanel, 3);
+            formGrid.Children.Add(mapPanel);
 
-            visCombo.Items.Add("🌐 Global (Sin restricciones - Abierto a todos)");
-            visCombo.Items.Add("🛡️ Servidor (Solo miembros del Servidor de Discord)");
-            visCombo.Items.Add("🔒 Exclusivo Rol Privadito (Solo miembros con el Rol Privadito)");
-            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
+            boxPanel.Children.Add(formGrid);
 
-            boxPanel.Children.Add(CreateLabel("🔒 Visibilidad & Control de Acceso"));
-            boxPanel.Children.Add(visCombo);
-
-            // Field 8: Checkbox Publicar en el Inicio
+            // Custom Styled Checkbox Switch
             CheckBox publishCheck = new CheckBox
             {
                 Content = "📢 Publicar Túnel en la Pantalla de Inicio (Home)",
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
-                Margin = new Thickness(0, 8, 0, 16),
+                Margin = new Thickness(0, 12, 0, 20),
                 IsChecked = true,
                 Cursor = System.Windows.Input.Cursors.Hand
             };
+
+            ControlTemplate chkTemplate = new ControlTemplate(typeof(CheckBox));
+            FrameworkElementFactory chkGrid = new FrameworkElementFactory(typeof(Grid));
+            chkGrid.SetValue(Grid.BackgroundProperty, Brushes.Transparent);
+
+            FrameworkElementFactory chkBoxBorder = new FrameworkElementFactory(typeof(Border));
+            chkBoxBorder.Name = "BoxBorder";
+            chkBoxBorder.SetValue(Border.WidthProperty, 22.0);
+            chkBoxBorder.SetValue(Border.HeightProperty, 22.0);
+            chkBoxBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(6));
+            chkBoxBorder.SetValue(Border.BackgroundProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#181824")));
+            chkBoxBorder.SetValue(Border.BorderBrushProperty, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")));
+            chkBoxBorder.SetValue(Border.BorderThicknessProperty, new Thickness(2));
+            chkBoxBorder.SetValue(Border.MarginProperty, new Thickness(0, 0, 10, 0));
+
+            FrameworkElementFactory chkMark = new FrameworkElementFactory(typeof(TextBlock));
+            chkMark.Name = "CheckMark";
+            chkMark.SetValue(TextBlock.TextProperty, "✓");
+            chkMark.SetValue(TextBlock.FontSizeProperty, 14.0);
+            chkMark.SetValue(TextBlock.FontWeightProperty, FontWeights.Bold);
+            chkMark.SetValue(TextBlock.ForegroundProperty, Brushes.White);
+            chkMark.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Center);
+            chkMark.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            chkMark.SetValue(TextBlock.VisibilityProperty, Visibility.Visible);
+            chkBoxBorder.AppendChild(chkMark);
+
+            FrameworkElementFactory chkContent = new FrameworkElementFactory(typeof(ContentPresenter));
+            chkContent.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+
+            FrameworkElementFactory chkStack = new FrameworkElementFactory(typeof(StackPanel));
+            chkStack.SetValue(StackPanel.OrientationProperty, Orientation.Horizontal);
+            chkStack.AppendChild(chkBoxBorder);
+            chkStack.AppendChild(chkContent);
+
+            chkTemplate.VisualTree = chkStack;
+            publishCheck.Template = chkTemplate;
             boxPanel.Children.Add(publishCheck);
 
             // Action Buttons Row (Import Scripts + Start Host)
@@ -625,14 +688,14 @@ namespace BlackHouseTunnel.Views
             {
                 Content = "📄 Importar Scripts",
                 Height = 44,
-                Padding = new Thickness(16, 0, 16, 0),
+                Padding = new Thickness(20, 0, 20, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E2E")),
                 Foreground = Brushes.White,
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(0, 0, 12, 0)
+                Margin = new Thickness(0, 0, 14, 0)
             };
             SetButtonCornerRadius(importBtn, 10);
 
@@ -656,7 +719,7 @@ namespace BlackHouseTunnel.Views
             {
                 Content = "🚀 Iniciar Servidor Host",
                 Height = 44,
-                Padding = new Thickness(24, 0, 24, 0),
+                Padding = new Thickness(28, 0, 28, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
                 Foreground = Brushes.White,
                 FontSize = 14,
@@ -962,16 +1025,17 @@ namespace BlackHouseTunnel.Views
             Button scanStudioBtn = new Button
             {
                 Content = "🎯 Seleccionar Versión de Studio...",
-                Height = 36,
-                Padding = new Thickness(14, 0, 14, 0),
+                Height = 44,
+                Padding = new Thickness(18, 0, 18, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
                 Foreground = Brushes.White,
+                FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(0, 0, 10, 0)
+                Margin = new Thickness(0, 0, 12, 0)
             };
-            SetButtonCornerRadius(scanStudioBtn, 8);
+            SetButtonCornerRadius(scanStudioBtn, 10);
 
             scanStudioBtn.Click += (s, e) =>
             {
@@ -998,15 +1062,16 @@ namespace BlackHouseTunnel.Views
             Button browseStudioBtn = new Button
             {
                 Content = "📁 Buscar Ejecutable...",
-                Height = 36,
-                Padding = new Thickness(14, 0, 14, 0),
+                Height = 44,
+                Padding = new Thickness(18, 0, 18, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F32")),
                 Foreground = Brushes.White,
+                FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand
             };
-            SetButtonCornerRadius(browseStudioBtn, 8);
+            SetButtonCornerRadius(browseStudioBtn, 10);
 
             browseStudioBtn.Click += (s, e) =>
             {
@@ -1349,7 +1414,7 @@ namespace BlackHouseTunnel.Views
             StackPanel updatesPanel = new StackPanel();
             TextBlock updatesHeader = new TextBlock
             {
-                Text = "🚀 Últimas Actualizaciones",
+                Text = "🔔 Notificaciones del Túnel",
                 FontSize = 15,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
@@ -1357,8 +1422,14 @@ namespace BlackHouseTunnel.Views
             };
             updatesPanel.Children.Add(updatesHeader);
 
-            updatesPanel.Children.Add(CreateUpdateItem("v3.2 - Autenticación Infalsificable", "Sistema de validación remota en servidor de Discord."));
-            updatesPanel.Children.Add(CreateUpdateItem("v3.1 - Auto-Login Silencioso", "Persistencia de sesión sin iniciar sesión en navegador."));
+            if (_user.IsPrivadito || _user.IsStaffOrAdmin)
+            {
+                updatesPanel.Children.Add(CreateUpdateItem("🔒 Túnel Privadito Disponible", "Tienes acceso a los servidores exclusivos del Rol Privadito y del Servidor de Discord."));
+            }
+            else
+            {
+                updatesPanel.Children.Add(CreateUpdateItem("🌐 Túneles de Servidor Activos", "Tienes acceso a los túneles abiertos del Servidor de Discord de BlackHouse."));
+            }
 
             _notificationsDrawer.Child = updatesPanel;
             rootGrid.Children.Add(_notificationsDrawer);
@@ -1391,6 +1462,7 @@ namespace BlackHouseTunnel.Views
         private void ToggleNotificationsDrawer()
         {
             _dropdownOverlay.Visibility = Visibility.Collapsed;
+            _notifBadge.Visibility = Visibility.Collapsed;
             _notificationsDrawer.Visibility = _notificationsDrawer.Visibility == Visibility.Visible ? Visibility.Collapsed : Visibility.Visible;
         }
 

@@ -45,10 +45,11 @@ namespace BlackHouseTunnel.Views
             Button addMapBtn = new Button
             {
                 Content = "📁 Agregar Archivo (.rbxm / .rbxmx)",
-                Height = 38,
-                Padding = new Thickness(16, 0, 16, 0),
+                Height = 44,
+                Padding = new Thickness(24, 0, 24, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#7C3AED")),
                 Foreground = Brushes.White,
+                FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand
