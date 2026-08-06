@@ -119,7 +119,7 @@ namespace BlackHouseTunnel.Views
             navPanel.Children.Add(logoIcon);
 
             string homeSvg = "M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z M9 22V12h6v10";
-            string hostSvg = "M2 9h20M2 15h20M6 6h.01M6 12h.01M6 18h.01";
+            string hostSvg = "M4 4h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zm0 10h16a2 2 0 0 1 2 2v4a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2v-4a2 2 0 0 1 2-2zm2-6h.01M6 18h.01M16 8h2M16 18h2";
             string joinSvg = "M6 12h12M12 6v12";
             string rbxmSvg = "M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z";
             string rsmSvg = "M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z";
@@ -127,7 +127,7 @@ namespace BlackHouseTunnel.Views
             string settingsSvg = "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
 
             _btnHome = CreateSidebarNavButton(homeSvg, "Inicio", () => SwitchTab("Home"));
-            _btnHost = CreateSidebarNavButton(hostSvg, "Crear Host", () => SwitchTab("Host"));
+            _btnHost = CreateSidebarNavButton(hostSvg, "Crear Host del Servidor", () => SwitchTab("Host"));
             _btnJoin = CreateSidebarNavButton(joinSvg, "Unirse a Host", () => SwitchTab("Join"));
             _btnRbxm = CreateSidebarNavButton(rbxmSvg, "Importador Mapas .rbxm", () => SwitchTab("Rbxm"));
             _btnRsm = CreateSidebarNavButton(rsmSvg, "Asistente RSM Mod Manager", () => SwitchTab("Rsm"));
@@ -1151,6 +1151,9 @@ namespace BlackHouseTunnel.Views
             ControlTemplate template = new ControlTemplate(typeof(Button));
             FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));
             borderFactory.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(Button.BackgroundProperty));
+            borderFactory.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(Button.BorderBrushProperty));
+            borderFactory.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(Button.BorderThicknessProperty));
+            borderFactory.SetValue(Border.PaddingProperty, new TemplateBindingExtension(Button.PaddingProperty));
             borderFactory.SetValue(Border.CornerRadiusProperty, new CornerRadius(radius));
             FrameworkElementFactory presenterFactory = new FrameworkElementFactory(typeof(ContentPresenter));
             presenterFactory.SetValue(ContentPresenter.HorizontalAlignmentProperty, HorizontalAlignment.Center);
