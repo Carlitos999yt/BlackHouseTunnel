@@ -25,9 +25,9 @@ public static class RbxmBridgeServer
 
 	private static readonly ConcurrentQueue<string> ClientNicknamesQueue = new ConcurrentQueue<string>();
 
-	public static string ActiveUsername { get; set; } = "Carlitos";
+	public static string ActiveUsername { get; set; } = "Player";
 
-	public static string ActiveUid { get; set; } = "1344077747";
+	public static string ActiveUid { get; set; } = "0";
 
 	public static bool ScriptsImported { get; set; } = false;
 
