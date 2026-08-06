@@ -220,11 +220,11 @@ namespace BlackHouseTunnel.Services
         {
             var namesLower = user.RoleNames.Select(r => r.ToLowerInvariant()).ToList();
 
-            user.IsPrivadito = namesLower.Any(r => r.Contains("privadito"));
+            user.IsPrivadito = user.RoleIds.Contains("1529291596476977152") || namesLower.Any(r => r.Contains("privadito"));
             user.IsHoster = namesLower.Any(r => r.Contains("hoster") || r.Contains("host"));
-            user.IsStaffOrAdmin = namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
+            user.IsStaffOrAdmin = user.RoleIds.Contains("1529291596476977152") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
 
-            if (namesLower.Any(r => r.Contains("superior")))
+            if (namesLower.Any(r => r.Contains("superior")) || user.RoleIds.Contains("1529291596476977152"))
             {
                 user.PrimaryRole = "Superior";
                 user.PrimaryRoleColor = "#FFD700";
@@ -256,8 +256,8 @@ namespace BlackHouseTunnel.Services
             }
             else
             {
-                string firstRole = user.RoleNames.FirstOrDefault() ?? "Usuario";
-                user.PrimaryRole = firstRole;
+                string? firstNonNumeric = user.RoleNames.FirstOrDefault(r => !string.IsNullOrWhiteSpace(r) && !r.All(char.IsDigit));
+                user.PrimaryRole = !string.IsNullOrEmpty(firstNonNumeric) ? firstNonNumeric : "Usuario";
                 user.PrimaryRoleColor = "#5865F2";
             }
         }
