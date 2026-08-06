@@ -42,15 +42,43 @@ namespace BlackHouseTunnel.Services
                         : null
                 };
 
-                // 2. Check Member of Guild (/users/@me/guilds/{guildId}/member)
-                var memberReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/users/@me/guilds/{guildId}/member");
-                memberReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-
-                var memberResp = await HttpClient.SendAsync(memberReq);
-                if (memberResp.IsSuccessStatusCode)
+                // 2. Check Member of Guild (First try Live Bot API for real-time roles, fallback to User OAuth)
+                string? memberJson = null;
+                if (!string.IsNullOrWhiteSpace(botToken))
                 {
-                    user.IsMemberOfGuild = true;
-                    string memberJson = await memberResp.Content.ReadAsStringAsync();
+                    try
+                    {
+                        var botMemberReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/guilds/{guildId}/members/{user.Id}");
+                        botMemberReq.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                        var botMemberResp = await HttpClient.SendAsync(botMemberReq);
+                        if (botMemberResp.IsSuccessStatusCode)
+                        {
+                            user.IsMemberOfGuild = true;
+                            memberJson = await botMemberResp.Content.ReadAsStringAsync();
+                        }
+                    }
+                    catch { }
+                }
+
+                if (memberJson == null)
+                {
+                    var memberReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/users/@me/guilds/{guildId}/member");
+                    memberReq.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+
+                    var memberResp = await HttpClient.SendAsync(memberReq);
+                    if (memberResp.IsSuccessStatusCode)
+                    {
+                        user.IsMemberOfGuild = true;
+                        memberJson = await memberResp.Content.ReadAsStringAsync();
+                    }
+                    else
+                    {
+                        user.IsMemberOfGuild = false;
+                    }
+                }
+
+                if (!string.IsNullOrEmpty(memberJson))
+                {
                     using var memberDoc = JsonDocument.Parse(memberJson);
                     var mRoot = memberDoc.RootElement;
 
@@ -71,10 +99,6 @@ namespace BlackHouseTunnel.Services
                     }
 
                     await ResolveRolesAsync(user, guildId, botToken);
-                }
-                else
-                {
-                    user.IsMemberOfGuild = false;
                 }
 
                 return user;
@@ -220,11 +244,11 @@ namespace BlackHouseTunnel.Services
         {
             var namesLower = user.RoleNames.Select(r => r.ToLowerInvariant()).ToList();
 
-            user.IsPrivadito = user.RoleIds.Contains("1529291596476977152") || namesLower.Any(r => r.Contains("privadito"));
+            user.IsPrivadito = namesLower.Any(r => r.Contains("privadito"));
             user.IsHoster = namesLower.Any(r => r.Contains("hoster") || r.Contains("host"));
-            user.IsStaffOrAdmin = user.RoleIds.Contains("1529291596476977152") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
+            user.IsStaffOrAdmin = namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
 
-            if (namesLower.Any(r => r.Contains("superior")) || user.RoleIds.Contains("1529291596476977152"))
+            if (namesLower.Any(r => r.Contains("superior")))
             {
                 user.PrimaryRole = "Superior";
                 user.PrimaryRoleColor = "#FFD700";
