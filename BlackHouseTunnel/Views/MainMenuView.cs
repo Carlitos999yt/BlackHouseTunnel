@@ -1105,6 +1105,12 @@ namespace BlackHouseTunnel.Views
             studioBtnsRow.Children.Add(browseStudioBtn);
             boxPanel.Children.Add(studioBtnsRow);
 
+            // Option 4: Discord Channel ID for Published Tunnel Embeds
+            boxPanel.Children.Add(CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)"));
+            TextBox channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1531027757365203015" : config.ChannelId);
+            channelBox.Margin = new Thickness(0, 0, 0, 20);
+            boxPanel.Children.Add(channelBox);
+
             // Save Settings Button
             Button saveBtn = new Button
             {
@@ -1137,6 +1143,7 @@ namespace BlackHouseTunnel.Views
                 };
 
                 config.SelectedStudioPath = studioBox.Text.Trim();
+                config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1531027757365203015" : channelBox.Text.Trim();
                 ConfigManager.SaveConfig(config);
                 DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
             };
