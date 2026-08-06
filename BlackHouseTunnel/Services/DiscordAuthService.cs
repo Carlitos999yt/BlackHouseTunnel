@@ -137,8 +137,10 @@ namespace BlackHouseTunnel.Services
                 return null;
             }
 
+            string usedRedirectUri = req.Url != null ? req.Url.GetLeftPart(UriPartial.Path).TrimEnd('/') : redirectUri.TrimEnd('/');
+
             // Exchange code for access token
-            return await ExchangeCodeForTokenAsync(code, redirectUri);
+            return await ExchangeCodeForTokenAsync(code, usedRedirectUri);
         }
 
         private async Task<string?> ExchangeCodeForTokenAsync(string code, string redirectUri)
@@ -149,11 +151,15 @@ namespace BlackHouseTunnel.Services
                 var values = new Dictionary<string, string>
                 {
                     { "client_id", _config.ClientId },
-                    { "client_secret", _config.ClientSecret },
                     { "grant_type", "authorization_code" },
                     { "code", code },
                     { "redirect_uri", redirectUri }
                 };
+
+                if (!string.IsNullOrWhiteSpace(_config.ClientSecret))
+                {
+                    values["client_secret"] = _config.ClientSecret;
+                }
 
                 var content = new FormUrlEncodedContent(values);
                 var tokenResp = await client.PostAsync("https://discord.com/api/v10/oauth2/token", content);
@@ -161,6 +167,15 @@ namespace BlackHouseTunnel.Services
                 {
                     string errStr = await tokenResp.Content.ReadAsStringAsync();
                     Debug.WriteLine($"[DiscordAuthService] Token Exchange Failed: {errStr}");
+                    System.Windows.Application.Current?.Dispatcher.Invoke(() =>
+                    {
+                        DarkMessageBox.Show($"Discord no pudo completar el canje del Token (HTTP {(int)tokenResp.StatusCode}).\n\n" +
+                                            $"Respuesta de Discord: {errStr}\n\n" +
+                                            $"URI usada: {redirectUri}",
+                                            "Error de Autenticación Discord",
+                                            System.Windows.MessageBoxButton.OK,
+                                            System.Windows.MessageBoxImage.Error);
+                    });
                     return null;
                 }
 

@@ -139,6 +139,7 @@ namespace BlackHouseTunnel
             if (user == null)
             {
                 _welcomeView?.SetLoadingState(false, "Error obteniendo datos del perfil de Discord.");
+                DarkMessageBox.Show("No se pudo obtener el perfil de usuario de Discord.\n\nComprueba tu conexión a Internet o que el token del bot de Discord esté activo.", "Error Perfil Discord", MessageBoxButton.OK, MessageBoxImage.Error);
                 return;
             }
 
