@@ -39,6 +39,8 @@ namespace BlackHouseTunnel.Views
         private Button _btnEcho = null!;
         private Button _btnSettings = null!;
 
+        public bool HasActiveHost => _activeHostConsoleView != null;
+
         public MainMenuView(DiscordUser user)
         {
             _user = user;

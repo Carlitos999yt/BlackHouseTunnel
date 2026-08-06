@@ -31,11 +31,13 @@ namespace BlackHouseTunnel.Services
         public static async Task<string?> PublishTunnelAsync(PublishedTunnel tunnel)
         {
             var config = ConfigManager.CurrentConfig;
+            string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
             string? msgId = null;
 
-            if (!string.IsNullOrWhiteSpace(config.BotToken) && !string.IsNullOrWhiteSpace(config.ChannelId))
+            if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
-                msgId = await ApiService.PostTunnelEmbedToChannelAsync(config.ChannelId, config.BotToken, tunnel);
+                msgId = await ApiService.PostTunnelEmbedToChannelAsync(channel, token, tunnel);
                 tunnel.DiscordMessageId = msgId;
             }
 
@@ -53,10 +55,12 @@ namespace BlackHouseTunnel.Services
         public static async Task UnpublishTunnelAsync(string hostUsername, string? messageId = null)
         {
             var config = ConfigManager.CurrentConfig;
+            string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
 
-            if (!string.IsNullOrWhiteSpace(messageId) && !string.IsNullOrWhiteSpace(config.BotToken) && !string.IsNullOrWhiteSpace(config.ChannelId))
+            if (!string.IsNullOrWhiteSpace(messageId) && !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
-                await ApiService.DeleteTunnelEmbedAsync(config.ChannelId, config.BotToken, messageId);
+                await ApiService.DeleteTunnelEmbedAsync(channel, token, messageId);
             }
 
             lock (SyncLock)
@@ -65,7 +69,7 @@ namespace BlackHouseTunnel.Services
                 var matching = list.FirstOrDefault(t => t.HostUsername.Equals(hostUsername, StringComparison.OrdinalIgnoreCase));
                 if (matching != null && !string.IsNullOrWhiteSpace(matching.DiscordMessageId) && string.IsNullOrWhiteSpace(messageId))
                 {
-                    Task.Run(() => ApiService.DeleteTunnelEmbedAsync(config.ChannelId, config.BotToken, matching.DiscordMessageId));
+                    Task.Run(() => ApiService.DeleteTunnelEmbedAsync(channel, token, matching.DiscordMessageId));
                 }
                 list.RemoveAll(t => t.HostUsername.Equals(hostUsername, StringComparison.OrdinalIgnoreCase));
                 SaveTunnels(list);
@@ -75,11 +79,13 @@ namespace BlackHouseTunnel.Services
         public static async Task<List<PublishedTunnel>> GetVisibleTunnelsForUserAsync(DiscordUser user)
         {
             var config = ConfigManager.CurrentConfig;
+            string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
+            string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1531027757365203015";
             List<PublishedTunnel> channelTunnels = new List<PublishedTunnel>();
 
-            if (!string.IsNullOrWhiteSpace(config.BotToken) && !string.IsNullOrWhiteSpace(config.ChannelId))
+            if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
-                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(config.ChannelId, config.BotToken);
+                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(channel, token);
             }
 
             lock (SyncLock)

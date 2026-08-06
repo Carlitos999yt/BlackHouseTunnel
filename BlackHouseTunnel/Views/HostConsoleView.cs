@@ -73,14 +73,10 @@ namespace BlackHouseTunnel.Views
             Button stopBtn = CreateActionButton("⏹ Detener Host", "#ED4245");
             stopBtn.Click += (s, e) =>
             {
-                var result = DarkMessageBox.Show("¿Estás seguro de detener el Servidor Host activo?\n\n(Al detener, se cerrará el Proxy UDP y el Servidor Puente).", "Detener Host", MessageBoxButton.YesNo, MessageBoxImage.Question);
+                var result = DarkMessageBox.Show("¿Estás seguro de detener el Servidor Host activo?", "Detener Host", MessageBoxButton.YesNo, MessageBoxImage.Question);
                 if (result == MessageBoxResult.Yes)
                 {
-                    var killResult = DarkMessageBox.Show("¿Deseas también forzar la finalización de todos los procesos activos de Roblox Studio?", "Forzar Cierre Studio", MessageBoxButton.YesNo, MessageBoxImage.Warning);
-                    if (killResult == MessageBoxResult.Yes)
-                    {
-                        RobloxStudioService.StopAllStudioProcesses();
-                    }
+                    RobloxStudioService.StopAllStudioProcesses();
                     OnStopHostRequested?.Invoke(this, EventArgs.Empty);
                 }
             };

@@ -1,4 +1,5 @@
 using System;
+using System.ComponentModel;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Input;
@@ -11,6 +12,7 @@ namespace BlackHouseTunnel
     public partial class MainWindow : Window
     {
         private WelcomeView? _welcomeView;
+        private MainMenuView? _mainMenuView;
         private readonly DiscordApiService _apiService;
 
         public MainWindow()
@@ -71,6 +73,24 @@ namespace BlackHouseTunnel
         private void BtnClose_Click(object sender, RoutedEventArgs e)
         {
             this.Close();
+        }
+
+        protected override void OnClosing(CancelEventArgs e)
+        {
+            if (_mainMenuView?.HasActiveHost == true)
+            {
+                var result = DarkMessageBox.Show("Hay un servidor Host en ejecución. Si cierras la aplicación se detendrá el túnel y se forzará el cierre de Roblox Studio.\n\n¿Estás seguro de que deseas salir?", "Confirmar Salida", MessageBoxButton.YesNo, MessageBoxImage.Warning);
+                if (result != MessageBoxResult.Yes)
+                {
+                    e.Cancel = true;
+                    return;
+                }
+
+                RobloxStudioService.StopAllStudioProcesses();
+                UdpProxy.StopProxy();
+                RbxmBridgeServer.Stop();
+            }
+            base.OnClosing(e);
         }
 
         private void ToggleMaximize()
@@ -135,6 +155,7 @@ namespace BlackHouseTunnel
         private void ShowMainMenuView(DiscordUser user)
         {
             var mainMenuView = new MainMenuView(user);
+            _mainMenuView = mainMenuView;
             mainMenuView.OnLogoutRequested += (s, e) => ShowWelcomeView();
             MainContainer.Children.Clear();
             MainContainer.Children.Add(mainMenuView);
