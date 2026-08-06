@@ -244,34 +244,41 @@ namespace BlackHouseTunnel.Services
         {
             var namesLower = user.RoleNames.Select(r => r.ToLowerInvariant()).ToList();
 
-            user.IsPrivadito = namesLower.Any(r => r.Contains("privadito"));
-            user.IsHoster = namesLower.Any(r => r.Contains("hoster") || r.Contains("host"));
-            user.IsStaffOrAdmin = namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
+            // Match by exact Discord Role ID or by Name substring
+            user.IsPrivadito = user.RoleIds.Contains("1531465096302301305") || namesLower.Any(r => r.Contains("privadito"));
+            user.IsHoster = user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster") || r.Contains("host"));
+            user.IsStaffOrAdmin = user.RoleIds.Contains("1529016731941601382") || user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
 
-            if (namesLower.Any(r => r.Contains("superior")))
+            // Determine Primary Role (Priority Order: Superior -> Staff -> Hoster -> Folladores -> Chica -> Privadito -> Default)
+            if (user.RoleIds.Contains("1529016731941601382") || namesLower.Any(r => r.Contains("superior")))
             {
                 user.PrimaryRole = "Superior";
                 user.PrimaryRoleColor = "#FFD700";
             }
-            else if (namesLower.Any(r => r.Contains("staff") || r.Contains("admin")))
+            else if (user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("staff") || r.Contains("admin")))
             {
                 user.PrimaryRole = "Staff";
                 user.PrimaryRoleColor = "#E74C3C";
             }
-            else if (namesLower.Any(r => r.Contains("hoster")))
+            else if (user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster")))
             {
                 user.PrimaryRole = "Hoster";
                 user.PrimaryRoleColor = "#9B59B6";
             }
-            else if (namesLower.Any(r => r.Contains("follador")))
+            else if (user.RoleIds.Contains("1529156574046588939") || namesLower.Any(r => r.Contains("follador")))
             {
-                user.PrimaryRole = "Follador";
+                user.PrimaryRole = "Folladores";
                 user.PrimaryRoleColor = "#E67E22";
             }
-            else if (namesLower.Any(r => r.Contains("chica")))
+            else if (user.RoleIds.Contains("1529156425027158296") || namesLower.Any(r => r.Contains("chica")))
             {
                 user.PrimaryRole = "Chica";
                 user.PrimaryRoleColor = "#FF69B4";
+            }
+            else if (user.RoleIds.Contains("1531465096302301305") || namesLower.Any(r => r.Contains("privadito")))
+            {
+                user.PrimaryRole = "Privadito";
+                user.PrimaryRoleColor = "#34D399";
             }
             else if (namesLower.Any(r => r.Contains("usuario") || r.Contains("member")))
             {
