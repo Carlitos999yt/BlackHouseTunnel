@@ -33,10 +33,18 @@ namespace BlackHouseTunnel
             if (!string.IsNullOrWhiteSpace(config.SavedAccessToken))
             {
                 var user = await _apiService.GetUserProfileAndGuildMemberAsync(config.SavedAccessToken, config.GuildId, config.BotToken);
-                if (user != null && user.IsMemberOfGuild)
+                if (user != null)
                 {
-                    ShowMainMenuView(user);
-                    return;
+                    if (user.IsMemberOfGuild)
+                    {
+                        ShowMainMenuView(user);
+                        return;
+                    }
+                    else
+                    {
+                        ShowAccessDeniedView(user);
+                        return;
+                    }
                 }
             }
 
