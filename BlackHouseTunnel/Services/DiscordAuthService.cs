@@ -1,11 +1,7 @@
 using System;
-using System.Collections.Generic;
 using System.Diagnostics;
 using System.Net;
-using System.Net.Http;
-using System.Security.Cryptography;
 using System.Text;
-using System.Text.Json;
 using System.Threading.Tasks;
 using BlackHouseTunnel.Models;
 
@@ -56,10 +52,8 @@ namespace BlackHouseTunnel.Services
                 }
             }
 
-            // Generate PKCE Verifier & Challenge for standard OAuth 1-click prompt
-            var (codeVerifier, codeChallenge) = GeneratePkce();
-
-            string oauthUrl = $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=code&scope=identify%20guilds%20guilds.members.read&code_challenge={codeChallenge}&code_challenge_method=S256";
+            // Standard Implicit Flow (response_type=token) - Direct Token Delivery with 0 code exchange errors
+            string oauthUrl = $"https://discord.com/oauth2/authorize?client_id={_config.ClientId}&redirect_uri={Uri.EscapeDataString(redirectUri)}&response_type=token&scope=identify%20guilds%20guilds.members.read";
 
             try
             {
@@ -76,43 +70,81 @@ namespace BlackHouseTunnel.Services
                 return null;
             }
 
-            return await HandleCodeFlowWithPkceAsync(listener, redirectUri, codeVerifier);
+            return await HandleImplicitFlowAsync(listener);
         }
 
-        private async Task<string?> HandleCodeFlowWithPkceAsync(HttpListener listener, string redirectUri, string codeVerifier)
+        private async Task<string?> HandleImplicitFlowAsync(HttpListener listener)
         {
-            HttpListenerContext context;
-            try
-            {
-                var getContextTask = listener.GetContextAsync();
-                var timeoutTask = Task.Delay(120000); // 2 minutes
+            string? tokenFound = null;
+            DateTime endTime = DateTime.Now.AddMinutes(2);
 
-                var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
-                if (completedTask == timeoutTask)
+            while (DateTime.Now < endTime && tokenFound == null)
+            {
+                HttpListenerContext context;
+                try
                 {
-                    try { listener.Stop(); } catch { }
-                    return null;
+                    var getContextTask = listener.GetContextAsync();
+                    var timeoutTask = Task.Delay((int)Math.Max(100, (endTime - DateTime.Now).TotalMilliseconds));
+
+                    var completedTask = await Task.WhenAny(getContextTask, timeoutTask);
+                    if (completedTask == timeoutTask) break;
+
+                    context = await getContextTask;
+                }
+                catch
+                {
+                    break;
                 }
 
-                context = await getContextTask;
-            }
-            catch
-            {
-                try { listener.Stop(); } catch { }
-                return null;
+                var req = context.Request;
+                var resp = context.Response;
+
+                if (req.Url != null && req.Url.AbsolutePath.Contains("/token"))
+                {
+                    tokenFound = req.QueryString["access_token"];
+                    SendSuccessHtml(resp);
+                    try { listener.Stop(); } catch { }
+                    break;
+                }
+                else
+                {
+                    // Serve JS script to forward hash parameters (#access_token=...) to /token query endpoint
+                    string jsBridgeHtml = @"
+<!DOCTYPE html>
+<html>
+<head>
+    <meta charset='utf-8'/>
+    <title>BlackHouseTunnel - Autenticación</title>
+    <script>
+        if (window.location.hash) {
+            var hash = window.location.hash.substring(1);
+            window.location.href = window.location.protocol + '//' + window.location.host + '/callback/token?' + hash;
+        }
+    </script>
+    <style>
+        body { background-color: #0d0d11; color: #ffffff; font-family: 'Segoe UI', sans-serif; display: flex; height: 100vh; justify-content: center; align-items: center; margin: 0; }
+        .card { background: #181820; padding: 40px; border-radius: 16px; border: 1px solid #5865F2; box-shadow: 0 0 30px rgba(88, 101, 242, 0.4); text-align: center; max-width: 400px; }
+        h1 { color: #5865F2; font-size: 22px; margin-bottom: 10px; }
+        p { color: #aaaaaa; font-size: 14px; }
+    </style>
+</head>
+<body>
+    <div class='card'>
+        <h1>Procesando Autenticación...</h1>
+        <p>Por favor espera un segundo mientras nos conectamos con <strong>BlackHouseTunnel</strong>.</p>
+    </div>
+</body>
+</html>";
+                    byte[] buffer = Encoding.UTF8.GetBytes(jsBridgeHtml);
+                    resp.ContentLength64 = buffer.Length;
+                    resp.ContentType = "text/html";
+                    await resp.OutputStream.WriteAsync(buffer, 0, buffer.Length);
+                    resp.OutputStream.Close();
+                }
             }
 
-            var req = context.Request;
-            var resp = context.Response;
-            string? code = req.QueryString["code"];
-
-            SendSuccessHtml(resp);
             try { listener.Stop(); } catch { }
-
-            if (string.IsNullOrEmpty(code)) return null;
-
-            string usedRedirectUri = req.Url != null ? req.Url.GetLeftPart(UriPartial.Path).TrimEnd('/') : redirectUri.TrimEnd('/');
-            return await ExchangeCodeForTokenPkceAsync(code, usedRedirectUri, codeVerifier);
+            return tokenFound;
         }
 
         private void SendSuccessHtml(HttpListenerResponse resp)
@@ -147,81 +179,6 @@ namespace BlackHouseTunnel.Services
                 resp.OutputStream.Close();
             }
             catch { }
-        }
-
-        private async Task<string?> ExchangeCodeForTokenPkceAsync(string code, string redirectUri, string codeVerifier)
-        {
-            try
-            {
-                using var client = new HttpClient();
-                var values = new Dictionary<string, string>
-                {
-                    { "client_id", _config.ClientId },
-                    { "grant_type", "authorization_code" },
-                    { "code", code },
-                    { "redirect_uri", redirectUri },
-                    { "code_verifier", codeVerifier }
-                };
-
-                if (!string.IsNullOrWhiteSpace(_config.ClientSecret))
-                {
-                    values["client_secret"] = _config.ClientSecret;
-                }
-
-                var content = new FormUrlEncodedContent(values);
-                var tokenResp = await client.PostAsync("https://discord.com/api/v10/oauth2/token", content);
-                if (!tokenResp.IsSuccessStatusCode)
-                {
-                    string errStr = await tokenResp.Content.ReadAsStringAsync();
-                    Debug.WriteLine($"[DiscordAuthService] Token Exchange Failed: {errStr}");
-                    System.Windows.Application.Current?.Dispatcher.Invoke(() =>
-                    {
-                        DarkMessageBox.Show($"Discord no pudo completar el canje del Token (HTTP {(int)tokenResp.StatusCode}).\n\n" +
-                                            $"Respuesta de Discord: {errStr}\n\n" +
-                                            $"URI usada: {redirectUri}",
-                                            "Error de Autenticación Discord",
-                                            System.Windows.MessageBoxButton.OK,
-                                            System.Windows.MessageBoxImage.Error);
-                    });
-                    return null;
-                }
-
-                string jsonStr = await tokenResp.Content.ReadAsStringAsync();
-                using var doc = JsonDocument.Parse(jsonStr);
-                if (doc.RootElement.TryGetProperty("access_token", out var tokenElem))
-                {
-                    return tokenElem.GetString();
-                }
-
-                return null;
-            }
-            catch (Exception ex)
-            {
-                Debug.WriteLine($"[DiscordAuthService] Exchange Exception: {ex.Message}");
-                return null;
-            }
-        }
-
-        private static (string codeVerifier, string codeChallenge) GeneratePkce()
-        {
-            byte[] bytes = new byte[32];
-            using (var rng = RandomNumberGenerator.Create())
-            {
-                rng.GetBytes(bytes);
-            }
-            string codeVerifier = Base64UrlEncode(bytes);
-            using (var sha256 = SHA256.Create())
-            {
-                byte[] challengeBytes = sha256.ComputeHash(Encoding.UTF8.GetBytes(codeVerifier));
-                string codeChallenge = Base64UrlEncode(challengeBytes);
-                return (codeVerifier, codeChallenge);
-            }
-        }
-
-        private static string Base64UrlEncode(byte[] input)
-        {
-            string base64 = Convert.ToBase64String(input);
-            return base64.Replace("+", "-").Replace("/", "_").Replace("=", "");
         }
     }
 }
