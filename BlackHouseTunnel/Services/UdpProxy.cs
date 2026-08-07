@@ -28,9 +28,12 @@ namespace BlackHouseTunnel.Services
             }
         }
 
-        public const int PROXY_PORT = 55555;
+        public const int PROXY_PORT = 55556;
         public const int WARM_PACKETS = 3;
         public const double WARM_INTERVAL_SEC = 0.4;
+
+        private static int _activeProxyPort = 55556;
+        public static int ActiveProxyPort => _activeProxyPort;
 
         private static CancellationTokenSource? _cts;
         private static Task? _proxyTask;
@@ -87,10 +90,34 @@ namespace BlackHouseTunnel.Services
                         return false;
                     }
                     IPAddress targetIp = result.FirstOrDefault((IPAddress a) => a.AddressFamily == AddressFamily.InterNetwork) ?? result[0];
-                    _localListener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    _localListener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
-                    DisableConnReset(_localListener);
-                    _localListener.Bind(new IPEndPoint(IPAddress.Loopback, PROXY_PORT));
+
+                    int[] candidatePorts = new int[] { 55556, 55557, 55558, 55559, 55560, 55561 };
+                    bool bound = false;
+                    foreach (int candidate in candidatePorts)
+                    {
+                        try
+                        {
+                            var socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            socket.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: false);
+                            DisableConnReset(socket);
+                            socket.Bind(new IPEndPoint(IPAddress.Loopback, candidate));
+
+                            _localListener = socket;
+                            _activeProxyPort = candidate;
+                            bound = true;
+                            break;
+                        }
+                        catch
+                        {
+                            continue;
+                        }
+                    }
+
+                    if (!bound || _localListener == null)
+                    {
+                        return false;
+                    }
+
                     _isRunning = true;
                     _proxyTask = Task.Run(() => WorkerLoop(targetIp, dstPort, token), token);
                     return true;

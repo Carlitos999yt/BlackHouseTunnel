@@ -77,17 +77,17 @@ namespace BlackHouseTunnel.Views
                 string playGuid = Guid.NewGuid().ToString().ToUpper();
 
                 _console.AppendLog($"Destino Túnel: {dstHost}:{dstPort}", "info");
-                _console.AppendLog($"Proxy Local UDP: 127.0.0.1:{UdpProxy.PROXY_PORT}");
+                _console.AppendLog($"Proxy Local UDP: 127.0.0.1:{UdpProxy.ActiveProxyPort}");
                 _console.AppendLog("Iniciando motor de Proxy UDP...");
 
                 bool ok = UdpProxy.StartProxy(dstHost, dstPort);
                 if (!ok)
                 {
-                    _console.AppendLog($"Error al enlazar el puerto {UdpProxy.PROXY_PORT}. ¿Hay otra sesión activa?", "err");
+                    _console.AppendLog($"Error al enlazar el puerto UDP {UdpProxy.ActiveProxyPort}. ¿Hay otra sesión activa?", "err");
                     return;
                 }
 
-                _console.AppendLog($"Proxy UDP activo en 127.0.0.1:{UdpProxy.PROXY_PORT}", "ok");
+                _console.AppendLog($"Proxy UDP activo en 127.0.0.1:{UdpProxy.ActiveProxyPort}", "ok");
                 _console.AppendLog("Realizando calentamiento de túnel (Warmup UDP)...", "warn");
 
                 int warmed = UdpProxy.WarmTunnel(dstHost, dstPort);
@@ -104,7 +104,7 @@ namespace BlackHouseTunnel.Views
 
                 try
                 {
-                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.PROXY_PORT.ToString(), parentGuid, playGuid, "StudioPlayer_Proxy", username);
+                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, "StudioPlayer_Proxy", username);
                     _console.AppendLog("● CONECTADO EXITOSAMENTE — Cliente en ejecución", "ok");
                 }
                 catch (Exception ex)
