@@ -10,7 +10,7 @@ namespace BlackHouseTunnel.Models
         public string ClientSecret { get; set; } = "";
 
         public string RedirectUri { get; set; } = "http://localhost:5000/callback";
-        public string GuildId { get; set; } = "";
+        public string GuildId { get; set; } = "1529015986135502951";
 
         public string ProtectedBotToken { get; set; } = "";
 

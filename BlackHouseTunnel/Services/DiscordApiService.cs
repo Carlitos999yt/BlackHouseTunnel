@@ -15,6 +15,9 @@ namespace BlackHouseTunnel.Services
 
         public async Task<DiscordUser?> GetUserProfileAndGuildMemberAsync(string accessToken, string guildId, string botToken = "")
         {
+            if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
+            if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
+
             try
             {
                 // 1. Get User Profile (/users/@me)

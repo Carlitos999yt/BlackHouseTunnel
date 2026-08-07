@@ -36,10 +36,20 @@ namespace BlackHouseTunnel.Services
                     var config = JsonSerializer.Deserialize<AppConfig>(json);
                     if (config != null)
                     {
-                        // Auto-migrate old channel ID to the new channel ID 1529169033482600659
+                        // Auto-migrate old channel ID and empty Guild ID
+                        bool modified = false;
                         if (config.ChannelId == "1531027757365203015" || string.IsNullOrWhiteSpace(config.ChannelId))
                         {
                             config.ChannelId = "1529169033482600659";
+                            modified = true;
+                        }
+                        if (string.IsNullOrWhiteSpace(config.GuildId))
+                        {
+                            config.GuildId = "1529015986135502951";
+                            modified = true;
+                        }
+                        if (modified)
+                        {
                             SaveConfig(config);
                         }
                         CurrentConfig = config;
