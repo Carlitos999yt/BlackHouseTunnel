@@ -90,28 +90,10 @@ namespace BlackHouseTunnel.Services
 
             lock (SyncLock)
             {
-                var localList = LoadTunnels();
-                localList.RemoveAll(t => (DateTime.UtcNow - t.CreatedAt).TotalHours > 12);
-                SaveTunnels(localList);
+                // Only keep tunnels that are actively present in live Discord channel embeds
+                SaveTunnels(channelTunnels);
 
-                foreach (var ct in channelTunnels)
-                {
-                    var existing = localList.FirstOrDefault(l => l.RemoteAddress.Equals(ct.RemoteAddress, StringComparison.OrdinalIgnoreCase) || l.HostUsername.Equals(ct.HostUsername, StringComparison.OrdinalIgnoreCase));
-                    if (existing != null)
-                    {
-                        existing.VisibilityMode = ct.VisibilityMode;
-                        existing.ServerName = ct.ServerName;
-                        existing.HostUsername = ct.HostUsername;
-                        existing.DiscordMessageId = ct.Id;
-                    }
-                    else
-                    {
-                        localList.Add(ct);
-                    }
-                }
-                SaveTunnels(localList);
-
-                return localList.Where(t =>
+                return channelTunnels.Where(t =>
                 {
                     if (t.VisibilityMode == 0) return true;
                     if (t.VisibilityMode == 1) return user.IsMemberOfGuild || user.IsStaffOrAdmin;
@@ -126,9 +108,6 @@ namespace BlackHouseTunnel.Services
             lock (SyncLock)
             {
                 var localList = LoadTunnels();
-                localList.RemoveAll(t => (DateTime.UtcNow - t.CreatedAt).TotalHours > 12);
-                SaveTunnels(localList);
-
                 return localList.Where(t =>
                 {
                     if (t.VisibilityMode == 0) return true;
