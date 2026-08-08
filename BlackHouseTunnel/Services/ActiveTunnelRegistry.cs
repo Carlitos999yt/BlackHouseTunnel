@@ -36,6 +36,7 @@ namespace BlackHouseTunnel.Services
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
             string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
+            string playitChannel = !string.IsNullOrWhiteSpace(config.PlayitChannelId) ? config.PlayitChannelId : "1535670567040974898";
             string? msgId = null;
 
             if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
@@ -43,9 +44,9 @@ namespace BlackHouseTunnel.Services
                 msgId = await ApiService.PostTunnelEmbedToChannelAsync(channel, token, tunnel);
                 tunnel.DiscordMessageId = msgId;
 
-                if (!string.IsNullOrWhiteSpace(config.PlayitChannelId))
+                if (!string.IsNullOrWhiteSpace(playitChannel))
                 {
-                    string? playitMsgId = await ApiService.PostPlayitMappingEmbedAsync(config.PlayitChannelId, token, tunnel);
+                    string? playitMsgId = await ApiService.PostPlayitMappingEmbedAsync(playitChannel, token, tunnel);
                     tunnel.PlayitMessageId = playitMsgId;
                 }
             }
@@ -66,6 +67,7 @@ namespace BlackHouseTunnel.Services
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
             string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
+            string playitChannel = !string.IsNullOrWhiteSpace(config.PlayitChannelId) ? config.PlayitChannelId : "1535670567040974898";
 
             if (!string.IsNullOrWhiteSpace(token))
             {
@@ -73,9 +75,9 @@ namespace BlackHouseTunnel.Services
                 {
                     await ApiService.DeleteTunnelEmbedAsync(channel, token, messageId);
                 }
-                if (!string.IsNullOrWhiteSpace(playitMessageId) && !string.IsNullOrWhiteSpace(config.PlayitChannelId))
+                if (!string.IsNullOrWhiteSpace(playitMessageId) && !string.IsNullOrWhiteSpace(playitChannel))
                 {
-                    await ApiService.DeleteTunnelEmbedAsync(config.PlayitChannelId, token, playitMessageId);
+                    await ApiService.DeleteTunnelEmbedAsync(playitChannel, token, playitMessageId);
                 }
             }
 
@@ -97,11 +99,12 @@ namespace BlackHouseTunnel.Services
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
             string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
+            string playitChannel = !string.IsNullOrWhiteSpace(config.PlayitChannelId) ? config.PlayitChannelId : "1535670567040974898";
             List<PublishedTunnel> channelTunnels = new List<PublishedTunnel>();
 
             if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
-                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(channel, token, config.PlayitChannelId);
+                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(channel, token, playitChannel);
             }
 
             lock (SyncLock)

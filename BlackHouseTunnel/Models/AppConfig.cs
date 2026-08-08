@@ -22,7 +22,7 @@ namespace BlackHouseTunnel.Models
         }
 
         public string ChannelId { get; set; } = "1529169033482600659";
-        public string PlayitChannelId { get; set; } = ""; // Mappings channel for playit addresses
+        public string PlayitChannelId { get; set; } = "1535670567040974898"; // Dedicated Discord channel for Playit address mapping
         public int LocalServerPort { get; set; } = 5000;
 
         // System Preferences
