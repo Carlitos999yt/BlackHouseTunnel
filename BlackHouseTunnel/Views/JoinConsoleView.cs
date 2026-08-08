@@ -96,8 +96,9 @@ namespace BlackHouseTunnel.Views
                     _console.AppendLog($"✓ Ruta de túnel establecida y calentada ({warmed} ráfagas enviadas)", "ok");
                 }
 
-                // Ultra-fast instant Studio client launch
-                await Task.Delay(50);
+                // Wait 1.5 seconds for Playit UDP tunnel stabilization so Roblox connects instantly
+                _console.AppendLog("⌛ Esperando estabilización del túnel (1.5s)...", "warn");
+                await Task.Delay(1500);
 
                 _console.AppendLog($"Parent GUID: {parentGuid}", "dim");
                 _console.AppendLog($"Play   GUID: {playGuid}", "dim");
