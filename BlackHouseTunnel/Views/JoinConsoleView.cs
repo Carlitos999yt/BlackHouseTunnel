@@ -90,7 +90,7 @@ namespace BlackHouseTunnel.Views
                 _console.AppendLog($"Proxy UDP activo en 127.0.0.1:{UdpProxy.ActiveProxyPort}", "ok");
                 _console.AppendLog("⏳ Pre-conectando al túnel remoto y estableciendo ruta UDP...", "warn");
 
-                int warmed = UdpProxy.WarmTunnel(dstHost, dstPort, UdpProxy.ActiveProxyPort);
+                int warmed = UdpProxy.WarmTunnel(dstHost, dstPort, UdpProxy.ActiveProxyPort, nickname: username);
                 if (warmed > 0)
                 {
                     _console.AppendLog($"✓ Ruta de túnel establecida y calentada ({warmed} ráfagas enviadas)", "ok");

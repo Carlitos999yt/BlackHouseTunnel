@@ -202,12 +202,12 @@ namespace BlackHouseTunnel.Views
                         ScriptInjector.InjectScriptIntoMap(mapPath, ScriptInjector.GetSecurityLuauScript(RbxmBridgeServer.ActiveUsername));
                     }
 
-                    UdpProxy.StartProxy("127.0.0.1", targetPort);
+                    UdpProxy.StartHostFirewallProxy(targetPort, UdpProxy.INTERNAL_HOST_PORT);
 
                     string sessionGuid = Guid.NewGuid().ToString();
                     string playGuid = Guid.NewGuid().ToString();
 
-                    RobloxStudioService.LaunchServer(studioPath, targetPort.ToString(), RbxmBridgeServer.ActiveUid, sessionGuid, playGuid, RbxmBridgeServer.ActiveUsername);
+                    RobloxStudioService.LaunchServer(studioPath, UdpProxy.INTERNAL_HOST_PORT.ToString(), RbxmBridgeServer.ActiveUid, sessionGuid, playGuid, RbxmBridgeServer.ActiveUsername);
 
                     OnHostStarted?.Invoke(this, nameBox.Text);
                     OnCloseRequested?.Invoke(this, EventArgs.Empty);

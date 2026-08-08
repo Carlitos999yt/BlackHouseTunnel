@@ -113,10 +113,14 @@ namespace BlackHouseTunnel.Views
                     }
                 }
 
+                _console.AppendLog($"Iniciando Firewall UDP de Host en puerto {port}...", "warn");
+                int listenP = int.TryParse(port, out int pVal) ? pVal : 55555;
+                UdpProxy.StartHostFirewallProxy(listenP, UdpProxy.INTERNAL_HOST_PORT);
+
                 _console.AppendLog("Iniciando proceso de Roblox Studio Server...");
                 try
                 {
-                    RobloxStudioService.LaunchServer(studioPath, port, uid, parentGuid, playGuid, username);
+                    RobloxStudioService.LaunchServer(studioPath, UdpProxy.INTERNAL_HOST_PORT.ToString(), uid, parentGuid, playGuid, username);
                     _console.AppendLog("¡Proceso de Servidor iniciado! Esperando 5 segundos...", "ok");
                     await Task.Delay(5000);
                     _console.AppendLog("● SERVIDOR EN VIVO Y LISTO PARA CONEXIONES", "ok");

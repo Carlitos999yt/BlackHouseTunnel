@@ -29,6 +29,7 @@ namespace BlackHouseTunnel.Services
         }
 
         public const int PROXY_PORT = 55555;
+        public const int INTERNAL_HOST_PORT = 55544;
         public const int WARM_PACKETS = 3;
         public const double WARM_INTERVAL_SEC = 0.4;
 
@@ -38,6 +39,7 @@ namespace BlackHouseTunnel.Services
         private static Task? _proxyTask;
         private static Socket? _localListener;
         private static readonly ConcurrentDictionary<IPEndPoint, ClientSession> _sessions = new ConcurrentDictionary<IPEndPoint, ClientSession>();
+        private static readonly ConcurrentDictionary<IPAddress, DateTime> AuthorizedClientIps = new ConcurrentDictionary<IPAddress, DateTime>();
         private static readonly object _stateLock = new object();
         private static bool _isRunning = false;
 
@@ -54,6 +56,38 @@ namespace BlackHouseTunnel.Services
             }
             catch
             {
+            }
+        }
+
+        public static bool StartHostFirewallProxy(int listenPort = 55555, int internalServerPort = INTERNAL_HOST_PORT)
+        {
+            lock (_stateLock)
+            {
+                if (_isRunning)
+                {
+                    StopProxy();
+                }
+                _cts = new CancellationTokenSource();
+                CancellationToken token = _cts.Token;
+                try
+                {
+                    IPAddress targetIp = IPAddress.Loopback;
+                    _localListener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                    _localListener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
+                    DisableConnReset(_localListener);
+                    _localListener.Bind(new IPEndPoint(IPAddress.Any, listenPort));
+                    _isRunning = true;
+                    _proxyTask = Task.Run(() => HostFirewallWorkerLoop(targetIp, internalServerPort, token), token);
+                    Logger.Log($"[UdpProxy] Host Firewall Proxy active on UDP port {listenPort} -> Internal Server {internalServerPort}");
+                    return true;
+                }
+                catch (Exception ex)
+                {
+                    Logger.LogError($"[UdpProxy] Host Firewall Proxy start failed on port {listenPort}", ex);
+                    CleanupSockets();
+                    _isRunning = false;
+                    return false;
+                }
             }
         }
 
@@ -104,6 +138,89 @@ namespace BlackHouseTunnel.Services
                     _isRunning = false;
                     return false;
                 }
+            }
+        }
+
+        private static async Task HostFirewallWorkerLoop(IPAddress internalIp, int internalPort, CancellationToken token)
+        {
+            IPEndPoint internalEndPoint = new IPEndPoint(internalIp, internalPort);
+            byte[] buffer = ArrayPool<byte>.Shared.Rent(65536);
+            try
+            {
+                while (!token.IsCancellationRequested && _localListener != null && _isRunning)
+                {
+                    EndPoint remoteEndPoint = new IPEndPoint(IPAddress.Any, 0);
+                    SocketReceiveFromResult result;
+                    try
+                    {
+                        result = await _localListener.ReceiveFromAsync(buffer, SocketFlags.None, remoteEndPoint, token);
+                    }
+                    catch (OperationCanceledException)
+                    {
+                        break;
+                    }
+                    catch (SocketException)
+                    {
+                        continue;
+                    }
+                    catch (ObjectDisposedException)
+                    {
+                        break;
+                    }
+
+                    if (result.ReceivedBytes <= 0 || !(result.RemoteEndPoint is IPEndPoint clientEp))
+                    {
+                        continue;
+                    }
+
+                    // 1. Check for BlackHouse Authentication handshake
+                    string textHeader = result.ReceivedBytes >= 15 ? Encoding.UTF8.GetString(buffer, 0, Math.Min(result.ReceivedBytes, 40)) : "";
+                    if (textHeader.StartsWith("BLACKHOUSE_AUTH") || textHeader.StartsWith("BLACKHOUSE_NICK"))
+                    {
+                        AuthorizedClientIps[clientEp.Address] = DateTime.UtcNow;
+                        if (textHeader.Contains(":"))
+                        {
+                            string nick = textHeader.Split(':')[1].Trim();
+                            RbxmBridgeServer.RegisterClientNickname(nick);
+                        }
+                        Logger.Log($"[HostFirewall] Authorized client IP: {clientEp.Address}");
+                        continue;
+                    }
+
+                    // 2. Strict Firewall Filter: Drop packets if client IP is NOT authorized!
+                    if (!AuthorizedClientIps.TryGetValue(clientEp.Address, out DateTime authTime) || (DateTime.UtcNow - authTime).TotalMinutes > 60)
+                    {
+                        // UN-AUTHORIZED CLIENT (e.g. NepTunnel classic or raw client)
+                        // DROP PACKET IMMEDIATELY -> Causes "Connection error 279" on client!
+                        continue;
+                    }
+
+                    // 3. Authorized client: Relay to Roblox Studio Server internal port
+                    ClientSession session = _sessions.GetOrAdd(clientEp, delegate(IPEndPoint ep)
+                    {
+                        Socket socket = new Socket(internalIp.AddressFamily, SocketType.Dgram, ProtocolType.Udp)
+                        {
+                            ReceiveTimeout = 2000,
+                            SendTimeout = 2000
+                        };
+                        DisableConnReset(socket);
+                        ClientSession newSess = new ClientSession(socket, ep);
+                        newSess.RelayTask = Task.Run(() => RelayRemoteToLocal(newSess, token), token);
+                        return newSess;
+                    });
+                    session.LastActivity = DateTime.UtcNow;
+                    try
+                    {
+                        await session.RemoteSocket.SendToAsync(new ArraySegment<byte>(buffer, 0, result.ReceivedBytes), SocketFlags.None, internalEndPoint, token);
+                    }
+                    catch
+                    {
+                    }
+                }
+            }
+            finally
+            {
+                ArrayPool<byte>.Shared.Return(buffer);
             }
         }
 
@@ -322,7 +439,7 @@ namespace BlackHouseTunnel.Services
             }
         }
 
-        public static int WarmTunnel(string? dstHost = null, int dstPort = 0, int proxyPort = PROXY_PORT, int packets = 5)
+        public static int WarmTunnel(string? dstHost = null, int dstPort = 0, int proxyPort = PROXY_PORT, int packets = 5, string nickname = "Player")
         {
             int num = 0;
             if (!string.IsNullOrEmpty(dstHost) && dstPort > 0)
@@ -336,8 +453,8 @@ namespace BlackHouseTunnel.Services
                         using Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                         socket.SendTimeout = 500;
                         DisableConnReset(socket);
-                        byte[] bytes = Encoding.UTF8.GetBytes("BLACKHOUSE_TUNNEL_WARMUP_V1");
-                        for (int i = 0; i < 3; i++)
+                        byte[] bytes = Encoding.UTF8.GetBytes($"BLACKHOUSE_AUTH:{nickname.Trim()}");
+                        for (int i = 0; i < 5; i++)
                         {
                             try
                             {
