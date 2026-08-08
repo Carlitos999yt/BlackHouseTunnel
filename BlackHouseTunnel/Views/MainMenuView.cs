@@ -1509,6 +1509,18 @@ namespace BlackHouseTunnel.Views
             string targetAddr = remoteAddress;
             connectBtn.Click += (s, e) =>
             {
+                if (isPrivadito && !(_user.IsPrivadito || _user.IsStaffOrAdmin))
+                {
+                    DarkMessageBox.Show("⛔ ACCESO RESTRICTO Y DENEGADO\n\nEste túnel está reservado exclusivamente para usuarios con el rol 'Privadito' en nuestro servidor de Discord.\n\nRoblox Studio NO se ejecutará.", "Acceso Restringido", MessageBoxButton.OK, MessageBoxImage.Stop);
+                    return;
+                }
+
+                if (isServidor && !(_user.IsMemberOfGuild || _user.IsStaffOrAdmin))
+                {
+                    DarkMessageBox.Show("⛔ ACCESO RESTRICTO Y DENEGADO\n\nEste túnel está configurado como 'Host para el Servidor'. Para conectarte debes ser miembro verificado de nuestro servidor de Discord.\n\nRoblox Studio NO se ejecutará.", "Acceso Restringido", MessageBoxButton.OK, MessageBoxImage.Stop);
+                    return;
+                }
+
                 if (_activeJoinConsoleView != null)
                 {
                     var result = DarkMessageBox.Show("Ya tienes un túnel de conexión activo. ¿Deseas desconectarte del actual para unirte a este nuevo túnel?", "Túnel Activo", MessageBoxButton.YesNo, MessageBoxImage.Question);
