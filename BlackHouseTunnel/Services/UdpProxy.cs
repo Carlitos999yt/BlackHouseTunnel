@@ -127,15 +127,24 @@ namespace BlackHouseTunnel.Services
                     _localListener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _localListener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
                     DisableConnReset(_localListener);
+                    int targetPort = PROXY_PORT;
                     try
                     {
-                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 55556));
+                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, PROXY_PORT));
                     }
                     catch
                     {
-                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                        try
+                        {
+                            targetPort = 55556;
+                            _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 55556));
+                        }
+                        catch
+                        {
+                            _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                        }
                     }
-                    _boundPort = (_localListener.LocalEndPoint as IPEndPoint)?.Port ?? 55556;
+                    _boundPort = (_localListener.LocalEndPoint as IPEndPoint)?.Port ?? targetPort;
                     _isRunning = true;
                     _proxyTask = Task.Run(() => WorkerLoop(targetIp, dstPort, token), token);
                     return true;
