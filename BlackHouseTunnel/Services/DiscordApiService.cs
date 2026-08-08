@@ -385,6 +385,17 @@ namespace BlackHouseTunnel.Services
                     _ => "🌐 Host Abierto (Público Global)"
                 };
 
+                var fieldsList = new List<object>
+                {
+                    new { name = "👤 Creado / Hosteado por", value = tunnel.HostUsername, inline = true },
+                    new { name = "🎯 Dirigido a / Alcance", value = scopeText, inline = true }
+                };
+
+                if (tunnel.RequiresAccessKey)
+                {
+                    fieldsList.Add(new { name = "🔑 Llave de Acceso", value = "🔒 Requiere Llave Privada", inline = false });
+                }
+
                 var embedObj = new
                 {
                     embeds = new[]
@@ -394,12 +405,7 @@ namespace BlackHouseTunnel.Services
                             title = $"🖥️ Servidor de Host: {tunnel.ServerName}",
                             description = "🚀 **Túnel de Servidor Activo en BlackHouseTunnel**",
                             color = color,
-                            fields = new[]
-                            {
-                                new { name = "👤 Creado / Hosteado por", value = tunnel.HostUsername, inline = true },
-                                new { name = "🔌 Dirección de Playit / Túnel", value = $"`{tunnel.RemoteAddress}`", inline = true },
-                                new { name = "🎯 Dirigido a / Alcance", value = scopeText, inline = false }
-                            },
+                            fields = fieldsList.ToArray(),
                             footer = new { text = "BlackHouseTunnel • Sincronización en Vivo" },
                             timestamp = DateTime.UtcNow.ToString("o")
                         }
@@ -408,6 +414,51 @@ namespace BlackHouseTunnel.Services
 
                 string jsonPayload = JsonSerializer.Serialize(embedObj);
                 var req = new HttpRequestMessage(HttpMethod.Post, $"https://discord.com/api/v10/channels/{channelId}/messages");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                req.Content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
+
+                var resp = await HttpClient.SendAsync(req);
+                if (resp.IsSuccessStatusCode)
+                {
+                    string respJson = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(respJson);
+                    return doc.RootElement.GetProperty("id").GetString();
+                }
+            }
+            catch
+            {
+            }
+            return null;
+        }
+
+        public async Task<string?> PostPlayitMappingEmbedAsync(string playitChannelId, string botToken, PublishedTunnel tunnel)
+        {
+            if (string.IsNullOrWhiteSpace(playitChannelId) || string.IsNullOrWhiteSpace(botToken)) return null;
+
+            try
+            {
+                var embedObj = new
+                {
+                    embeds = new[]
+                    {
+                        new
+                        {
+                            title = $"🔗 PLAYIT_MAP:{tunnel.ServerName}",
+                            description = "Contenido de mapeo privado de red para BlackHouseTunnel",
+                            color = 3447003,
+                            fields = new[]
+                            {
+                                new { name = "Host", value = tunnel.HostUsername, inline = true },
+                                new { name = "RemoteAddress", value = tunnel.RemoteAddress, inline = true },
+                                new { name = "AccessKey", value = tunnel.AccessKey ?? "", inline = true }
+                            },
+                            timestamp = DateTime.UtcNow.ToString("o")
+                        }
+                    }
+                };
+
+                string jsonPayload = JsonSerializer.Serialize(embedObj);
+                var req = new HttpRequestMessage(HttpMethod.Post, $"https://discord.com/api/v10/channels/{playitChannelId}/messages");
                 req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
                 req.Content = new StringContent(jsonPayload, System.Text.Encoding.UTF8, "application/json");
 
@@ -442,10 +493,58 @@ namespace BlackHouseTunnel.Services
             }
         }
 
-        public async Task<List<PublishedTunnel>> FetchChannelTunnelEmbedsAsync(string channelId, string botToken)
+        public async Task<List<PublishedTunnel>> FetchChannelTunnelEmbedsAsync(string channelId, string botToken, string playitChannelId = "")
         {
             var list = new List<PublishedTunnel>();
             if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return list;
+
+            // Map serverName -> (remoteAddr, accessKey) from playit channel
+            var playitMap = new Dictionary<string, (string remoteAddr, string accessKey)>(StringComparer.OrdinalIgnoreCase);
+            if (!string.IsNullOrWhiteSpace(playitChannelId))
+            {
+                try
+                {
+                    var pReq = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/channels/{playitChannelId}/messages?limit=100");
+                    pReq.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                    var pResp = await HttpClient.SendAsync(pReq);
+                    if (pResp.IsSuccessStatusCode)
+                    {
+                        string pJson = await pResp.Content.ReadAsStringAsync();
+                        using var pDoc = JsonDocument.Parse(pJson);
+                        foreach (var msgElem in pDoc.RootElement.EnumerateArray())
+                        {
+                            if (msgElem.TryGetProperty("embeds", out var embedsArr) && embedsArr.ValueKind == JsonValueKind.Array)
+                            {
+                                foreach (var embed in embedsArr.EnumerateArray())
+                                {
+                                    string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                                    if (!title.Contains("PLAYIT_MAP:", StringComparison.OrdinalIgnoreCase)) continue;
+
+                                    string sName = title.Replace("🔗 PLAYIT_MAP:", "").Replace("PLAYIT_MAP:", "").Trim();
+                                    string rAddr = "";
+                                    string aKey = "";
+
+                                    if (embed.TryGetProperty("fields", out var fArr) && fArr.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var field in fArr.EnumerateArray())
+                                        {
+                                            string fn = field.GetProperty("name").GetString() ?? "";
+                                            string fv = field.GetProperty("value").GetString() ?? "";
+                                            if (fn.Equals("RemoteAddress", StringComparison.OrdinalIgnoreCase)) rAddr = fv.Trim();
+                                            else if (fn.Equals("AccessKey", StringComparison.OrdinalIgnoreCase)) aKey = fv.Trim();
+                                        }
+                                    }
+                                    if (!string.IsNullOrEmpty(sName) && !string.IsNullOrEmpty(rAddr))
+                                    {
+                                        playitMap[sName] = (rAddr, aKey);
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+                catch { }
+            }
 
             try
             {
@@ -459,7 +558,6 @@ namespace BlackHouseTunnel.Services
                     using var doc = JsonDocument.Parse(json);
                     foreach (var msgElem in doc.RootElement.EnumerateArray())
                     {
-                        // Exclusively check messages sent by Discord Bots
                         if (msgElem.TryGetProperty("author", out var authorElem) && authorElem.TryGetProperty("bot", out var isBotElem) && isBotElem.GetBoolean())
                         {
                             if (msgElem.TryGetProperty("embeds", out var embedsArr) && embedsArr.ValueKind == JsonValueKind.Array)
@@ -470,61 +568,68 @@ namespace BlackHouseTunnel.Services
                                     if (!title.Contains("Servidor de Host", StringComparison.OrdinalIgnoreCase)) continue;
 
                                     string serverName = title.Replace("🖥️ Servidor de Host:", "").Replace("Servidor de Host:", "").Trim();
-                                string hostUser = "";
-                                string remoteAddr = "";
-                                int visMode = 0;
+                                    string hostUser = "";
+                                    string remoteAddr = "";
+                                    string accessKey = "";
+                                    int visMode = 0;
 
-                                if (embed.TryGetProperty("color", out var colVal))
-                                {
-                                    int col = colVal.GetInt32();
-                                    if (col == 16766720) visMode = 2; // Gold color for Privadito
-                                    else if (col == 5793266) visMode = 1; // Discord Blurple for Servidor
-                                }
-
-                                if (embed.TryGetProperty("fields", out var fieldsArr) && fieldsArr.ValueKind == JsonValueKind.Array)
-                                {
-                                    foreach (var field in fieldsArr.EnumerateArray())
+                                    if (embed.TryGetProperty("color", out var colVal))
                                     {
-                                        string fName = field.GetProperty("name").GetString() ?? "";
-                                        string fVal = field.GetProperty("value").GetString() ?? "";
+                                        int col = colVal.GetInt32();
+                                        if (col == 16766720) visMode = 2; // Gold color for Privadito
+                                        else if (col == 5793266) visMode = 1; // Discord Blurple for Servidor
+                                    }
 
-                                        if (fName.Contains("Creado") || fName.Contains("Hosteado"))
+                                    if (embed.TryGetProperty("fields", out var fieldsArr) && fieldsArr.ValueKind == JsonValueKind.Array)
+                                    {
+                                        foreach (var field in fieldsArr.EnumerateArray())
                                         {
-                                            hostUser = fVal;
-                                        }
-                                        else if (fName.Contains("Dirección") || fName.Contains("Túnel"))
-                                        {
-                                            remoteAddr = fVal.Replace("`", "").Trim();
-                                        }
-                                        else if (fName.Contains("Dirigido") || fName.Contains("Alcance"))
-                                        {
-                                            if (fVal.Contains("Privado", StringComparison.OrdinalIgnoreCase) || fVal.Contains("Privadito", StringComparison.OrdinalIgnoreCase))
+                                            string fName = field.GetProperty("name").GetString() ?? "";
+                                            string fVal = field.GetProperty("value").GetString() ?? "";
+
+                                            if (fName.Contains("Creado") || fName.Contains("Hosteado"))
                                             {
-                                                visMode = 2;
+                                                hostUser = fVal;
                                             }
-                                            else if (fVal.Contains("Servidor", StringComparison.OrdinalIgnoreCase))
+                                            else if (fName.Contains("Dirección") || fName.Contains("Túnel"))
                                             {
-                                                visMode = 1;
+                                                remoteAddr = fVal.Replace("`", "").Trim();
                                             }
-                                            else
+                                            else if (fName.Contains("Dirigido") || fName.Contains("Alcance"))
                                             {
-                                                visMode = 0;
+                                                if (fVal.Contains("Privado", StringComparison.OrdinalIgnoreCase) || fVal.Contains("Privadito", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    visMode = 2;
+                                                }
+                                                else if (fVal.Contains("Servidor", StringComparison.OrdinalIgnoreCase))
+                                                {
+                                                    visMode = 1;
+                                                }
+                                                else
+                                                {
+                                                    visMode = 0;
+                                                }
                                             }
                                         }
                                     }
-                                }
 
-                                    if (!string.IsNullOrEmpty(remoteAddr))
+                                    // Check if mapping exists from playit channel
+                                    if (playitMap.TryGetValue(serverName, out var pData))
                                     {
-                                        list.Add(new PublishedTunnel
-                                        {
-                                            Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
-                                            ServerName = serverName,
-                                            HostUsername = hostUser,
-                                            RemoteAddress = remoteAddr,
-                                            VisibilityMode = visMode
-                                        });
+                                        remoteAddr = pData.remoteAddr;
+                                        accessKey = pData.accessKey;
                                     }
+
+                                    list.Add(new PublishedTunnel
+                                    {
+                                        Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
+                                        ServerName = serverName,
+                                        HostUsername = hostUser,
+                                        RemoteAddress = remoteAddr,
+                                        VisibilityMode = visMode,
+                                        AccessKey = accessKey,
+                                        DiscordMessageId = msgElem.GetProperty("id").GetString()
+                                    });
                                 }
                             }
                         }

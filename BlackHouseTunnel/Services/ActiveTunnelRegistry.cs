@@ -15,8 +15,11 @@ namespace BlackHouseTunnel.Services
         public string HostUsername { get; set; } = "";
         public string RemoteAddress { get; set; } = "";
         public int VisibilityMode { get; set; } = 0; // 0: Global, 1: Servidor, 2: Privadito
+        public string AccessKey { get; set; } = ""; // Key/Password for private hosts
+        public bool RequiresAccessKey => !string.IsNullOrWhiteSpace(AccessKey);
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? DiscordMessageId { get; set; } = null;
+        public string? PlayitMessageId { get; set; } = null;
     }
 
     public static class ActiveTunnelRegistry
@@ -39,6 +42,12 @@ namespace BlackHouseTunnel.Services
             {
                 msgId = await ApiService.PostTunnelEmbedToChannelAsync(channel, token, tunnel);
                 tunnel.DiscordMessageId = msgId;
+
+                if (!string.IsNullOrWhiteSpace(config.PlayitChannelId))
+                {
+                    string? playitMsgId = await ApiService.PostPlayitMappingEmbedAsync(config.PlayitChannelId, token, tunnel);
+                    tunnel.PlayitMessageId = playitMsgId;
+                }
             }
 
             lock (SyncLock)
@@ -52,15 +61,22 @@ namespace BlackHouseTunnel.Services
             return msgId;
         }
 
-        public static async Task UnpublishTunnelAsync(string hostUsername, string? messageId = null)
+        public static async Task UnpublishTunnelAsync(string hostUsername, string? messageId = null, string? playitMessageId = null)
         {
             var config = ConfigManager.CurrentConfig;
             string token = !string.IsNullOrWhiteSpace(config.BotToken) ? config.BotToken : TokenProtector.GetDefaultBotToken();
             string channel = !string.IsNullOrWhiteSpace(config.ChannelId) ? config.ChannelId : "1529169033482600659";
 
-            if (!string.IsNullOrWhiteSpace(messageId) && !string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
+            if (!string.IsNullOrWhiteSpace(token))
             {
-                await ApiService.DeleteTunnelEmbedAsync(channel, token, messageId);
+                if (!string.IsNullOrWhiteSpace(messageId) && !string.IsNullOrWhiteSpace(channel))
+                {
+                    await ApiService.DeleteTunnelEmbedAsync(channel, token, messageId);
+                }
+                if (!string.IsNullOrWhiteSpace(playitMessageId) && !string.IsNullOrWhiteSpace(config.PlayitChannelId))
+                {
+                    await ApiService.DeleteTunnelEmbedAsync(config.PlayitChannelId, token, playitMessageId);
+                }
             }
 
             lock (SyncLock)
@@ -85,7 +101,7 @@ namespace BlackHouseTunnel.Services
 
             if (!string.IsNullOrWhiteSpace(token) && !string.IsNullOrWhiteSpace(channel))
             {
-                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(channel, token);
+                channelTunnels = await ApiService.FetchChannelTunnelEmbedsAsync(channel, token, config.PlayitChannelId);
             }
 
             lock (SyncLock)

@@ -76,9 +76,9 @@ namespace BlackHouseTunnel.Views
                 string parentGuid = Guid.NewGuid().ToString().ToUpper();
                 string playGuid = Guid.NewGuid().ToString().ToUpper();
 
-                _console.AppendLog($"Destino Túnel: {dstHost}:{dstPort}", "info");
+                _console.AppendLog("Destino Túnel: [Ruta Protegida de Red]", "info");
                 _console.AppendLog($"Proxy Local UDP: 127.0.0.1:{UdpProxy.ActiveProxyPort}");
-                _console.AppendLog("Iniciando motor de Proxy UDP y estableciendo túnel...");
+                _console.AppendLog("Iniciando motor de Proxy UDP y estableciendo túnel seguro...");
 
                 bool ok = UdpProxy.StartProxy(dstHost, dstPort);
                 if (!ok)

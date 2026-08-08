@@ -1427,18 +1427,19 @@ namespace BlackHouseTunnel.Views
             return container;
         }
 
-        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "")
+        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "", string accessKey = "")
         {
             bool isPrivadito = visibilityMode == 2;
             bool isServidor = visibilityMode == 1;
+            bool reqKey = !string.IsNullOrWhiteSpace(accessKey);
 
             string borderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
             string badgeBgHex = isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937");
             string badgeBorderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
             string badgeTextHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF");
-            string badgeLabel = isPrivadito ? "🔒 Privadito (Rol Exclusivo)" : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)");
+            string badgeLabel = isPrivadito ? (reqKey ? "🔑 Privadito (Requiere Llave)" : "🔒 Privadito (Rol Exclusivo)") : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)");
             string btnBgHex = isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563");
-            string btnText = isPrivadito ? "🔒 Conectarse (Privadito)" : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel");
+            string btnText = isPrivadito ? (reqKey ? "🔑 Conectarse con Llave" : "🔒 Conectarse (Privadito)") : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel");
 
             Border card = new Border
             {
@@ -1533,6 +1534,16 @@ namespace BlackHouseTunnel.Views
                 {
                     DarkMessageBox.Show("⛔ ACCESO RESTRICTO Y DENEGADO\n\nEste túnel está configurado como 'Host para el Servidor'. Para conectarte debes ser miembro verificado de nuestro servidor de Discord.\n\nRoblox Studio NO se ejecutará.", "Acceso Restringido", MessageBoxButton.OK, MessageBoxImage.Stop);
                     return;
+                }
+
+                if (reqKey)
+                {
+                    string inputKey = PromptPasswordDialog("🔐 Llave de Acceso Requerida", $"El host '{title}' requiere una Llave de Acceso privada para ingresar.\n\nPor favor ingresa la clave asignada por el Host:");
+                    if (string.IsNullOrWhiteSpace(inputKey) || !inputKey.Equals(accessKey, StringComparison.OrdinalIgnoreCase))
+                    {
+                        DarkMessageBox.Show("⛔ LLAVE DE ACCESO INCORRECTA\n\nLa clave ingresada es incorrecta o está vacía. Acceso Denegado.", "Acceso Denegado", MessageBoxButton.OK, MessageBoxImage.Error);
+                        return;
+                    }
                 }
 
                 if (_activeJoinConsoleView != null)
@@ -1787,6 +1798,67 @@ namespace BlackHouseTunnel.Views
             cardBorder.Child = contentPanel;
 
             return cardBorder;
+        }
+
+        private string PromptPasswordDialog(string title, string message)
+        {
+            string enteredKey = "";
+            Window dialog = new Window
+            {
+                Title = title,
+                Width = 420,
+                Height = 230,
+                WindowStartupLocation = WindowStartupLocation.CenterScreen,
+                ResizeMode = ResizeMode.NoResize,
+                WindowStyle = WindowStyle.None,
+                AllowsTransparency = true,
+                Background = Brushes.Transparent
+            };
+
+            Border border = new Border
+            {
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D16")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")),
+                BorderThickness = new Thickness(1.5),
+                CornerRadius = new CornerRadius(12),
+                Padding = new Thickness(20)
+            };
+
+            StackPanel panel = new StackPanel();
+            panel.Children.Add(new TextBlock { Text = title, FontSize = 16, FontWeight = FontWeights.Bold, Foreground = Brushes.White, Margin = new Thickness(0, 0, 0, 8) });
+            panel.Children.Add(new TextBlock { Text = message, FontSize = 12, Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")), TextWrapping = TextWrapping.Wrap, Margin = new Thickness(0, 0, 0, 14) });
+
+            PasswordBox passBox = new PasswordBox
+            {
+                Height = 36,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141422")),
+                Foreground = Brushes.White,
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#28283E")),
+                BorderThickness = new Thickness(1),
+                Padding = new Thickness(8, 6, 8, 6),
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+            panel.Children.Add(passBox);
+
+            StackPanel btnRow = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+            Button cancelBtn = new Button { Content = "Cancelar", Height = 34, Padding = new Thickness(14, 0, 14, 0), Margin = new Thickness(0, 0, 8, 0), Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222234")), Foreground = Brushes.White, FontWeight = FontWeights.Bold, Cursor = System.Windows.Input.Cursors.Hand };
+            SetButtonCornerRadius(cancelBtn, 8);
+            cancelBtn.Click += (s, e) => dialog.Close();
+
+            Button okBtn = new Button { Content = "🔐 Confirmar", Height = 34, Padding = new Thickness(16, 0, 16, 0), Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#F59E0B")), Foreground = Brushes.White, FontWeight = FontWeights.Bold, Cursor = System.Windows.Input.Cursors.Hand };
+            SetButtonCornerRadius(okBtn, 8);
+            okBtn.Click += (s, e) => { enteredKey = passBox.Password; dialog.Close(); };
+
+            btnRow.Children.Add(cancelBtn);
+            btnRow.Children.Add(okBtn);
+            panel.Children.Add(btnRow);
+
+            border.Child = panel;
+            dialog.Content = border;
+            dialog.ShowDialog();
+
+            return enteredKey;
         }
     }
 }
