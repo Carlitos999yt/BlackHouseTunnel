@@ -96,9 +96,8 @@ namespace BlackHouseTunnel.Views
                     _console.AppendLog($"✓ Ruta de túnel establecida y calentada ({warmed} ráfagas enviadas)", "ok");
                 }
 
-                // Wait 1.5 seconds for Playit UDP tunnel stabilization before launching Studio
-                _console.AppendLog("⌛ Esperando estabilización del túnel (1.5s)...", "warn");
-                await Task.Delay(1500);
+                // Ultra-fast instant Studio client launch
+                await Task.Delay(50);
 
                 _console.AppendLog($"Parent GUID: {parentGuid}", "dim");
                 _console.AppendLog($"Play   GUID: {playGuid}", "dim");
@@ -106,7 +105,7 @@ namespace BlackHouseTunnel.Views
 
                 try
                 {
-                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, "StudioPlayer_Proxy", username);
+                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, "StudioPlayer_0", username);
                     _console.AppendLog("● CONECTADO EXITOSAMENTE — Cliente en ejecución", "ok");
                 }
                 catch (Exception ex)
