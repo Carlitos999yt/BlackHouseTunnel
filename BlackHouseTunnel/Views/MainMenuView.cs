@@ -921,7 +921,21 @@ namespace BlackHouseTunnel.Views
             StackPanel boxPanel = new StackPanel();
 
             boxPanel.Children.Add(CreateLabel("Mi Apodo en Roblox (Username)"));
-            TextBox userBox = CreateStyledTextBox(_user.DisplayNick);
+            var currentCfg = ConfigManager.CurrentConfig;
+            string defaultUser = !string.IsNullOrWhiteSpace(currentCfg.SavedUsername) ? currentCfg.SavedUsername : _user.DisplayNick;
+            TextBox userBox = CreateStyledTextBox(defaultUser);
+            userBox.TextChanged += (s, e) =>
+            {
+                string val = userBox.Text.Trim();
+                if (!string.IsNullOrWhiteSpace(val))
+                {
+                    var cfg = ConfigManager.CurrentConfig;
+                    cfg.SavedUsername = val;
+                    ConfigManager.SaveConfig(cfg);
+                    _user.ServerNick = val;
+                    _user.GlobalName = val;
+                }
+            };
             boxPanel.Children.Add(userBox);
 
             boxPanel.Children.Add(CreateLabel("Dirección del Túnel (ej: manzana.gl.at.ply.gg:20573)"));
