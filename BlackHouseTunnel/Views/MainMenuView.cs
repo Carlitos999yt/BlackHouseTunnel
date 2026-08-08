@@ -879,6 +879,8 @@ namespace BlackHouseTunnel.Views
         }
 
         // TAB 3: JOIN TUNNEL VIEW
+        private string _activeTargetAddress = "";
+
         private UIElement BuildJoinView()
         {
             ScrollViewer scroll = new ScrollViewer
@@ -900,7 +902,7 @@ namespace BlackHouseTunnel.Views
 
             TextBlock sub = new TextBlock
             {
-                Text = "Ingresa tu apodo de jugador y la dirección IP / Túnel del Host.",
+                Text = "Ingresa tu apodo de jugador y conéctate al servidor túnel.",
                 FontSize = 13,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
                 Margin = new Thickness(0, 0, 0, 24)
@@ -938,10 +940,15 @@ namespace BlackHouseTunnel.Views
             };
             boxPanel.Children.Add(userBox);
 
-            boxPanel.Children.Add(CreateLabel("Dirección del Túnel (ej: manzana.gl.at.ply.gg:20573)"));
-            string defaultAddr = !string.IsNullOrEmpty(_pendingJoinAddress) ? _pendingJoinAddress : "";
-            _pendingJoinAddress = "";
-            TextBox addrBox = CreateStyledTextBox(defaultAddr);
+            boxPanel.Children.Add(CreateLabel("Dirección del Túnel (Entrada Manual Opcional)"));
+            if (!string.IsNullOrEmpty(_pendingJoinAddress))
+            {
+                _activeTargetAddress = _pendingJoinAddress;
+                _pendingJoinAddress = "";
+            }
+
+            string displayAddr = !string.IsNullOrEmpty(_activeTargetAddress) ? "🔒 Túnel Protegido (Servidor Seleccionado)" : "";
+            TextBox addrBox = CreateStyledTextBox(displayAddr);
             boxPanel.Children.Add(addrBox);
 
             Button connectBtn = new Button
@@ -969,15 +976,26 @@ namespace BlackHouseTunnel.Views
                         return;
                     }
 
-                    string rawAddress = addrBox.Text.Trim();
-                    if (string.IsNullOrEmpty(rawAddress))
+                    string inputAddr = addrBox.Text.Trim();
+                    string targetAddressToUse = "";
+
+                    if (inputAddr.Contains("🔒") || string.IsNullOrEmpty(inputAddr))
                     {
-                        DarkMessageBox.Show("Por favor ingresa una dirección de túnel válida.", "Error Dirección", MessageBoxButton.OK, MessageBoxImage.Warning);
+                        targetAddressToUse = _activeTargetAddress;
+                    }
+                    else
+                    {
+                        targetAddressToUse = inputAddr;
+                    }
+
+                    if (string.IsNullOrEmpty(targetAddressToUse))
+                    {
+                        DarkMessageBox.Show("Por favor ingresa o selecciona una dirección de túnel válida.", "Error Dirección", MessageBoxButton.OK, MessageBoxImage.Warning);
                         return;
                     }
 
                     var publishedTunnels = ActiveTunnelRegistry.GetVisibleTunnelsForUser(_user);
-                    var matchingTunnel = publishedTunnels.FirstOrDefault(t => t.RemoteAddress.Equals(rawAddress, StringComparison.OrdinalIgnoreCase));
+                    var matchingTunnel = publishedTunnels.FirstOrDefault(t => t.RemoteAddress.Equals(targetAddressToUse, StringComparison.OrdinalIgnoreCase));
                     if (matchingTunnel != null)
                     {
                         if (matchingTunnel.VisibilityMode == 1 && !_user.IsMemberOfGuild && !_user.IsStaffOrAdmin)
@@ -992,7 +1010,7 @@ namespace BlackHouseTunnel.Views
                         }
                     }
 
-                    var parts = rawAddress.Split(':');
+                    var parts = targetAddressToUse.Split(':');
                     string dstHost = parts[0];
                     int dstPort = parts.Length > 1 && int.TryParse(parts[1], out var p) ? p : 55555;
                     string username = string.IsNullOrWhiteSpace(userBox.Text) ? _user.DisplayNick : userBox.Text.Trim();
