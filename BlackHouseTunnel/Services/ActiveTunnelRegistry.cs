@@ -11,6 +11,7 @@ namespace BlackHouseTunnel.Services
     public class PublishedTunnel
     {
         public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string HostId { get; set; } = "HOST-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant();
         public string ServerName { get; set; } = "";
         public string HostUsername { get; set; } = "";
         public string RemoteAddress { get; set; } = "";
