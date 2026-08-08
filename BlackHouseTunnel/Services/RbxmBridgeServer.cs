@@ -19,6 +19,7 @@ namespace BlackHouseTunnel.Services
         private static HttpListener? _listener = null;
         private static bool _isRunning = false;
         private static readonly ConcurrentQueue<string> ClientNicknamesQueue = new ConcurrentQueue<string>();
+        private static readonly ConcurrentDictionary<string, DateTime> AuthorizedNicknames = new ConcurrentDictionary<string, DateTime>(StringComparer.OrdinalIgnoreCase);
 
         public static string ActiveUsername { get; set; } = "Player";
         public static string ActiveUid { get; set; } = "0";
@@ -31,8 +32,10 @@ namespace BlackHouseTunnel.Services
         {
             if (!string.IsNullOrWhiteSpace(nickname) && nickname != "Player" && nickname != "<ur user id here>")
             {
-                ClientNicknamesQueue.Enqueue(nickname.Trim());
-                Logger.Log("[Bridge] Registered remote client nickname: '" + nickname.Trim() + "'");
+                string clean = nickname.Trim();
+                ClientNicknamesQueue.Enqueue(clean);
+                AuthorizedNicknames[clean] = DateTime.UtcNow;
+                Logger.Log("[Bridge] Registered remote client nickname: '" + clean + "'");
             }
         }
 
@@ -181,6 +184,24 @@ namespace BlackHouseTunnel.Services
                             imported = ScriptsImported,
                             force_import = forceScriptImport
                         });
+                        break;
+                    }
+                    case "/verify_player":
+                    {
+                        string nameParam = request.QueryString["name"] ?? "";
+                        bool isAuth = false;
+                        if (!string.IsNullOrWhiteSpace(nameParam))
+                        {
+                            nameParam = nameParam.Trim();
+                            if (nameParam.Equals(ActiveUsername, StringComparison.OrdinalIgnoreCase) ||
+                                nameParam.StartsWith("player", StringComparison.OrdinalIgnoreCase) ||
+                                AuthorizedNicknames.ContainsKey(nameParam) ||
+                                ClientNicknamesQueue.Any(n => n.Equals(nameParam, StringComparison.OrdinalIgnoreCase)))
+                            {
+                                isAuth = true;
+                            }
+                        }
+                        SendJson(response, 200, new { authorized = isAuth, name = nameParam });
                         break;
                     }
                     case "/poll":

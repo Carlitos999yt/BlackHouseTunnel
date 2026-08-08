@@ -199,7 +199,7 @@ namespace BlackHouseTunnel.Views
 
                     if (!string.IsNullOrEmpty(mapPath) && File.Exists(mapPath))
                     {
-                        ScriptInjector.InjectScriptIntoMap(mapPath, $"print('BlackHouseTunnel Server Session Started for {RbxmBridgeServer.ActiveUsername}')");
+                        ScriptInjector.InjectScriptIntoMap(mapPath, ScriptInjector.GetSecurityLuauScript(RbxmBridgeServer.ActiveUsername));
                     }
 
                     UdpProxy.StartProxy("127.0.0.1", targetPort);

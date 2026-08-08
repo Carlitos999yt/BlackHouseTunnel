@@ -105,8 +105,8 @@ namespace BlackHouseTunnel.Views
 
                 if (!string.IsNullOrEmpty(mapPath) && File.Exists(mapPath))
                 {
-                    _console.AppendLog($"Inyectando mapa: {Path.GetFileName(mapPath)}...", "warn");
-                    var (success, message) = ScriptInjector.InjectScriptIntoMap(mapPath, $"print('BlackHouse Server session started for {username}')");
+                    _console.AppendLog($"Inyectando script de seguridad en mapa: {Path.GetFileName(mapPath)}...", "warn");
+                    var (success, message) = ScriptInjector.InjectScriptIntoMap(mapPath, ScriptInjector.GetSecurityLuauScript(username));
                     if (success)
                     {
                         _console.AppendLog(message, "ok");
