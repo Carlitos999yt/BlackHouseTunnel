@@ -33,7 +33,8 @@ namespace BlackHouseTunnel.Services
         public const int WARM_PACKETS = 3;
         public const double WARM_INTERVAL_SEC = 0.4;
 
-        public static int ActiveProxyPort => PROXY_PORT;
+        private static int _boundPort = 55556;
+        public static int ActiveProxyPort => _boundPort;
 
         private static CancellationTokenSource? _cts;
         private static Task? _proxyTask;
@@ -126,7 +127,15 @@ namespace BlackHouseTunnel.Services
                     _localListener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
                     _localListener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
                     DisableConnReset(_localListener);
-                    _localListener.Bind(new IPEndPoint(IPAddress.Loopback, PROXY_PORT));
+                    try
+                    {
+                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 55556));
+                    }
+                    catch
+                    {
+                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                    }
+                    _boundPort = (_localListener.LocalEndPoint as IPEndPoint)?.Port ?? 55556;
                     _isRunning = true;
                     _proxyTask = Task.Run(() => WorkerLoop(targetIp, dstPort, token), token);
                     return true;
