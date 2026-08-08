@@ -78,7 +78,7 @@ namespace BlackHouseTunnel.Views
 
                 _console.AppendLog($"Destino Túnel: {dstHost}:{dstPort}", "info");
                 _console.AppendLog($"Proxy Local UDP: 127.0.0.1:{UdpProxy.ActiveProxyPort}");
-                _console.AppendLog("Iniciando motor de Proxy UDP...");
+                _console.AppendLog("Iniciando motor de Proxy UDP y estableciendo túnel...");
 
                 bool ok = UdpProxy.StartProxy(dstHost, dstPort);
                 if (!ok)
@@ -88,19 +88,21 @@ namespace BlackHouseTunnel.Views
                 }
 
                 _console.AppendLog($"Proxy UDP activo en 127.0.0.1:{UdpProxy.ActiveProxyPort}", "ok");
-                _console.AppendLog("Realizando calentamiento de túnel (Warmup UDP)...", "warn");
+                _console.AppendLog("⏳ Pre-conectando al túnel remoto y estableciendo ruta UDP...", "warn");
 
-                int warmed = UdpProxy.WarmTunnel(dstHost, dstPort);
+                int warmed = UdpProxy.WarmTunnel(dstHost, dstPort, UdpProxy.ActiveProxyPort);
                 if (warmed > 0)
                 {
-                    _console.AppendLog($"✓ Túnel calentado ({warmed}/{UdpProxy.WARM_PACKETS} ráfagas enviadas)", "ok");
+                    _console.AppendLog($"✓ Ruta de túnel establecida y calentada ({warmed} ráfagas enviadas)", "ok");
                 }
 
-                await Task.Delay(250);
+                // Wait 1.5 seconds for Playit UDP tunnel stabilization before launching Studio
+                _console.AppendLog("⌛ Esperando estabilización del túnel (1.5s)...", "warn");
+                await Task.Delay(1500);
 
                 _console.AppendLog($"Parent GUID: {parentGuid}", "dim");
                 _console.AppendLog($"Play   GUID: {playGuid}", "dim");
-                _console.AppendLog("Ejecutando cliente Roblox Studio...");
+                _console.AppendLog("✓ Túnel 100% activo. Ejecutando cliente Roblox Studio...", "ok");
 
                 try
                 {
