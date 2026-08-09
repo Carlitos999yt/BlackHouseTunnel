@@ -29,7 +29,7 @@ namespace BlackHouseTunnel.Views
 
             TextBlock sub = new TextBlock
             {
-                Text = $"Conectado como '{username}' al túnel {dstHost}:{dstPort} vía Proxy Local 127.0.0.1:{UdpProxy.PROXY_PORT}",
+                Text = $"Conectado como '{username}' al túnel seguro de host vía Proxy Local 127.0.0.1:{UdpProxy.PROXY_PORT}",
                 FontSize = 13,
                 Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
                 Margin = new Thickness(0, 0, 0, 16)
@@ -77,15 +77,16 @@ namespace BlackHouseTunnel.Views
                 string playGuid = Guid.NewGuid().ToString().ToUpper();
 
                 _console.AppendLog("Destino Túnel: [Ruta Protegida de Red]", "info");
-                _console.AppendLog($"Proxy Local UDP: 127.0.0.1:{UdpProxy.ActiveProxyPort}");
                 _console.AppendLog("Iniciando motor de Proxy UDP y estableciendo túnel seguro...");
 
                 bool ok = UdpProxy.StartProxy(dstHost, dstPort);
                 if (!ok)
                 {
-                    _console.AppendLog($"Error al enlazar el puerto UDP {UdpProxy.ActiveProxyPort}. ¿Hay otra sesión activa?", "err");
+                    _console.AppendLog("Error al enlazar el puerto UDP del Proxy local. ¿Hay otra sesión activa?", "err");
                     return;
                 }
+
+                Dispatcher.Invoke(() => sub.Text = $"Conectado como '{username}' al túnel seguro de host vía Proxy Local 127.0.0.1:{UdpProxy.ActiveProxyPort}");
 
                 _console.AppendLog($"Proxy UDP activo en 127.0.0.1:{UdpProxy.ActiveProxyPort}", "ok");
                 _console.AppendLog("⏳ Pre-conectando al túnel remoto y estableciendo ruta UDP...", "warn");

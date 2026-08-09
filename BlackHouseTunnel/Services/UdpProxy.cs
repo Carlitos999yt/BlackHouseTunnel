@@ -124,27 +124,33 @@ namespace BlackHouseTunnel.Services
                         return false;
                     }
                     IPAddress targetIp = result.FirstOrDefault((IPAddress a) => a.AddressFamily == AddressFamily.InterNetwork) ?? result[0];
-                    _localListener = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
-                    _localListener.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
-                    DisableConnReset(_localListener);
-                    int targetPort = PROXY_PORT;
-                    try
-                    {
-                        _localListener.Bind(new IPEndPoint(IPAddress.Loopback, PROXY_PORT));
-                    }
-                    catch
+                    int[] portsToTry = new int[] { PROXY_PORT, 55556, 0 };
+                    Socket? boundSocket = null;
+
+                    foreach (int port in portsToTry)
                     {
                         try
                         {
-                            targetPort = 55556;
-                            _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 55556));
+                            Socket s = new Socket(AddressFamily.InterNetwork, SocketType.Dgram, ProtocolType.Udp);
+                            s.SetSocketOption(SocketOptionLevel.Socket, SocketOptionName.ReuseAddress, optionValue: true);
+                            DisableConnReset(s);
+                            s.Bind(new IPEndPoint(IPAddress.Loopback, port));
+                            boundSocket = s;
+                            break;
                         }
                         catch
                         {
-                            _localListener.Bind(new IPEndPoint(IPAddress.Loopback, 0));
+                            // Try next port with a fresh socket instance
                         }
                     }
-                    _boundPort = (_localListener.LocalEndPoint as IPEndPoint)?.Port ?? targetPort;
+
+                    if (boundSocket == null)
+                    {
+                        return false;
+                    }
+
+                    _localListener = boundSocket;
+                    _boundPort = (_localListener.LocalEndPoint as IPEndPoint)?.Port ?? PROXY_PORT;
                     _isRunning = true;
                     _proxyTask = Task.Run(() => WorkerLoop(targetIp, dstPort, token), token);
                     return true;
