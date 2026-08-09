@@ -197,25 +197,15 @@ namespace BlackHouseTunnel.Services
                         continue;
                     }
 
-                    // 1. Check for BlackHouse Authentication handshake
+                    // Process authentication header for nickname registration if present
                     string textHeader = result.ReceivedBytes >= 15 ? Encoding.UTF8.GetString(buffer, 0, Math.Min(result.ReceivedBytes, 40)) : "";
-                    if (textHeader.StartsWith("BLACKHOUSE_AUTH") || textHeader.StartsWith("BLACKHOUSE_NICK"))
+                    if (textHeader.StartsWith("BLACKHOUSE_AUTH") || textHeader.StartsWith("BLACKHOUSE_NICK") || textHeader.StartsWith("NEP_NICK"))
                     {
-                        AuthorizedClientIps[clientEp.Address] = DateTime.UtcNow;
                         if (textHeader.Contains(":"))
                         {
                             string nick = textHeader.Split(':')[1].Trim();
                             RbxmBridgeServer.RegisterClientNickname(nick);
                         }
-                        Logger.Log($"[HostFirewall] Authorized client IP: {clientEp.Address}");
-                        continue;
-                    }
-
-                    // 2. Strict Firewall Filter: Drop packets if client IP is NOT authorized!
-                    if (!AuthorizedClientIps.TryGetValue(clientEp.Address, out DateTime authTime) || (DateTime.UtcNow - authTime).TotalMinutes > 60)
-                    {
-                        // UN-AUTHORIZED CLIENT (e.g. NepTunnel classic or raw client)
-                        // DROP PACKET IMMEDIATELY -> Causes "Connection error 279" on client!
                         continue;
                     }
 

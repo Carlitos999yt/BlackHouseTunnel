@@ -272,7 +272,7 @@ namespace BlackHouseTunnel.Services
                 "-task", "StartClient",
                 "-placeId", "0",
                 "-universeId", "0",
-                "-placeVersion", "0",
+                "-placeVersion", "1",
                 "-server", server,
                 "-port", port,
                 "-parentSessionGuid", pg,
