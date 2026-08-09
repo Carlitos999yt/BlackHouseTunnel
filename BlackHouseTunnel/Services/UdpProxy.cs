@@ -33,7 +33,7 @@ namespace BlackHouseTunnel.Services
         public const int WARM_PACKETS = 3;
         public const double WARM_INTERVAL_SEC = 0.4;
 
-        private static int _boundPort = 55556;
+        private static int _boundPort = PROXY_PORT;
         public static int ActiveProxyPort => _boundPort;
 
         private static CancellationTokenSource? _cts;
