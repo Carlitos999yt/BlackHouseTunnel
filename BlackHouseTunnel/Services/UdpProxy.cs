@@ -124,7 +124,7 @@ namespace BlackHouseTunnel.Services
                         return false;
                     }
                     IPAddress targetIp = result.FirstOrDefault((IPAddress a) => a.AddressFamily == AddressFamily.InterNetwork) ?? result[0];
-                    int[] portsToTry = new int[] { PROXY_PORT, 55556, 0 };
+                    int[] portsToTry = new int[] { PROXY_PORT, 0 };
                     Socket? boundSocket = null;
 
                     foreach (int port in portsToTry)
