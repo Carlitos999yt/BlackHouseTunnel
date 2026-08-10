@@ -13,7 +13,7 @@ namespace BlackHouseTunnel.Services
     {
         private static readonly HttpClient HttpClient = new HttpClient();
 
-        public async Task<bool> UpdateGuildMemberNicknameAsync(string accessToken, string guildId, string nickname, string botToken = "")
+        public async Task<bool> UpdateGuildMemberNicknameAsync(string accessToken, string guildId, string userId, string nickname, string botToken = "")
         {
             if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
             if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
@@ -29,17 +29,36 @@ namespace BlackHouseTunnel.Services
                     req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                     req.Content = content;
                     var resp = await HttpClient.SendAsync(req);
-                    if (resp.IsSuccessStatusCode) return true;
+                    if (resp.IsSuccessStatusCode)
+                    {
+                        Logger.Log($"[DiscordApi] Updated nick for @me via OAuth token.");
+                        return true;
+                    }
+
+                    var reqAlt = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me");
+                    reqAlt.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    reqAlt.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
+                    var respAlt = await HttpClient.SendAsync(reqAlt);
+                    if (respAlt.IsSuccessStatusCode) return true;
                 }
 
-                // Try 2: Bot token (/guilds/{guildId}/members/@me)
-                if (!string.IsNullOrWhiteSpace(botToken))
+                // Try 2: Bot token with specific User ID (/guilds/{guildId}/members/{userId})
+                if (!string.IsNullOrWhiteSpace(botToken) && !string.IsNullOrWhiteSpace(userId))
                 {
-                    var req2 = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me");
-                    req2.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
-                    req2.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
-                    var resp2 = await HttpClient.SendAsync(req2);
-                    if (resp2.IsSuccessStatusCode) return true;
+                    var reqBot = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/{userId}");
+                    reqBot.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                    reqBot.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
+                    var respBot = await HttpClient.SendAsync(reqBot);
+                    if (respBot.IsSuccessStatusCode)
+                    {
+                        Logger.Log($"[DiscordApi] Successfully updated nick for user {userId} to '{nickname}' via Bot API.");
+                        return true;
+                    }
+                    else
+                    {
+                        string errBody = await respBot.Content.ReadAsStringAsync();
+                        Logger.Log($"[DiscordApi] Bot nick update failed ({respBot.StatusCode}): {errBody}");
+                    }
                 }
             }
             catch (Exception ex)

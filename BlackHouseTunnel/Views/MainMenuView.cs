@@ -75,7 +75,7 @@ namespace BlackHouseTunnel.Views
 
             Grid appLayoutGrid = new Grid
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#060609"))
+                Background = MainBgBrush
             };
 
             appLayoutGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(68) });
@@ -1121,10 +1121,10 @@ namespace BlackHouseTunnel.Views
 
             TextBlock title = new TextBlock
             {
-                Text = "⚙️ Configuraciones del Sistema",
+                Text = LocalizationService.Get("settings_title"),
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 24)
             };
 
@@ -1132,8 +1132,8 @@ namespace BlackHouseTunnel.Views
 
             Border box = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Background = CardBgBrush,
+                BorderBrush = CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(24)
@@ -1142,14 +1142,14 @@ namespace BlackHouseTunnel.Views
             StackPanel boxPanel = new StackPanel();
 
             // Section 1: Language & Theme
-            boxPanel.Children.Add(CreateSectionHeader("🌐 Idioma y Apariencia"));
+            boxPanel.Children.Add(CreateSectionHeader(LocalizationService.Get("settings_lang_theme")));
 
-            boxPanel.Children.Add(CreateLabel("Idioma de la Aplicación"));
+            boxPanel.Children.Add(CreateLabel(LocalizationService.Get("settings_lang_lbl")));
             ComboBox langCombo = new ComboBox
             {
                 Height = 38,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
-                Foreground = Brushes.White,
+                Background = InputBgBrush,
+                Foreground = TextPrimaryBrush,
                 FontSize = 13,
                 Margin = new Thickness(0, 0, 0, 16)
             };
@@ -1173,23 +1173,24 @@ namespace BlackHouseTunnel.Views
                 if (config.Language != newLang)
                 {
                     config.Language = newLang;
+                    LocalizationService.CurrentLanguage = newLang;
                     ConfigManager.SaveConfig(config);
                     OnReloadRequested?.Invoke(this, EventArgs.Empty);
                 }
             };
             boxPanel.Children.Add(langCombo);
 
-            boxPanel.Children.Add(CreateLabel("Tema de la Interfaz"));
+            boxPanel.Children.Add(CreateLabel(LocalizationService.Get("settings_theme_lbl")));
             ComboBox themeCombo = new ComboBox
             {
                 Height = 38,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
-                Foreground = Brushes.White,
+                Background = InputBgBrush,
+                Foreground = TextPrimaryBrush,
                 FontSize = 13,
                 Margin = new Thickness(0, 0, 0, 24)
             };
-            themeCombo.Items.Add("🌙 Oscuro Noche Profunda (Tema por Defecto)");
-            themeCombo.Items.Add("☀️ Claro Moderno (Light Mode)");
+            themeCombo.Items.Add(LocalizationService.Get("settings_theme_dark"));
+            themeCombo.Items.Add(LocalizationService.Get("settings_theme_light"));
             themeCombo.SelectedIndex = config.ThemeMode == "Light" ? 1 : 0;
             themeCombo.SelectionChanged += (s, e) =>
             {
@@ -1204,10 +1205,10 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(themeCombo);
 
             // Section 2: Discord Rich Presence
-            boxPanel.Children.Add(CreateSectionHeader("🎮 Discord y Presencia en Vivo"));
+            boxPanel.Children.Add(CreateSectionHeader(LocalizationService.Get("settings_discord_sec")));
 
             Border rpcToggle = CreateModernToggleSwitch(
-                "Activar Discord Rich Presence (Muestra tu estado 'Conectado a Host' o 'Hosteando' en Discord)",
+                LocalizationService.Get("settings_rpc_toggle"),
                 config.EnableDiscordRpc,
                 (enabled) =>
                 {
@@ -1225,24 +1226,24 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(rpcToggle);
 
             // Section 3: Roblox Studio Maintenance
-            boxPanel.Children.Add(CreateSectionHeader("🛠️ Mantenimiento y Roblox Studio"));
+            boxPanel.Children.Add(CreateSectionHeader(LocalizationService.Get("settings_maint_sec")));
 
-            boxPanel.Children.Add(CreateLabel("Ejecutable Activo de Roblox Studio"));
+            boxPanel.Children.Add(CreateLabel(LocalizationService.Get("settings_studio_path")));
             string currentStudio = !string.IsNullOrEmpty(config.SelectedStudioPath) && File.Exists(config.SelectedStudioPath)
                 ? config.SelectedStudioPath
                 : (RobloxStudioService.GetStudioPath() ?? "No detectado");
 
             TextBox studioBox = CreateStyledTextBox(currentStudio);
             studioBox.IsReadOnly = true;
-            studioBox.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#08080E"));
-            studioBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A0A0C0"));
+            studioBox.Background = InputBgBrush;
+            studioBox.Foreground = TextMutedBrush;
             boxPanel.Children.Add(studioBox);
 
             WrapPanel studioBtnsRow = new WrapPanel { Margin = new Thickness(0, 0, 0, 24) };
 
             Button scanStudioBtn = new Button
             {
-                Content = "🎯 Seleccionar Versión...",
+                Content = LocalizationService.Get("btn_scan_studio"),
                 Height = 40,
                 Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
@@ -1279,7 +1280,7 @@ namespace BlackHouseTunnel.Views
 
             Button browseStudioBtn = new Button
             {
-                Content = "📁 Buscar Exe...",
+                Content = LocalizationService.Get("btn_browse_studio"),
                 Height = 40,
                 Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F32")),
@@ -1310,7 +1311,7 @@ namespace BlackHouseTunnel.Views
 
             Button reinstallStudioBtn = new Button
             {
-                Content = "🔄 Reinstalar / Actualizar Roblox Studio",
+                Content = LocalizationService.Get("btn_reinstall_studio"),
                 Height = 40,
                 Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
@@ -1512,6 +1513,7 @@ namespace BlackHouseTunnel.Views
                     await _apiService.UpdateGuildMemberNicknameAsync(
                         ConfigManager.CurrentConfig.SavedAccessToken ?? "",
                         "1529015986135502951",
+                        _user.Id,
                         newNick
                     );
 
