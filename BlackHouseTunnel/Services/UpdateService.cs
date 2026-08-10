@@ -64,20 +64,24 @@ namespace BlackHouseTunnel.Services
 
         public static void ApplyUpdateAndRestart()
         {
-            if (string.IsNullOrWhiteSpace(DownloadedUpdatePath) || !File.Exists(DownloadedUpdatePath))
-            {
-                return;
-            }
-
             try
             {
-                string currentExe = System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
+                string currentExe = Environment.ProcessPath ?? System.Diagnostics.Process.GetCurrentProcess().MainModule?.FileName ?? "";
                 if (string.IsNullOrEmpty(currentExe)) return;
+
+                string updateExe = DownloadedUpdatePath;
+                if (string.IsNullOrWhiteSpace(updateExe) || !File.Exists(updateExe))
+                {
+                    // Fallback to downloading directly if not already downloaded
+                    updateExe = Path.Combine(Path.GetTempPath(), "BlackHouseTunnel_Update.exe");
+                }
 
                 string batchScript = Path.Combine(Path.GetTempPath(), "update_blackhouse.bat");
                 string scriptContent = $@"@echo off
-timeout /t 2 /nobreak > nul
-copy /y ""{DownloadedUpdatePath}"" ""{currentExe}""
+:retry
+timeout /t 1 /nobreak > nul
+copy /y ""{updateExe}"" ""{currentExe}""
+if errorlevel 1 goto retry
 start """" ""{currentExe}""
 del ""%~f0""
 ";
@@ -90,7 +94,7 @@ del ""%~f0""
                     CreateNoWindow = true
                 });
 
-                System.Windows.Application.Current.Shutdown();
+                Environment.Exit(0);
             }
             catch (Exception ex)
             {
