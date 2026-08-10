@@ -26,8 +26,8 @@ namespace BlackHouseTunnel.Services
         {
             try
             {
-                // Check version.json from GitHub main branch
-                string versionUrl = "https://raw.githubusercontent.com/Carlitos999yt/NepTunnel/main/version.json";
+                // Check version.json from BlackHouseTunnel GitHub repo
+                string versionUrl = "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/version.json";
                 string json = await Client.GetStringAsync(versionUrl);
 
                 using var doc = JsonDocument.Parse(json);

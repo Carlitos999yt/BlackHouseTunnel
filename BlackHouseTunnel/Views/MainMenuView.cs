@@ -1377,7 +1377,7 @@ namespace BlackHouseTunnel.Views
                     string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioInstaller.exe");
                     using (var client = new System.Net.Http.HttpClient())
                     {
-                        byte[] data = await client.GetByteArrayAsync("https://raw.githubusercontent.com/Carlitos999yt/NepTunnel/main/RobloxInstaller/RobloxStudioInstaller.exe");
+                        byte[] data = await client.GetByteArrayAsync("https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/RobloxInstaller/RobloxStudioInstaller.exe");
                         await System.IO.File.WriteAllBytesAsync(tempInstaller, data);
                     }
 
