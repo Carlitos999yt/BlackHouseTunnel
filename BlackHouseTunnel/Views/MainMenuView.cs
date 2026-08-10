@@ -1691,77 +1691,29 @@ namespace BlackHouseTunnel.Views
                 BorderBrush = ThemeManager.InputBorderBrush,
                 BorderThickness = new Thickness(1),
                 FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 16)
+                Margin = new Thickness(0, 0, 0, 16),
+                Cursor = System.Windows.Input.Cursors.Hand
             };
 
-            // Custom ControlTemplate for rounded ComboBox + rounded dropdown popup
-            ControlTemplate comboTemplate = new ControlTemplate(typeof(ComboBox));
-            FrameworkElementFactory mainGrid = new FrameworkElementFactory(typeof(Grid));
+            // Round the popup dropdown dynamically when it opens
+            combo.DropDownOpened += (s, e) =>
+            {
+                if (s is ComboBox cb)
+                {
+                    // Find the Popup in the visual tree and round its child border
+                    var popup = FindVisualChild<System.Windows.Controls.Primitives.Popup>(cb);
+                    if (popup?.Child is Border popupBorder)
+                    {
+                        popupBorder.CornerRadius = new CornerRadius(10);
+                        popupBorder.Background = ThemeManager.CardBgBrush;
+                        popupBorder.BorderBrush = ThemeManager.InputBorderBrush;
+                        popupBorder.BorderThickness = new Thickness(1);
+                        popupBorder.Padding = new Thickness(4);
+                    }
+                }
+            };
 
-            // Main display border (rounded)
-            FrameworkElementFactory mainBorder = new FrameworkElementFactory(typeof(Border));
-            mainBorder.SetValue(Border.BackgroundProperty, ThemeManager.InputBgBrush);
-            mainBorder.SetValue(Border.BorderBrushProperty, ThemeManager.InputBorderBrush);
-            mainBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-            mainBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            mainBorder.SetValue(Border.PaddingProperty, new Thickness(10, 0, 30, 0));
-
-            FrameworkElementFactory contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
-            contentPresenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
-            contentPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
-            mainBorder.AppendChild(contentPresenter);
-            mainGrid.AppendChild(mainBorder);
-
-            // Toggle button (arrow area)
-            FrameworkElementFactory toggleBtn = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.ToggleButton));
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, new TemplateBindingExtension(ComboBox.IsDropDownOpenProperty));
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.BackgroundProperty, Brushes.Transparent);
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.BorderThicknessProperty, new Thickness(0));
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.OpacityProperty, 0.0);
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.CursorProperty, System.Windows.Input.Cursors.Hand);
-            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.ClickModeProperty, ClickMode.Press);
-            mainGrid.AppendChild(toggleBtn);
-
-            // Arrow indicator ▼
-            FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(TextBlock));
-            arrow.SetValue(TextBlock.TextProperty, "▼");
-            arrow.SetValue(TextBlock.FontSizeProperty, 10.0);
-            arrow.SetValue(TextBlock.ForegroundProperty, ThemeManager.TextMutedBrush);
-            arrow.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
-            arrow.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
-            arrow.SetValue(TextBlock.MarginProperty, new Thickness(0, 0, 10, 0));
-            arrow.SetValue(TextBlock.IsHitTestVisibleProperty, false);
-            mainGrid.AppendChild(arrow);
-
-            // Popup with rounded border for dropdown list
-            FrameworkElementFactory popup = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.Popup));
-            popup.SetValue(System.Windows.Controls.Primitives.Popup.IsOpenProperty, new TemplateBindingExtension(ComboBox.IsDropDownOpenProperty));
-            popup.SetValue(System.Windows.Controls.Primitives.Popup.PlacementProperty, System.Windows.Controls.Primitives.PlacementMode.Bottom);
-            popup.SetValue(System.Windows.Controls.Primitives.Popup.AllowsTransparencyProperty, true);
-            popup.SetValue(System.Windows.Controls.Primitives.Popup.PopupAnimationProperty, System.Windows.Controls.Primitives.PopupAnimation.Slide);
-
-            FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
-            popupBorder.SetValue(Border.BackgroundProperty, ThemeManager.CardBgBrush);
-            popupBorder.SetValue(Border.BorderBrushProperty, ThemeManager.InputBorderBrush);
-            popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
-            popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
-            popupBorder.SetValue(Border.PaddingProperty, new Thickness(4));
-            popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 4, 0, 0));
-            popupBorder.SetValue(Border.MinWidthProperty, new TemplateBindingExtension(ComboBox.ActualWidthProperty));
-
-            FrameworkElementFactory scrollViewer = new FrameworkElementFactory(typeof(ScrollViewer));
-            scrollViewer.SetValue(ScrollViewer.MaxHeightProperty, 300.0);
-
-            FrameworkElementFactory itemsPresenter = new FrameworkElementFactory(typeof(ItemsPresenter));
-            scrollViewer.AppendChild(itemsPresenter);
-            popupBorder.AppendChild(scrollViewer);
-            popup.AppendChild(popupBorder);
-            mainGrid.AppendChild(popup);
-
-            comboTemplate.VisualTree = mainGrid;
-            combo.Template = comboTemplate;
-
-            // Item container style (each dropdown item)
+            // Item container style (each dropdown item with rounded corners)
             Style itemStyle = new Style(typeof(ComboBoxItem));
             itemStyle.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, ThemeManager.CardBgBrush));
             itemStyle.Setters.Add(new Setter(ComboBoxItem.ForegroundProperty, ThemeManager.TextPrimaryBrush));
@@ -1786,6 +1738,18 @@ namespace BlackHouseTunnel.Views
 
             combo.ItemContainerStyle = itemStyle;
             return combo;
+        }
+
+        private static T? FindVisualChild<T>(DependencyObject parent) where T : DependencyObject
+        {
+            for (int i = 0; i < System.Windows.Media.VisualTreeHelper.GetChildrenCount(parent); i++)
+            {
+                DependencyObject child = System.Windows.Media.VisualTreeHelper.GetChild(parent, i);
+                if (child is T found) return found;
+                T? result = FindVisualChild<T>(child);
+                if (result != null) return result;
+            }
+            return null;
         }
 
         private Border CreateModernToggleSwitch(string labelText, bool initialValue, Action<bool> onChanged)
