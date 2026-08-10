@@ -47,6 +47,7 @@ namespace BlackHouseTunnel.Services
                 ["home_online_members"] = "Miembros en Línea",
                 ["home_active_tunnels"] = "Túneles de Host Activos",
                 ["home_no_tunnels"] = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
+                ["btn_reload_tunnels"] = "🔄 Recargar Lista de Túneles Activos",
 
                 // Host View
                 ["host_title"] = "🖥️ Configuración Completa de Host de Servidor",
@@ -57,14 +58,15 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Puerto Local UDP",
                 ["lbl_addr"] = "Dirección del Túnel Remoto (Host Address)",
                 ["lbl_vis"] = "🔒 Visibilidad & Control de Acceso",
-                ["lbl_key"] = "🔑 Llave de Acceso (Key)",
+                ["lbl_key"] = "🔑 Configuración de Llave de Acceso Secreta (Key)",
+                ["lbl_key_hint"] = "Ingresa una contraseña aquí si deseas que los usuarios deban escribir una clave secreta para conectarse a tu túnel.",
                 ["lbl_map"] = "Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]",
                 ["btn_start_host"] = "🚀 Iniciar Servidor Host",
+                ["btn_import_scripts"] = "📄 Importar Scripts",
 
                 ["vis_option_0"] = "🌐 Global (Sin restricciones - Abierto a todos)",
                 ["vis_option_1"] = "🛡️ Servidor (Solo miembros del Servidor de Discord)",
-                ["vis_option_2"] = "🔒 Exclusivo Rol Privadito (Solo miembros con el Rol)",
-                ["vis_option_3"] = "🔑 Con Contraseña / Key (Protegido por Clave Secreta)",
+                ["vis_option_2"] = "🔒 Exclusivo con Rol (Solo miembros con Rol de Discord)",
 
                 // Join View
                 ["join_title"] = "🔗 Conectarse a un Servidor Túnel",
@@ -121,6 +123,7 @@ namespace BlackHouseTunnel.Services
                 ["home_online_members"] = "Online Members",
                 ["home_active_tunnels"] = "Live Active Tunnels",
                 ["home_no_tunnels"] = "ℹ️ No active host tunnels at this moment. Create one from the Host tab to start!",
+                ["btn_reload_tunnels"] = "🔄 Refresh Active Tunnels List",
 
                 // Host View
                 ["host_title"] = "🖥️ Complete Server Host Configuration",
@@ -131,14 +134,15 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Local UDP Port",
                 ["lbl_addr"] = "Remote Tunnel Address (Host Address)",
                 ["lbl_vis"] = "🔒 Visibility & Access Control",
-                ["lbl_key"] = "🔑 Access Key / Password",
+                ["lbl_key"] = "🔑 Secret Access Key Configuration (Key)",
+                ["lbl_key_hint"] = "Enter a password here if you want users to enter a secret key to connect to your tunnel.",
                 ["lbl_map"] = "Roblox Map File (.rbxl / .rbxlx) [Optional]",
                 ["btn_start_host"] = "🚀 Start Host Server",
+                ["btn_import_scripts"] = "📄 Import Scripts",
 
                 ["vis_option_0"] = "🌐 Global (Open to everyone)",
                 ["vis_option_1"] = "🛡️ Server (Discord Server Members only)",
-                ["vis_option_2"] = "🔒 Privadito Role Exclusive (Members with Role)",
-                ["vis_option_3"] = "🔑 Password / Key Protected (Secret Access Key)",
+                ["vis_option_2"] = "🔒 Role Exclusive (Members with Discord Role)",
 
                 // Join View
                 ["join_title"] = "🔗 Connect to a Tunnel Server",
@@ -195,6 +199,7 @@ namespace BlackHouseTunnel.Services
                 ["home_online_members"] = "Membros Online",
                 ["home_active_tunnels"] = "Túneis Ativos ao Vivo",
                 ["home_no_tunnels"] = "ℹ️ Nenhum túnel de host ativo no momento. Crie um na aba Host para começar!",
+                ["btn_reload_tunnels"] = "🔄 Recarregar Lista de Túneis Ativos",
 
                 // Host View
                 ["host_title"] = "🖥️ Configuração Completa do Servidor Host",
@@ -205,14 +210,15 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Porta Local UDP",
                 ["lbl_addr"] = "Endereço Remoto do Túnel",
                 ["lbl_vis"] = "🔒 Visibilidade e Controle de Acesso",
-                ["lbl_key"] = "🔑 Chave de Acesso (Key)",
+                ["lbl_key"] = "🔑 Configuração de Chave de Acesso Secreta (Key)",
+                ["lbl_key_hint"] = "Insira uma senha aqui se desejar proteger seu túnel com chave.",
                 ["lbl_map"] = "Arquivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]",
                 ["btn_start_host"] = "🚀 Iniciar Servidor Host",
+                ["btn_import_scripts"] = "📄 Importar Scripts",
 
                 ["vis_option_0"] = "🌐 Global (Aberto a todos)",
                 ["vis_option_1"] = "🛡️ Servidor (Apenas membros do Servidor)",
-                ["vis_option_2"] = "🔒 Exclusivo Função Privadito (Membros com Função)",
-                ["vis_option_3"] = "🔑 Com Senha / Chave (Protegido por Chave)",
+                ["vis_option_2"] = "🔒 Exclusivo com Função (Membros com Função do Discord)",
 
                 // Join View
                 ["join_title"] = "🔗 Conectar ao Servidor Túnel",

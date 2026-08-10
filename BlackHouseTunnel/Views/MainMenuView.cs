@@ -730,43 +730,24 @@ namespace BlackHouseTunnel.Views
             Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
             formGrid.Children.Add(addrPanel);
 
-            // Col 2, Row 2: Visibilidad & Key (Side-by-side)
-            Grid visAndKeyGrid = new Grid();
-            visAndKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            visAndKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
-            StackPanel visPanel = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
+            // Col 2, Row 2: Visibilidad (solo ComboBox, sin Key al lado)
+            StackPanel visPanel = new StackPanel();
             visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
             ComboBox visCombo = CreateStyledComboBox();
             visCombo.Items.Add(LocalizationService.Get("vis_option_0"));
             visCombo.Items.Add(LocalizationService.Get("vis_option_1"));
             visCombo.Items.Add(LocalizationService.Get("vis_option_2"));
-            visCombo.Items.Add(LocalizationService.Get("vis_option_3"));
-            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 3);
+            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
             visPanel.Children.Add(visCombo);
-            Grid.SetColumn(visPanel, 0);
-            visAndKeyGrid.Children.Add(visPanel);
+            Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
+            formGrid.Children.Add(visPanel);
 
-            StackPanel keyPanel = new StackPanel { Width = 130, Margin = new Thickness(8, 0, 0, 0) };
-            keyPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_key")));
+            // Placeholder for keyBox (created later in the separate Key card)
             TextBox keyBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedAccessKey);
-            keyPanel.Children.Add(keyBox);
-            Grid.SetColumn(keyPanel, 1);
-            visAndKeyGrid.Children.Add(keyPanel);
-
-            // Conditional Visibility for Key Box
-            keyPanel.Visibility = visCombo.SelectedIndex == 3 ? Visibility.Visible : Visibility.Collapsed;
-            visCombo.SelectionChanged += (s, e) =>
-            {
-                keyPanel.Visibility = visCombo.SelectedIndex == 3 ? Visibility.Visible : Visibility.Collapsed;
-            };
-
-            Grid.SetRow(visAndKeyGrid, 2); Grid.SetColumn(visAndKeyGrid, 2);
-            formGrid.Children.Add(visAndKeyGrid);
 
             // Row 3: Archivo de Mapa Roblox (Full width across 2 columns)
             StackPanel mapPanel = new StackPanel();
-            mapPanel.Children.Add(CreateLabel("Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]"));
+            mapPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_map")));
             Grid mapGrid = new Grid();
             mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
             mapGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
@@ -810,6 +791,49 @@ namespace BlackHouseTunnel.Views
             formGrid.Children.Add(mapPanel);
 
             boxPanel.Children.Add(formGrid);
+
+            // === SEPARATE KEY CARD (Only visible when Exclusivo con Rol is selected) ===
+            Border keyCard = new Border
+            {
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(14),
+                Padding = new Thickness(20),
+                Margin = new Thickness(0, 16, 0, 0),
+                Visibility = visCombo.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed
+            };
+
+            StackPanel keyCardPanel = new StackPanel();
+
+            TextBlock keyCardTitle = new TextBlock
+            {
+                Text = LocalizationService.Get("lbl_key"),
+                FontSize = 16,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#FFD700")),
+                Margin = new Thickness(0, 0, 0, 6)
+            };
+            keyCardPanel.Children.Add(keyCardTitle);
+
+            TextBlock keyCardHint = new TextBlock
+            {
+                Text = LocalizationService.Get("lbl_key_hint"),
+                FontSize = 12,
+                Foreground = ThemeManager.TextMutedBrush,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+            keyCardPanel.Children.Add(keyCardHint);
+
+            keyCardPanel.Children.Add(keyBox);
+            keyCard.Child = keyCardPanel;
+
+            // Toggle key card visibility based on visCombo
+            visCombo.SelectionChanged += (s, e) =>
+            {
+                keyCard.Visibility = visCombo.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
+            };
 
             // Custom Styled Checkbox Switch
             CheckBox publishCheck = new CheckBox
@@ -887,7 +911,7 @@ namespace BlackHouseTunnel.Views
 
             Button importBtn = new Button
             {
-                Content = "📄 Importar Scripts",
+                Content = LocalizationService.Get("btn_import_scripts"),
                 Height = 44,
                 Padding = new Thickness(20, 0, 20, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E2E")),
@@ -918,7 +942,7 @@ namespace BlackHouseTunnel.Views
 
             Button startHostBtn = new Button
             {
-                Content = "🚀 Iniciar Servidor Host",
+                Content = LocalizationService.Get("btn_start_host"),
                 Height = 44,
                 Padding = new Thickness(28, 0, 28, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
@@ -1006,6 +1030,9 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(btnRow);
             box.Child = boxPanel;
             panel.Children.Add(box);
+
+            // Add the key card BELOW the main form card
+            panel.Children.Add(keyCard);
 
             scroll.Content = panel;
             return scroll;
@@ -1667,10 +1694,90 @@ namespace BlackHouseTunnel.Views
                 Margin = new Thickness(0, 0, 0, 16)
             };
 
+            // Custom ControlTemplate for rounded ComboBox + rounded dropdown popup
+            ControlTemplate comboTemplate = new ControlTemplate(typeof(ComboBox));
+            FrameworkElementFactory mainGrid = new FrameworkElementFactory(typeof(Grid));
+
+            // Main display border (rounded)
+            FrameworkElementFactory mainBorder = new FrameworkElementFactory(typeof(Border));
+            mainBorder.SetValue(Border.BackgroundProperty, ThemeManager.InputBgBrush);
+            mainBorder.SetValue(Border.BorderBrushProperty, ThemeManager.InputBorderBrush);
+            mainBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            mainBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+            mainBorder.SetValue(Border.PaddingProperty, new Thickness(10, 0, 30, 0));
+
+            FrameworkElementFactory contentPresenter = new FrameworkElementFactory(typeof(ContentPresenter));
+            contentPresenter.SetValue(ContentPresenter.ContentProperty, new TemplateBindingExtension(ComboBox.SelectionBoxItemProperty));
+            contentPresenter.SetValue(ContentPresenter.VerticalAlignmentProperty, VerticalAlignment.Center);
+            mainBorder.AppendChild(contentPresenter);
+            mainGrid.AppendChild(mainBorder);
+
+            // Toggle button (arrow area)
+            FrameworkElementFactory toggleBtn = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.ToggleButton));
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.IsCheckedProperty, new TemplateBindingExtension(ComboBox.IsDropDownOpenProperty));
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.BackgroundProperty, Brushes.Transparent);
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.BorderThicknessProperty, new Thickness(0));
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.OpacityProperty, 0.0);
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.CursorProperty, System.Windows.Input.Cursors.Hand);
+            toggleBtn.SetValue(System.Windows.Controls.Primitives.ToggleButton.ClickModeProperty, ClickMode.Press);
+            mainGrid.AppendChild(toggleBtn);
+
+            // Arrow indicator ▼
+            FrameworkElementFactory arrow = new FrameworkElementFactory(typeof(TextBlock));
+            arrow.SetValue(TextBlock.TextProperty, "▼");
+            arrow.SetValue(TextBlock.FontSizeProperty, 10.0);
+            arrow.SetValue(TextBlock.ForegroundProperty, ThemeManager.TextMutedBrush);
+            arrow.SetValue(TextBlock.HorizontalAlignmentProperty, HorizontalAlignment.Right);
+            arrow.SetValue(TextBlock.VerticalAlignmentProperty, VerticalAlignment.Center);
+            arrow.SetValue(TextBlock.MarginProperty, new Thickness(0, 0, 10, 0));
+            arrow.SetValue(TextBlock.IsHitTestVisibleProperty, false);
+            mainGrid.AppendChild(arrow);
+
+            // Popup with rounded border for dropdown list
+            FrameworkElementFactory popup = new FrameworkElementFactory(typeof(System.Windows.Controls.Primitives.Popup));
+            popup.SetValue(System.Windows.Controls.Primitives.Popup.IsOpenProperty, new TemplateBindingExtension(ComboBox.IsDropDownOpenProperty));
+            popup.SetValue(System.Windows.Controls.Primitives.Popup.PlacementProperty, System.Windows.Controls.Primitives.PlacementMode.Bottom);
+            popup.SetValue(System.Windows.Controls.Primitives.Popup.AllowsTransparencyProperty, true);
+            popup.SetValue(System.Windows.Controls.Primitives.Popup.PopupAnimationProperty, System.Windows.Controls.Primitives.PopupAnimation.Slide);
+
+            FrameworkElementFactory popupBorder = new FrameworkElementFactory(typeof(Border));
+            popupBorder.SetValue(Border.BackgroundProperty, ThemeManager.CardBgBrush);
+            popupBorder.SetValue(Border.BorderBrushProperty, ThemeManager.InputBorderBrush);
+            popupBorder.SetValue(Border.BorderThicknessProperty, new Thickness(1));
+            popupBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(10));
+            popupBorder.SetValue(Border.PaddingProperty, new Thickness(4));
+            popupBorder.SetValue(Border.MarginProperty, new Thickness(0, 4, 0, 0));
+            popupBorder.SetValue(Border.MinWidthProperty, new TemplateBindingExtension(ComboBox.ActualWidthProperty));
+
+            FrameworkElementFactory scrollViewer = new FrameworkElementFactory(typeof(ScrollViewer));
+            scrollViewer.SetValue(ScrollViewer.MaxHeightProperty, 300.0);
+
+            FrameworkElementFactory itemsPresenter = new FrameworkElementFactory(typeof(ItemsPresenter));
+            scrollViewer.AppendChild(itemsPresenter);
+            popupBorder.AppendChild(scrollViewer);
+            popup.AppendChild(popupBorder);
+            mainGrid.AppendChild(popup);
+
+            comboTemplate.VisualTree = mainGrid;
+            combo.Template = comboTemplate;
+
+            // Item container style (each dropdown item)
             Style itemStyle = new Style(typeof(ComboBoxItem));
             itemStyle.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, ThemeManager.CardBgBrush));
             itemStyle.Setters.Add(new Setter(ComboBoxItem.ForegroundProperty, ThemeManager.TextPrimaryBrush));
-            itemStyle.Setters.Add(new Setter(ComboBoxItem.PaddingProperty, new Thickness(10, 8, 10, 8)));
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.PaddingProperty, new Thickness(12, 8, 12, 8)));
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.CursorProperty, System.Windows.Input.Cursors.Hand));
+
+            // Create item template with rounded corners per item
+            ControlTemplate itemTemplate = new ControlTemplate(typeof(ComboBoxItem));
+            FrameworkElementFactory itemBorder = new FrameworkElementFactory(typeof(Border));
+            itemBorder.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(ComboBoxItem.BackgroundProperty));
+            itemBorder.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+            itemBorder.SetValue(Border.PaddingProperty, new TemplateBindingExtension(ComboBoxItem.PaddingProperty));
+            FrameworkElementFactory itemContent = new FrameworkElementFactory(typeof(ContentPresenter));
+            itemBorder.AppendChild(itemContent);
+            itemTemplate.VisualTree = itemBorder;
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.TemplateProperty, itemTemplate));
 
             Trigger hoverTrigger = new Trigger { Property = ComboBoxItem.IsMouseOverProperty, Value = true };
             hoverTrigger.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, ThemeManager.IsLight ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5E7EB")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#202030"))));
