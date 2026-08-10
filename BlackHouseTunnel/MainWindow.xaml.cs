@@ -168,6 +168,7 @@ namespace BlackHouseTunnel
             var mainMenuView = new MainMenuView(user);
             _mainMenuView = mainMenuView;
             mainMenuView.OnLogoutRequested += (s, e) => ShowWelcomeView();
+            mainMenuView.OnReloadRequested += (s, e) => ShowMainMenuView(user);
             MainContainer.Children.Clear();
             MainContainer.Children.Add(mainMenuView);
         }

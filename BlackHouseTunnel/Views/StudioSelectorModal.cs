@@ -158,7 +158,7 @@ namespace BlackHouseTunnel.Views
                     Grid.SetColumn(titleWithIcon, 0);
                     headerGrid.Children.Add(titleWithIcon);
 
-                    StackPanel badgePanel = new StackPanel { Orientation = Orientation.Horizontal };
+                    StackPanel badgePanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
                     if (isSelected)
                     {
                         Border activeTag = CreateBadge("ACTIVO", "#5865F2");
@@ -301,14 +301,16 @@ namespace BlackHouseTunnel.Views
             {
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString(colorHex)),
                 CornerRadius = new CornerRadius(4),
-                Padding = new Thickness(6, 2, 6, 2),
+                Padding = new Thickness(5, 1, 5, 1),
                 Margin = new Thickness(4, 0, 0, 0),
+                VerticalAlignment = VerticalAlignment.Center,
                 Child = new TextBlock
                 {
                     Text = label,
                     FontSize = 9,
                     FontWeight = FontWeights.Bold,
-                    Foreground = Brushes.White
+                    Foreground = Brushes.White,
+                    VerticalAlignment = VerticalAlignment.Center
                 }
             };
         }

@@ -42,8 +42,10 @@ namespace BlackHouseTunnel.Models
             }
         }
 
-        // Top Line 1: Server Nickname if set, otherwise GlobalName or Username
-        public string DisplayNick => !string.IsNullOrWhiteSpace(ServerNick) ? ServerNick : (!string.IsNullOrWhiteSpace(GlobalName) ? GlobalName : Username);
+        public string CustomNickname { get; set; } = string.Empty;
+
+        // Top Line 1: CustomNickname if set, otherwise ServerNick, GlobalName or Username
+        public string DisplayNick => !string.IsNullOrWhiteSpace(CustomNickname) ? CustomNickname : (!string.IsNullOrWhiteSpace(ServerNick) ? ServerNick : (!string.IsNullOrWhiteSpace(GlobalName) ? GlobalName : Username));
         public string DisplayName => DisplayNick;
 
         // Line 2: Original Handle @username

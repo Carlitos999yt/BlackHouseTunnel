@@ -39,6 +39,7 @@ namespace BlackHouseTunnel.Models
         public string SavedRemoteHostAddress { get; set; } = "";
         public string SavedMapPath { get; set; } = "";
         public int SavedVisibilityOptionIndex { get; set; } = 0;
+        public string SavedAccessKey { get; set; } = "";
 
         // Auto-Login Session Token
         public string? SavedAccessToken { get; set; } = null;

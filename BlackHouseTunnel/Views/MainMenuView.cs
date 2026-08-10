@@ -17,6 +17,7 @@ namespace BlackHouseTunnel.Views
     public class MainMenuView : UserControl
     {
         public event EventHandler? OnLogoutRequested;
+        public event EventHandler? OnReloadRequested;
 
         private readonly DiscordUser _user;
         private readonly OnlineMembersMonitor _membersMonitor;
@@ -47,6 +48,10 @@ namespace BlackHouseTunnel.Views
         public MainMenuView(DiscordUser user)
         {
             _user = user;
+            if (!string.IsNullOrWhiteSpace(ConfigManager.CurrentConfig.SavedUsername))
+            {
+                _user.CustomNickname = ConfigManager.CurrentConfig.SavedUsername;
+            }
             _membersMonitor = new OnlineMembersMonitor(ConfigManager.CurrentConfig, _user);
             InitializeComponent();
             _membersMonitor.OnMembersUpdated += MembersMonitor_OnMembersUpdated;
@@ -663,6 +668,14 @@ namespace BlackHouseTunnel.Views
             Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
             formGrid.Children.Add(visPanel);
 
+            // Row 3 Col 0: Llave de Acceso (Key/Password)
+            StackPanel keyPanel = new StackPanel();
+            keyPanel.Children.Add(CreateLabel("🔑 Llave de Acceso / Key (Opcional)"));
+            TextBox keyBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedAccessKey);
+            keyPanel.Children.Add(keyBox);
+            Grid.SetRow(keyPanel, 3); Grid.SetColumn(keyPanel, 0);
+            formGrid.Children.Add(keyPanel);
+
             // Row 3: Archivo de Mapa Roblox (Full width across 2 columns)
             StackPanel mapPanel = new StackPanel();
             mapPanel.Children.Add(CreateLabel("Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]"));
@@ -846,6 +859,7 @@ namespace BlackHouseTunnel.Views
                     string targetServerName = nameBox.Text.Trim();
                     string mapPath = mapBox.Text.Trim();
                     string addr = addrBox.Text.Trim();
+                    string accessKey = keyBox.Text.Trim();
 
                     // Save all form values to config.json in BlackHouseTunnel folder
                     ConfigManager.CurrentConfig.SavedUserId = targetUid;
@@ -854,6 +868,7 @@ namespace BlackHouseTunnel.Views
                     ConfigManager.CurrentConfig.SavedUdpPort = targetPort;
                     ConfigManager.CurrentConfig.SavedRemoteHostAddress = addr;
                     ConfigManager.CurrentConfig.SavedMapPath = mapPath;
+                    ConfigManager.CurrentConfig.SavedAccessKey = accessKey;
                     int targetVisMode = isAuthorizedHost ? visCombo.SelectedIndex : 0;
                     ConfigManager.CurrentConfig.SavedVisibilityOptionIndex = targetVisMode;
                     ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
@@ -871,7 +886,8 @@ namespace BlackHouseTunnel.Views
                             ServerName = string.IsNullOrWhiteSpace(targetServerName) ? $"Servidor de {targetUsername}" : targetServerName,
                             HostUsername = targetUsername,
                             RemoteAddress = addr,
-                            VisibilityMode = targetVisMode
+                            VisibilityMode = targetVisMode,
+                            AccessKey = accessKey
                         });
                     }
 
@@ -1135,6 +1151,21 @@ namespace BlackHouseTunnel.Views
                 "pt" => 2,
                 _ => 0
             };
+            langCombo.SelectionChanged += (s, e) =>
+            {
+                string newLang = langCombo.SelectedIndex switch
+                {
+                    1 => "en",
+                    2 => "pt",
+                    _ => "es"
+                };
+                if (config.Language != newLang)
+                {
+                    config.Language = newLang;
+                    ConfigManager.SaveConfig(config);
+                    OnReloadRequested?.Invoke(this, EventArgs.Empty);
+                }
+            };
             boxPanel.Children.Add(langCombo);
 
             boxPanel.Children.Add(CreateLabel("Tema de la Interfaz"));
@@ -1149,20 +1180,38 @@ namespace BlackHouseTunnel.Views
             themeCombo.Items.Add("🌙 Oscuro Noche Profunda (Tema por Defecto)");
             themeCombo.Items.Add("☀️ Claro Moderno (Light Mode)");
             themeCombo.SelectedIndex = config.ThemeMode == "Light" ? 1 : 0;
+            themeCombo.SelectionChanged += (s, e) =>
+            {
+                string newTheme = themeCombo.SelectedIndex == 1 ? "Light" : "Dark";
+                if (config.ThemeMode != newTheme)
+                {
+                    config.ThemeMode = newTheme;
+                    ConfigManager.SaveConfig(config);
+                    OnReloadRequested?.Invoke(this, EventArgs.Empty);
+                }
+            };
             boxPanel.Children.Add(themeCombo);
 
             // Section 2: Discord Rich Presence
             boxPanel.Children.Add(CreateSectionHeader("🎮 Discord y Presencia en Vivo"));
 
-            CheckBox rpcCheck = new CheckBox
-            {
-                Content = "Activar Discord Rich Presence (Muestra tu estado 'Conectado a Host' o 'Hosteando' en Discord)",
-                IsChecked = config.EnableDiscordRpc,
-                Foreground = Brushes.White,
-                FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 24)
-            };
-            boxPanel.Children.Add(rpcCheck);
+            Border rpcToggle = CreateModernToggleSwitch(
+                "Activar Discord Rich Presence (Muestra tu estado 'Conectado a Host' o 'Hosteando' en Discord)",
+                config.EnableDiscordRpc,
+                (enabled) =>
+                {
+                    config.EnableDiscordRpc = enabled;
+                    ConfigManager.SaveConfig(config);
+                    if (enabled)
+                    {
+                        DiscordRpcService.SetPresenceInMenu();
+                    }
+                    else
+                    {
+                        DiscordRpcService.ClearPresence();
+                    }
+                });
+            boxPanel.Children.Add(rpcToggle);
 
             // Section 3: Roblox Studio Maintenance
             boxPanel.Children.Add(CreateSectionHeader("🛠️ Mantenimiento y Roblox Studio"));
@@ -1290,69 +1339,8 @@ namespace BlackHouseTunnel.Views
                 }
             };
             studioBtnsRow.Children.Add(reinstallStudioBtn);
-
             boxPanel.Children.Add(studioBtnsRow);
 
-            // Section 4: Discord Channel ID (Staff / Superior / Hoster Only)
-            TextBlock? channelLabel = null;
-            TextBox? channelBox = null;
-            if (_user.IsCanHostOrManage)
-            {
-                boxPanel.Children.Add(CreateSectionHeader("📢 Configuración de Canal (Hosters / Staff)"));
-                channelLabel = CreateLabel("ID del Canal de Anuncios de Túnel");
-                channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1529169033482600659" : config.ChannelId);
-                channelBox.Margin = new Thickness(0, 0, 0, 24);
-                boxPanel.Children.Add(channelLabel);
-                boxPanel.Children.Add(channelBox);
-            }
-
-            // Save Settings Button
-            Button saveBtn = new Button
-            {
-                Content = "💾 Guardar Configuración del Sistema",
-                Height = 44,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
-                Foreground = Brushes.White,
-                FontSize = 14,
-                FontWeight = FontWeights.Bold,
-                BorderThickness = new Thickness(0),
-                Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(0, 10, 0, 0)
-            };
-            SetButtonCornerRadius(saveBtn, 10);
-
-            saveBtn.Click += (s, e) =>
-            {
-                config.Language = langCombo.SelectedIndex switch
-                {
-                    1 => "en",
-                    2 => "pt",
-                    _ => "es"
-                };
-
-                config.ThemeMode = themeCombo.SelectedIndex == 1 ? "Light" : "Dark";
-                config.EnableDiscordRpc = rpcCheck.IsChecked == true;
-
-                config.SelectedStudioPath = studioBox.Text.Trim();
-                if (_user.IsCanHostOrManage && channelBox != null)
-                {
-                    config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1529169033482600659" : channelBox.Text.Trim();
-                }
-                ConfigManager.SaveConfig(config);
-
-                if (config.EnableDiscordRpc)
-                {
-                    DiscordRpcService.SetPresenceInMenu();
-                }
-                else
-                {
-                    DiscordRpcService.ClearPresence();
-                }
-
-                DarkMessageBox.Show("¡Configuración del sistema guardada con éxito!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
-            };
-
-            boxPanel.Children.Add(saveBtn);
             box.Child = boxPanel;
             panel.Children.Add(box);
 
@@ -1375,6 +1363,145 @@ namespace BlackHouseTunnel.Views
             borderFactory.AppendChild(presenterFactory);
             template.VisualTree = borderFactory;
             btn.Template = template;
+        }
+
+        private Border CreateModernToggleSwitch(string labelText, bool initialValue, Action<bool> onChanged)
+        {
+            bool isChecked = initialValue;
+
+            StackPanel mainPanel = new StackPanel { Orientation = Orientation.Horizontal, VerticalAlignment = VerticalAlignment.Center };
+
+            Border track = new Border
+            {
+                Width = 46,
+                Height = 24,
+                CornerRadius = new CornerRadius(12),
+                Background = isChecked ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2B2D31")),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 12, 0),
+                Padding = new Thickness(3)
+            };
+
+            Ellipse thumb = new Ellipse
+            {
+                Width = 18,
+                Height = 18,
+                Fill = Brushes.White,
+                HorizontalAlignment = isChecked ? HorizontalAlignment.Right : HorizontalAlignment.Left
+            };
+
+            track.Child = thumb;
+
+            TextBlock label = new TextBlock
+            {
+                Text = labelText,
+                FontSize = 13,
+                FontWeight = FontWeights.SemiBold,
+                Foreground = Brushes.White,
+                VerticalAlignment = VerticalAlignment.Center,
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+
+            mainPanel.Children.Add(track);
+            mainPanel.Children.Add(label);
+
+            Border wrapper = new Border { Child = mainPanel, Margin = new Thickness(0, 4, 0, 20), Cursor = System.Windows.Input.Cursors.Hand };
+
+            wrapper.MouseLeftButtonDown += (s, e) =>
+            {
+                isChecked = !isChecked;
+                track.Background = isChecked ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2B2D31"));
+                thumb.HorizontalAlignment = isChecked ? HorizontalAlignment.Right : HorizontalAlignment.Left;
+                onChanged?.Invoke(isChecked);
+            };
+
+            return wrapper;
+        }
+
+        private void ShowEditNicknameModal()
+        {
+            Grid modalRoot = new Grid { Background = new SolidColorBrush(Color.FromArgb(160, 0, 0, 0)) };
+            Border card = new Border
+            {
+                Width = 360,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F0F1A")),
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A54")),
+                BorderThickness = new Thickness(1.5),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(24),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            StackPanel stack = new StackPanel();
+            stack.Children.Add(new TextBlock
+            {
+                Text = "👤 Cambiar Mi Apodo en la App",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                Margin = new Thickness(0, 0, 0, 16)
+            });
+
+            stack.Children.Add(CreateLabel("Ingresa tu nuevo apodo (Username)"));
+            TextBox nickBox = CreateStyledTextBox(_user.DisplayNick);
+            stack.Children.Add(nickBox);
+
+            StackPanel btns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right, Margin = new Thickness(0, 16, 0, 0) };
+
+            Button cancelBtn = new Button
+            {
+                Content = "Cancelar",
+                Height = 36,
+                Padding = new Thickness(16, 0, 16, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222234")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.SemiBold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            SetButtonCornerRadius(cancelBtn, 8);
+            cancelBtn.Click += (s, e) =>
+            {
+                _dropdownOverlay.Children.Clear();
+                _dropdownOverlay.Visibility = Visibility.Collapsed;
+            };
+            btns.Children.Add(cancelBtn);
+
+            Button saveBtn = new Button
+            {
+                Content = "💾 Guardar Apodo",
+                Height = 36,
+                Padding = new Thickness(16, 0, 16, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            SetButtonCornerRadius(saveBtn, 8);
+            saveBtn.Click += (s, e) =>
+            {
+                string newNick = nickBox.Text.Trim();
+                if (!string.IsNullOrWhiteSpace(newNick))
+                {
+                    _user.CustomNickname = newNick;
+                    ConfigManager.CurrentConfig.SavedUsername = newNick;
+                    ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
+                    _dropdownOverlay.Children.Clear();
+                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                    OnReloadRequested?.Invoke(this, EventArgs.Empty);
+                }
+            };
+            btns.Children.Add(saveBtn);
+
+            stack.Children.Add(btns);
+            card.Child = stack;
+            modalRoot.Children.Add(card);
+
+            _dropdownOverlay.Children.Clear();
+            _dropdownOverlay.Children.Add(modalRoot);
+            _dropdownOverlay.Visibility = Visibility.Visible;
         }
 
         private TextBlock CreateSectionHeader(string text)
@@ -1726,6 +1853,12 @@ namespace BlackHouseTunnel.Views
                 ConfigManager.CurrentConfig.SavedAccessToken = null;
                 ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
                 OnLogoutRequested?.Invoke(this, EventArgs.Empty);
+            };
+
+            dropdownMenu.OnEditNickRequested += (s, e) =>
+            {
+                _dropdownOverlay.Visibility = Visibility.Collapsed;
+                ShowEditNicknameModal();
             };
 
             _dropdownOverlay.Children.Add(dropdownMenu);

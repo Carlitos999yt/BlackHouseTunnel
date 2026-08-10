@@ -12,7 +12,7 @@ namespace BlackHouseTunnel.Views
     public class ProfileDropdownMenu : UserControl
     {
         public event EventHandler? OnLogoutRequested;
-        public event EventHandler? OnSettingsRequested;
+        public event EventHandler? OnEditNickRequested;
 
         private readonly DiscordUser _user;
         private Border _menuBorder = null!;
@@ -67,10 +67,10 @@ namespace BlackHouseTunnel.Views
             };
             menuPanel.Children.Add(sep);
 
-            // Professional SVG Settings Icon (Gear/Cog)
-            string gearPathData = "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
-            Button settingsBtn = CreateMenuItemWithSvgIcon("Configuración", gearPathData, Brushes.White, () => OnSettingsRequested?.Invoke(this, EventArgs.Empty));
-            menuPanel.Children.Add(settingsBtn);
+            // SVG User Edit Icon (Person/Pen)
+            string userEditPathData = "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z";
+            Button nickBtn = CreateMenuItemWithSvgIcon("Cambiar Mi Apodo", userEditPathData, Brushes.White, () => OnEditNickRequested?.Invoke(this, EventArgs.Empty));
+            menuPanel.Children.Add(nickBtn);
 
             // Professional SVG Logout Icon (Door Exit)
             string logoutPathData = "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9";
