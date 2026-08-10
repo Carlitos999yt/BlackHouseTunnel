@@ -46,6 +46,7 @@ namespace BlackHouseTunnel.Services
                 ["home_quick_join"] = "Unirse a Partida Túnel",
                 ["home_online_members"] = "Miembros en Línea",
                 ["home_active_tunnels"] = "Túneles de Host Activos",
+                ["home_no_tunnels"] = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
 
                 // Host View
                 ["host_title"] = "🖥️ Configuración Completa de Host de Servidor",
@@ -56,9 +57,14 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Puerto Local UDP",
                 ["lbl_addr"] = "Dirección del Túnel Remoto (Host Address)",
                 ["lbl_vis"] = "🔒 Visibilidad & Control de Acceso",
-                ["lbl_key"] = "🔑 Llave de Acceso / Key (Opcional)",
+                ["lbl_key"] = "🔑 Llave de Acceso (Key)",
                 ["lbl_map"] = "Archivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]",
                 ["btn_start_host"] = "🚀 Iniciar Servidor Host",
+
+                ["vis_option_0"] = "🌐 Global (Sin restricciones - Abierto a todos)",
+                ["vis_option_1"] = "🛡️ Servidor (Solo miembros del Servidor de Discord)",
+                ["vis_option_2"] = "🔒 Exclusivo Rol Privadito (Solo miembros con el Rol)",
+                ["vis_option_3"] = "🔑 Con Contraseña / Key (Protegido por Clave Secreta)",
 
                 // Join View
                 ["join_title"] = "🔗 Conectarse a un Servidor Túnel",
@@ -114,6 +120,7 @@ namespace BlackHouseTunnel.Services
                 ["home_quick_join"] = "Join Tunnel Session",
                 ["home_online_members"] = "Online Members",
                 ["home_active_tunnels"] = "Live Active Tunnels",
+                ["home_no_tunnels"] = "ℹ️ No active host tunnels at this moment. Create one from the Host tab to start!",
 
                 // Host View
                 ["host_title"] = "🖥️ Complete Server Host Configuration",
@@ -124,9 +131,14 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Local UDP Port",
                 ["lbl_addr"] = "Remote Tunnel Address (Host Address)",
                 ["lbl_vis"] = "🔒 Visibility & Access Control",
-                ["lbl_key"] = "🔑 Access Key / Password (Optional)",
+                ["lbl_key"] = "🔑 Access Key / Password",
                 ["lbl_map"] = "Roblox Map File (.rbxl / .rbxlx) [Optional]",
                 ["btn_start_host"] = "🚀 Start Host Server",
+
+                ["vis_option_0"] = "🌐 Global (Open to everyone)",
+                ["vis_option_1"] = "🛡️ Server (Discord Server Members only)",
+                ["vis_option_2"] = "🔒 Privadito Role Exclusive (Members with Role)",
+                ["vis_option_3"] = "🔑 Password / Key Protected (Secret Access Key)",
 
                 // Join View
                 ["join_title"] = "🔗 Connect to a Tunnel Server",
@@ -182,6 +194,7 @@ namespace BlackHouseTunnel.Services
                 ["home_quick_join"] = "Entrar na Partida",
                 ["home_online_members"] = "Membros Online",
                 ["home_active_tunnels"] = "Túneis Ativos ao Vivo",
+                ["home_no_tunnels"] = "ℹ️ Nenhum túnel de host ativo no momento. Crie um na aba Host para começar!",
 
                 // Host View
                 ["host_title"] = "🖥️ Configuração Completa do Servidor Host",
@@ -192,9 +205,14 @@ namespace BlackHouseTunnel.Services
                 ["lbl_port"] = "Porta Local UDP",
                 ["lbl_addr"] = "Endereço Remoto do Túnel",
                 ["lbl_vis"] = "🔒 Visibilidade e Controle de Acesso",
-                ["lbl_key"] = "🔑 Chave de Acesso (Opcional)",
+                ["lbl_key"] = "🔑 Chave de Acesso (Key)",
                 ["lbl_map"] = "Arquivo de Mapa Roblox (.rbxl / .rbxlx) [Opcional]",
                 ["btn_start_host"] = "🚀 Iniciar Servidor Host",
+
+                ["vis_option_0"] = "🌐 Global (Aberto a todos)",
+                ["vis_option_1"] = "🛡️ Servidor (Apenas membros do Servidor)",
+                ["vis_option_2"] = "🔒 Exclusivo Função Privadito (Membros com Função)",
+                ["vis_option_3"] = "🔑 Com Senha / Chave (Protegido por Chave)",
 
                 // Join View
                 ["join_title"] = "🔗 Conectar ao Servidor Túnel",

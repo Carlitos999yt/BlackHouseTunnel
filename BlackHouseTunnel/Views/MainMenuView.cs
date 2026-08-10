@@ -547,7 +547,7 @@ namespace BlackHouseTunnel.Views
 
             TextBlock friendsHeader = new TextBlock
             {
-                Text = "Miembros en Línea",
+                Text = LocalizationService.Get("home_online_members"),
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Foreground = ThemeManager.TextPrimaryBrush,
@@ -566,18 +566,38 @@ namespace BlackHouseTunnel.Views
             friendsScroll.Content = _friendsRowPanel;
             body.Children.Add(friendsScroll);
 
+            // Active Tunnels Header Row with Reload Button 🔄
+            StackPanel tunnelsHeaderRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 14) };
+
             TextBlock tunnelsHeader = new TextBlock
             {
                 Text = LocalizationService.Get("home_active_tunnels"),
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
                 Foreground = ThemeManager.TextPrimaryBrush,
-                Margin = new Thickness(0, 0, 0, 14)
+                VerticalAlignment = VerticalAlignment.Center
             };
-            body.Children.Add(tunnelsHeader);
+            tunnelsHeaderRow.Children.Add(tunnelsHeader);
+
+            Button reloadBtn = new Button
+            {
+                Content = "🔄",
+                FontSize = 14,
+                Width = 32,
+                Height = 32,
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
+                BorderBrush = ThemeManager.InputBorderBrush,
+                BorderThickness = new Thickness(1),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(10, 0, 0, 0),
+                ToolTip = "Recargar Lista de Túneles Activos"
+            };
+            SetButtonCornerRadius(reloadBtn, 8);
 
             WrapPanel tunnelGrid = new WrapPanel();
-            Task.Run(async () =>
+
+            Func<Task> loadTunnelsAction = async () =>
             {
                 var activeTunnels = await ActiveTunnelRegistry.GetVisibleTunnelsForUserAsync(_user);
                 Dispatcher.Invoke(() =>
@@ -587,7 +607,7 @@ namespace BlackHouseTunnel.Views
                     {
                         tunnelGrid.Children.Add(new TextBlock
                         {
-                            Text = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
+                            Text = LocalizationService.Get("home_no_tunnels"),
                             FontSize = 13,
                             Foreground = ThemeManager.TextMutedBrush,
                             Margin = new Thickness(0, 10, 0, 20)
@@ -601,7 +621,23 @@ namespace BlackHouseTunnel.Views
                         }
                     }
                 });
-            });
+            };
+
+            reloadBtn.Click += async (s, e) =>
+            {
+                reloadBtn.IsEnabled = false;
+                reloadBtn.Content = "⏳";
+                await loadTunnelsAction();
+                _membersMonitor.Stop();
+                _membersMonitor.Start();
+                reloadBtn.Content = "🔄";
+                reloadBtn.IsEnabled = true;
+            };
+
+            tunnelsHeaderRow.Children.Add(reloadBtn);
+            body.Children.Add(tunnelsHeaderRow);
+
+            Task.Run(loadTunnelsAction);
 
             body.Children.Add(tunnelGrid);
 
@@ -661,7 +697,6 @@ namespace BlackHouseTunnel.Views
             formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 1
             formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 2
             formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 3
-            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 4
 
             // Col 0, Row 0: ID de Usuario (UID)
             StackPanel uidPanel = new StackPanel();
@@ -704,32 +739,39 @@ namespace BlackHouseTunnel.Views
             Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
             formGrid.Children.Add(addrPanel);
 
-            // Col 2, Row 2: Visibilidad & Whitelist de Acceso
-            StackPanel visPanel = new StackPanel();
-            visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
-            ComboBox visCombo = new ComboBox
-            {
-                Height = 38,
-                Background = ThemeManager.InputBgBrush,
-                Foreground = ThemeManager.TextPrimaryBrush,
-                FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 16)
-            };
-            visCombo.Items.Add("🌐 Global (Sin restricciones - Abierto a todos)");
-            visCombo.Items.Add("🛡️ Servidor (Solo miembros del Servidor de Discord)");
-            visCombo.Items.Add("🔒 Exclusivo Rol Privadito (Solo miembros con el Rol Privadito)");
-            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
-            visPanel.Children.Add(visCombo);
-            Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
-            formGrid.Children.Add(visPanel);
+            // Col 2, Row 2: Visibilidad & Key (Side-by-side)
+            Grid visAndKeyGrid = new Grid();
+            visAndKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            visAndKeyGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
 
-            // Row 3 Col 0: Llave de Acceso (Key/Password)
-            StackPanel keyPanel = new StackPanel();
-            keyPanel.Children.Add(CreateLabel("🔑 Llave de Acceso / Key (Opcional)"));
+            StackPanel visPanel = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
+            visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
+            ComboBox visCombo = CreateStyledComboBox();
+            visCombo.Items.Add(LocalizationService.Get("vis_option_0"));
+            visCombo.Items.Add(LocalizationService.Get("vis_option_1"));
+            visCombo.Items.Add(LocalizationService.Get("vis_option_2"));
+            visCombo.Items.Add(LocalizationService.Get("vis_option_3"));
+            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 3);
+            visPanel.Children.Add(visCombo);
+            Grid.SetColumn(visPanel, 0);
+            visAndKeyGrid.Children.Add(visPanel);
+
+            StackPanel keyPanel = new StackPanel { Width = 130, Margin = new Thickness(8, 0, 0, 0) };
+            keyPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_key")));
             TextBox keyBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedAccessKey);
             keyPanel.Children.Add(keyBox);
-            Grid.SetRow(keyPanel, 3); Grid.SetColumn(keyPanel, 0);
-            formGrid.Children.Add(keyPanel);
+            Grid.SetColumn(keyPanel, 1);
+            visAndKeyGrid.Children.Add(keyPanel);
+
+            // Conditional Visibility for Key Box
+            keyPanel.Visibility = visCombo.SelectedIndex == 3 ? Visibility.Visible : Visibility.Collapsed;
+            visCombo.SelectionChanged += (s, e) =>
+            {
+                keyPanel.Visibility = visCombo.SelectedIndex == 3 ? Visibility.Visible : Visibility.Collapsed;
+            };
+
+            Grid.SetRow(visAndKeyGrid, 2); Grid.SetColumn(visAndKeyGrid, 2);
+            formGrid.Children.Add(visAndKeyGrid);
 
             // Row 3: Archivo de Mapa Roblox (Full width across 2 columns)
             StackPanel mapPanel = new StackPanel();
@@ -1189,14 +1231,7 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(CreateSectionHeader(LocalizationService.Get("settings_lang_theme")));
 
             boxPanel.Children.Add(CreateLabel(LocalizationService.Get("settings_lang_lbl")));
-            ComboBox langCombo = new ComboBox
-            {
-                Height = 38,
-                Background = InputBgBrush,
-                Foreground = TextPrimaryBrush,
-                FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 16)
-            };
+            ComboBox langCombo = CreateStyledComboBox();
             langCombo.Items.Add("🇪🇸 Español (Spanish)");
             langCombo.Items.Add("🇺🇸 English (Inglés)");
             langCombo.Items.Add("🇧🇷 Português (Portugués)");
@@ -1225,14 +1260,7 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(langCombo);
 
             boxPanel.Children.Add(CreateLabel(LocalizationService.Get("settings_theme_lbl")));
-            ComboBox themeCombo = new ComboBox
-            {
-                Height = 38,
-                Background = InputBgBrush,
-                Foreground = TextPrimaryBrush,
-                FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 24)
-            };
+            ComboBox themeCombo = CreateStyledComboBox();
             themeCombo.Items.Add(LocalizationService.Get("settings_theme_dark"));
             themeCombo.Items.Add(LocalizationService.Get("settings_theme_light"));
             themeCombo.SelectedIndex = config.ThemeMode == "Light" ? 1 : 0;
@@ -1472,6 +1500,33 @@ namespace BlackHouseTunnel.Views
             borderFactory.AppendChild(presenterFactory);
             template.VisualTree = borderFactory;
             btn.Template = template;
+        }
+
+        private ComboBox CreateStyledComboBox()
+        {
+            ComboBox combo = new ComboBox
+            {
+                Height = 38,
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
+                BorderBrush = ThemeManager.InputBorderBrush,
+                BorderThickness = new Thickness(1),
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 16)
+            };
+
+            Style itemStyle = new Style(typeof(ComboBoxItem));
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, ThemeManager.CardBgBrush));
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.ForegroundProperty, ThemeManager.TextPrimaryBrush));
+            itemStyle.Setters.Add(new Setter(ComboBoxItem.PaddingProperty, new Thickness(10, 8, 10, 8)));
+
+            Trigger hoverTrigger = new Trigger { Property = ComboBoxItem.IsMouseOverProperty, Value = true };
+            hoverTrigger.Setters.Add(new Setter(ComboBoxItem.BackgroundProperty, ThemeManager.IsLight ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5E7EB")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#202030"))));
+            hoverTrigger.Setters.Add(new Setter(ComboBoxItem.ForegroundProperty, ThemeManager.TextPrimaryBrush));
+            itemStyle.Triggers.Add(hoverTrigger);
+
+            combo.ItemContainerStyle = itemStyle;
+            return combo;
         }
 
         private Border CreateModernToggleSwitch(string labelText, bool initialValue, Action<bool> onChanged)
