@@ -6,6 +6,7 @@ using System.Windows.Media.Animation;
 using System.Windows.Media.Effects;
 using System.Windows.Shapes;
 using BlackHouseTunnel.Models;
+using BlackHouseTunnel.Services;
 
 namespace BlackHouseTunnel.Views
 {
@@ -28,8 +29,8 @@ namespace BlackHouseTunnel.Views
             _menuBorder = new Border
             {
                 Width = 220,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12121B")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A54")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1.5),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(10),
@@ -54,7 +55,7 @@ namespace BlackHouseTunnel.Views
                 FontFamily = new FontFamily("Segoe UI, sans-serif"),
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(10, 6, 10, 8)
             };
             menuPanel.Children.Add(userHeader);
@@ -62,19 +63,19 @@ namespace BlackHouseTunnel.Views
             // Separator
             Separator sep = new Separator
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222232")),
+                Background = ThemeManager.CardBorderBrush,
                 Margin = new Thickness(4, 0, 4, 8)
             };
             menuPanel.Children.Add(sep);
 
             // SVG User Edit Icon (Person/Pen)
             string userEditPathData = "M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z";
-            Button nickBtn = CreateMenuItemWithSvgIcon("Cambiar Mi Apodo", userEditPathData, Brushes.White, () => OnEditNickRequested?.Invoke(this, EventArgs.Empty));
+            Button nickBtn = CreateMenuItemWithSvgIcon(LocalizationService.Get("profile_edit_nick"), userEditPathData, ThemeManager.TextPrimaryBrush, () => OnEditNickRequested?.Invoke(this, EventArgs.Empty));
             menuPanel.Children.Add(nickBtn);
 
             // Professional SVG Logout Icon (Door Exit)
             string logoutPathData = "M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4M16 17l5-5-5-5M21 12H9";
-            Button logoutBtn = CreateMenuItemWithSvgIcon("Cerrar Sesión", logoutPathData, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ED4245")), () => OnLogoutRequested?.Invoke(this, EventArgs.Empty), isDanger: true);
+            Button logoutBtn = CreateMenuItemWithSvgIcon(LocalizationService.Get("profile_logout"), logoutPathData, new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ED4245")), () => OnLogoutRequested?.Invoke(this, EventArgs.Empty), isDanger: true);
             menuPanel.Children.Add(logoutBtn);
 
             _menuBorder.Child = menuPanel;

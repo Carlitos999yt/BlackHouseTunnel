@@ -38,6 +38,7 @@ namespace BlackHouseTunnel.Views
 
         private Grid _rootGrid = null!;
         private Grid _dropdownOverlay = null!;
+        private Grid _modalOverlay = null!;
         private Border _notificationsDrawer = null!;
         private Border _notifBadge = null!;
         private Grid _contentHostGrid = null!;
@@ -1307,17 +1308,17 @@ namespace BlackHouseTunnel.Views
                     studioBox.Text = path;
                     config.SelectedStudioPath = path;
                     ConfigManager.SaveConfig(config);
-                    _dropdownOverlay.Children.Clear();
-                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                    _modalOverlay.Children.Clear();
+                    _modalOverlay.Visibility = Visibility.Collapsed;
                 };
                 modal.OnCloseRequested += (s2, e2) =>
                 {
-                    _dropdownOverlay.Children.Clear();
-                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                    _modalOverlay.Children.Clear();
+                    _modalOverlay.Visibility = Visibility.Collapsed;
                 };
-                _dropdownOverlay.Children.Clear();
-                _dropdownOverlay.Children.Add(modal);
-                _dropdownOverlay.Visibility = Visibility.Visible;
+                _modalOverlay.Children.Clear();
+                _modalOverlay.Children.Add(modal);
+                _modalOverlay.Visibility = Visibility.Visible;
             };
             studioBtnsRow.Children.Add(scanStudioBtn);
 
@@ -1532,8 +1533,8 @@ namespace BlackHouseTunnel.Views
             Border card = new Border
             {
                 Width = 360,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F0F1A")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3A3A54")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1.5),
                 CornerRadius = new CornerRadius(16),
                 Padding = new Thickness(24),
@@ -1543,14 +1544,14 @@ namespace BlackHouseTunnel.Views
             StackPanel stack = new StackPanel();
             stack.Children.Add(new TextBlock
             {
-                Text = "👤 Cambiar Mi Apodo en la App",
+                Text = LocalizationService.Get("modal_nick_title"),
                 FontSize = 18,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 16)
             });
 
-            stack.Children.Add(CreateLabel("Ingresa tu nuevo apodo (Username)"));
+            stack.Children.Add(CreateLabel(LocalizationService.Get("modal_nick_sub")));
             TextBox nickBox = CreateStyledTextBox(_user.DisplayNick);
             stack.Children.Add(nickBox);
 
@@ -1558,11 +1559,11 @@ namespace BlackHouseTunnel.Views
 
             Button cancelBtn = new Button
             {
-                Content = "Cancelar",
+                Content = LocalizationService.Get("btn_cancel"),
                 Height = 36,
                 Padding = new Thickness(16, 0, 16, 0),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222234")),
-                Foreground = Brushes.White,
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 FontWeight = FontWeights.SemiBold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
@@ -1571,14 +1572,14 @@ namespace BlackHouseTunnel.Views
             SetButtonCornerRadius(cancelBtn, 8);
             cancelBtn.Click += (s, e) =>
             {
-                _dropdownOverlay.Children.Clear();
-                _dropdownOverlay.Visibility = Visibility.Collapsed;
+                _modalOverlay.Children.Clear();
+                _modalOverlay.Visibility = Visibility.Collapsed;
             };
             btns.Children.Add(cancelBtn);
 
             Button saveBtn = new Button
             {
-                Content = "💾 Guardar Apodo",
+                Content = LocalizationService.Get("btn_save"),
                 Height = 36,
                 Padding = new Thickness(16, 0, 16, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
@@ -1607,8 +1608,8 @@ namespace BlackHouseTunnel.Views
                         newNick
                     );
 
-                    _dropdownOverlay.Children.Clear();
-                    _dropdownOverlay.Visibility = Visibility.Collapsed;
+                    _modalOverlay.Children.Clear();
+                    _modalOverlay.Visibility = Visibility.Collapsed;
                     OnReloadRequested?.Invoke(this, EventArgs.Empty);
                 }
             };
@@ -1618,9 +1619,9 @@ namespace BlackHouseTunnel.Views
             card.Child = stack;
             modalRoot.Children.Add(card);
 
-            _dropdownOverlay.Children.Clear();
-            _dropdownOverlay.Children.Add(modalRoot);
-            _dropdownOverlay.Visibility = Visibility.Visible;
+            _modalOverlay.Children.Clear();
+            _modalOverlay.Children.Add(modalRoot);
+            _modalOverlay.Visibility = Visibility.Visible;
         }
 
         private TextBlock CreateSectionHeader(string text)
@@ -1982,6 +1983,13 @@ namespace BlackHouseTunnel.Views
 
             _dropdownOverlay.Children.Add(dropdownMenu);
             rootGrid.Children.Add(_dropdownOverlay);
+
+            _modalOverlay = new Grid
+            {
+                Background = Brushes.Transparent,
+                Visibility = Visibility.Collapsed
+            };
+            rootGrid.Children.Add(_modalOverlay);
 
             _notificationsDrawer = new Border
             {

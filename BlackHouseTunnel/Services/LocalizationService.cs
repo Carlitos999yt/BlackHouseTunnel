@@ -44,7 +44,8 @@ namespace BlackHouseTunnel.Services
                 ["home_sub"] = "Plataforma de Túneles Seguros para Roblox Studio",
                 ["home_quick_host"] = "Servidor Túnel Rápido",
                 ["home_quick_join"] = "Unirse a Partida Túnel",
-                ["home_active_tunnels"] = "Túneles Activos en Vivo",
+                ["home_online_members"] = "Miembros en Línea",
+                ["home_active_tunnels"] = "Túneles de Host Activos",
 
                 // Host View
                 ["host_title"] = "🖥️ Configuración Completa de Host de Servidor",
@@ -65,6 +66,11 @@ namespace BlackHouseTunnel.Services
                 ["lbl_manual_addr"] = "Dirección del Túnel (Host:Puerto)",
                 ["btn_connect"] = "⚡ Conectarse & Lanzar Studio",
 
+                // Echo Test View
+                ["echo_title"] = "📡 Diagnóstico y Prueba de Latencia UDP",
+                ["echo_sub"] = "Verifica el tiempo de respuesta y paquete en vivo.",
+                ["btn_run_echo"] = "⚡ Iniciar Prueba de Latencia",
+
                 // Settings
                 ["settings_title"] = "⚙️ Configuraciones del Sistema",
                 ["settings_lang_theme"] = "🌐 Idioma y Apariencia",
@@ -73,17 +79,19 @@ namespace BlackHouseTunnel.Services
                 ["settings_theme_dark"] = "🌙 Oscuro Noche Profunda (Tema por Defecto)",
                 ["settings_theme_light"] = "☀️ Claro Moderno (Light Mode)",
                 ["settings_discord_sec"] = "🎮 Discord y Presencia en Vivo",
-                ["settings_rpc_toggle"] = "Activar Discord Rich Presence (Muestra tu estado 'Conectado a Host' o 'Hosteando' en Discord)",
+                ["settings_rpc_toggle"] = "Activar Discord Rich Presence (Muestra tu estado en Discord)",
                 ["settings_maint_sec"] = "🛠️ Mantenimiento y Roblox Studio",
                 ["settings_studio_path"] = "Ejecutable Activo de Roblox Studio",
+                ["settings_updates_sec"] = "🔄 Actualizaciones del Sistema",
                 ["btn_scan_studio"] = "🎯 Seleccionar Versión...",
                 ["btn_browse_studio"] = "📁 Buscar Exe...",
                 ["btn_reinstall_studio"] = "🔄 Reinstalar / Actualizar Roblox Studio",
+                ["btn_check_updates"] = "🔍 Buscar Actualizaciones Manuales",
 
                 // Profile
                 ["profile_edit_nick"] = "👤 Cambiar Mi Apodo",
                 ["profile_logout"] = "Cerrar Sesión",
-                ["modal_nick_title"] = "👤 Cambiar Mi Apodo",
+                ["modal_nick_title"] = "👤 Cambiar Mi Apodo en la App",
                 ["modal_nick_sub"] = "Ingresa tu nuevo apodo (Se actualizará en la app y en el Servidor de Discord)",
                 ["btn_save"] = "💾 Guardar Apodo",
                 ["btn_cancel"] = "Cancelar"
@@ -92,7 +100,7 @@ namespace BlackHouseTunnel.Services
             {
                 ["app_title"] = "BlackHouse Tunnel",
                 ["nav_home"] = "Home",
-                ["nav_host"] = "Create Server Host",
+                ["nav_host"] = "Create Host Server",
                 ["nav_join"] = "Join Host",
                 ["nav_rbxm"] = ".rbxm Map Importer",
                 ["nav_rsm"] = "RSM Mod Assistant",
@@ -104,6 +112,7 @@ namespace BlackHouseTunnel.Services
                 ["home_sub"] = "Secure Tunnel Platform for Roblox Studio",
                 ["home_quick_host"] = "Quick Host Server",
                 ["home_quick_join"] = "Join Tunnel Session",
+                ["home_online_members"] = "Online Members",
                 ["home_active_tunnels"] = "Live Active Tunnels",
 
                 // Host View
@@ -125,6 +134,11 @@ namespace BlackHouseTunnel.Services
                 ["lbl_manual_addr"] = "Tunnel Address (Host:Port)",
                 ["btn_connect"] = "⚡ Connect & Launch Studio",
 
+                // Echo Test View
+                ["echo_title"] = "📡 UDP Echo & Latency Test",
+                ["echo_sub"] = "Check response time and live packet transmission.",
+                ["btn_run_echo"] = "⚡ Start Latency Test",
+
                 // Settings
                 ["settings_title"] = "⚙️ System Settings",
                 ["settings_lang_theme"] = "🌐 Language & Appearance",
@@ -133,12 +147,14 @@ namespace BlackHouseTunnel.Services
                 ["settings_theme_dark"] = "🌙 Dark Deep Night (Default Theme)",
                 ["settings_theme_light"] = "☀️ Light Modern (Light Mode)",
                 ["settings_discord_sec"] = "🎮 Discord & Live Presence",
-                ["settings_rpc_toggle"] = "Enable Discord Rich Presence (Show your status on Discord)",
+                ["settings_rpc_toggle"] = "Enable Discord Rich Presence (Show status on Discord)",
                 ["settings_maint_sec"] = "🛠️ Maintenance & Roblox Studio",
                 ["settings_studio_path"] = "Active Roblox Studio Executable",
+                ["settings_updates_sec"] = "🔄 System Updates",
                 ["btn_scan_studio"] = "🎯 Select Version...",
                 ["btn_browse_studio"] = "📁 Browse Exe...",
                 ["btn_reinstall_studio"] = "🔄 Reinstall / Update Roblox Studio",
+                ["btn_check_updates"] = "🔍 Check for Updates Manually",
 
                 // Profile
                 ["profile_edit_nick"] = "👤 Change My Nickname",
@@ -164,6 +180,7 @@ namespace BlackHouseTunnel.Services
                 ["home_sub"] = "Plataforma de Túneis Seguros para Roblox Studio",
                 ["home_quick_host"] = "Servidor Host Rápido",
                 ["home_quick_join"] = "Entrar na Partida",
+                ["home_online_members"] = "Membros Online",
                 ["home_active_tunnels"] = "Túneis Ativos ao Vivo",
 
                 // Host View
@@ -185,6 +202,11 @@ namespace BlackHouseTunnel.Services
                 ["lbl_manual_addr"] = "Endereço do Túnel (Host:Porta)",
                 ["btn_connect"] = "⚡ Conectar e Iniciar Studio",
 
+                // Echo Test View
+                ["echo_title"] = "📡 Diagnóstico e Teste de Eco UDP",
+                ["echo_sub"] = "Verifique o tempo de resposta e pacote ao vivo.",
+                ["btn_run_echo"] = "⚡ Iniciar Teste de Latência",
+
                 // Settings
                 ["settings_title"] = "⚙️ Configurações do Sistema",
                 ["settings_lang_theme"] = "🌐 Idioma e Aparência",
@@ -196,9 +218,11 @@ namespace BlackHouseTunnel.Services
                 ["settings_rpc_toggle"] = "Ativar Discord Rich Presence (Mostrar status no Discord)",
                 ["settings_maint_sec"] = "🛠️ Manutenção e Roblox Studio",
                 ["settings_studio_path"] = "Executável Ativo do Roblox Studio",
+                ["settings_updates_sec"] = "🔄 Atualizações do Sistema",
                 ["btn_scan_studio"] = "🎯 Selecionar Versão...",
                 ["btn_browse_studio"] = "📁 Buscar Exe...",
                 ["btn_reinstall_studio"] = "🔄 Reinstalar / Atualizar Roblox Studio",
+                ["btn_check_updates"] = "🔍 Buscar Atualizações Manualmente",
 
                 // Profile
                 ["profile_edit_nick"] = "👤 Alterar Meu Apelido",

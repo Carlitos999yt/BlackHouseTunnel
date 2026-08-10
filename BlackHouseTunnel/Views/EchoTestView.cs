@@ -20,18 +20,18 @@ namespace BlackHouseTunnel.Views
 
             TextBlock title = new TextBlock
             {
-                Text = "📶 Prueba de Eco & Latencia UDP (Echo Test)",
+                Text = LocalizationService.Get("echo_title"),
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 4)
             };
 
             TextBlock sub = new TextBlock
             {
-                Text = "Verifica la transmisión directa de paquetes UDP sin pérdida entre el Host y el Cliente.",
+                Text = LocalizationService.Get("echo_sub"),
                 FontSize = 13,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 16)
             };
 
@@ -41,8 +41,8 @@ namespace BlackHouseTunnel.Views
             // Controls Card
             Border card = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(20),
@@ -56,14 +56,14 @@ namespace BlackHouseTunnel.Views
             fieldsGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
             StackPanel portStack = new StackPanel { Margin = new Thickness(0, 0, 8, 0) };
-            portStack.Children.Add(CreateLabel("Puerto UDP"));
+            portStack.Children.Add(CreateLabel(LocalizationService.Get("lbl_port")));
             TextBox portBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUdpPort.ToString());
             portStack.Children.Add(portBox);
             Grid.SetColumn(portStack, 0);
             fieldsGrid.Children.Add(portStack);
 
             StackPanel addrStack = new StackPanel { Margin = new Thickness(8, 0, 0, 0) };
-            addrStack.Children.Add(CreateLabel("Dirección del Túnel (ej: manzana.gl.at.ply.gg:20573)"));
+            addrStack.Children.Add(CreateLabel(LocalizationService.Get("lbl_addr")));
             TextBox addrBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedRemoteHostAddress);
             addrStack.Children.Add(addrBox);
             Grid.SetColumn(addrStack, 1);
@@ -115,7 +115,7 @@ namespace BlackHouseTunnel.Views
 
             Button echoClientBtn = new Button
             {
-                Content = "⚡ Ejecutar Prueba de Latencia",
+                Content = LocalizationService.Get("btn_run_echo"),
                 Height = 38,
                 Padding = new Thickness(16, 0, 16, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
@@ -166,7 +166,7 @@ namespace BlackHouseTunnel.Views
                 Text = text,
                 FontSize = 12,
                 FontWeight = FontWeights.SemiBold,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 4, 0, 4)
             };
         }
@@ -177,9 +177,9 @@ namespace BlackHouseTunnel.Views
             {
                 Text = defaultText,
                 Height = 36,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12121A")),
-                Foreground = Brushes.White,
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A2A3E")),
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
+                BorderBrush = ThemeManager.InputBorderBrush,
                 BorderThickness = new Thickness(1),
                 Padding = new Thickness(8, 6, 8, 6),
                 FontSize = 13
