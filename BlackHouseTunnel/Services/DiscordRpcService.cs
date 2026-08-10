@@ -104,49 +104,52 @@ namespace BlackHouseTunnel.Services
 
         public static void UpdatePresence(string details, string state, string largeImageKey = "logo", string largeImageText = "BlackHouse Tunnel")
         {
-            var config = ConfigManager.CurrentConfig;
-            if (!config.EnableDiscordRpc)
+            Task.Run(() =>
             {
-                ClearPresence();
-                return;
-            }
-
-            if (!_isConnected)
-            {
-                ConnectPipe();
-                if (!_isConnected) return;
-            }
-
-            try
-            {
-                var nonce = Guid.NewGuid().ToString();
-                var activity = new
+                var config = ConfigManager.CurrentConfig;
+                if (!config.EnableDiscordRpc)
                 {
-                    cmd = "SET_ACTIVITY",
-                    args = new
-                    {
-                        pid = System.Diagnostics.Process.GetCurrentProcess().Id,
-                        activity = new
-                        {
-                            details = details,
-                            state = state,
-                            assets = new
-                            {
-                                large_image = largeImageKey,
-                                large_text = largeImageText
-                            }
-                        }
-                    },
-                    nonce = nonce
-                };
+                    ClearPresence();
+                    return;
+                }
 
-                string json = JsonSerializer.Serialize(activity);
-                WriteFrame(1, json);
-            }
-            catch (Exception ex)
-            {
-                Logger.Log($"[DiscordRPC] Update error: {ex.Message}");
-            }
+                if (!_isConnected)
+                {
+                    ConnectPipe();
+                    if (!_isConnected) return;
+                }
+
+                try
+                {
+                    var nonce = Guid.NewGuid().ToString();
+                    var activity = new
+                    {
+                        cmd = "SET_ACTIVITY",
+                        args = new
+                        {
+                            pid = System.Diagnostics.Process.GetCurrentProcess().Id,
+                            activity = new
+                            {
+                                details = details,
+                                state = state,
+                                assets = new
+                                {
+                                    large_image = largeImageKey,
+                                    large_text = largeImageText
+                                }
+                            }
+                        },
+                        nonce = nonce
+                    };
+
+                    string json = JsonSerializer.Serialize(activity);
+                    WriteFrame(1, json);
+                }
+                catch (Exception ex)
+                {
+                    Logger.Log($"[DiscordRPC] Update error: {ex.Message}");
+                }
+            });
         }
 
         public static void SetPresenceInMenu()

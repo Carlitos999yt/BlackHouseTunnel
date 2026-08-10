@@ -13,6 +13,42 @@ namespace BlackHouseTunnel.Services
     {
         private static readonly HttpClient HttpClient = new HttpClient();
 
+        public async Task<bool> UpdateGuildMemberNicknameAsync(string accessToken, string guildId, string nickname, string botToken = "")
+        {
+            if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
+            if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
+
+            try
+            {
+                var content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
+
+                // Try 1: User OAuth Bearer token (/guilds/{guildId}/members/@me/nick)
+                if (!string.IsNullOrWhiteSpace(accessToken))
+                {
+                    var req = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me/nick");
+                    req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
+                    req.Content = content;
+                    var resp = await HttpClient.SendAsync(req);
+                    if (resp.IsSuccessStatusCode) return true;
+                }
+
+                // Try 2: Bot token (/guilds/{guildId}/members/@me)
+                if (!string.IsNullOrWhiteSpace(botToken))
+                {
+                    var req2 = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me");
+                    req2.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                    req2.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
+                    var resp2 = await HttpClient.SendAsync(req2);
+                    if (resp2.IsSuccessStatusCode) return true;
+                }
+            }
+            catch (Exception ex)
+            {
+                Logger.Log($"[DiscordApi] Error updating nick: {ex.Message}");
+            }
+            return false;
+        }
+
         public async Task<DiscordUser?> GetUserProfileAndGuildMemberAsync(string accessToken, string guildId, string botToken = "")
         {
             if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";

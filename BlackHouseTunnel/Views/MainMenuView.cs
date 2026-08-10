@@ -21,10 +21,20 @@ namespace BlackHouseTunnel.Views
 
         private readonly DiscordUser _user;
         private readonly OnlineMembersMonitor _membersMonitor;
+        private readonly DiscordApiService _apiService = new DiscordApiService();
         private HostConsoleView? _activeHostConsoleView = null;
         private JoinConsoleView? _activeJoinConsoleView = null;
         private string _pendingJoinAddress = "";
         private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
+
+        private bool IsLight => ConfigManager.CurrentConfig.ThemeMode == "Light";
+        private SolidColorBrush MainBgBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#F4F5F8" : "#060609"));
+        private SolidColorBrush CardBgBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#FFFFFF" : "#0D0D15"));
+        private SolidColorBrush CardBorderBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#E5E7EB" : "#1F1F30"));
+        private SolidColorBrush TextPrimaryBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#111827" : "#FFFFFF"));
+        private SolidColorBrush TextMutedBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#4B5563" : "#AAAAAA"));
+        private SolidColorBrush InputBgBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#FFFFFF" : "#12121A"));
+        private SolidColorBrush InputBorderBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#D1D5DB" : "#2A2A3E"));
 
         private Grid _rootGrid = null!;
         private Grid _dropdownOverlay = null!;
@@ -137,13 +147,13 @@ namespace BlackHouseTunnel.Views
             string echoSvg = "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01";
             string settingsSvg = "M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.38a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2zM12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6z";
 
-            _btnHome = CreateSidebarNavButton(homeSvg, "Inicio", () => SwitchTab("Home"));
-            _btnHost = CreateSidebarNavButton(hostSvg, "Crear Host del Servidor", () => SwitchTab("Host"));
-            _btnJoin = CreateSidebarNavButton(joinSvg, "Unirse a Host", () => SwitchTab("Join"));
-            _btnRbxm = CreateSidebarNavButton(rbxmSvg, "Importador Mapas .rbxm", () => SwitchTab("Rbxm"));
-            _btnRsm = CreateSidebarNavButton(rsmSvg, "Asistente RSM Mod Manager", () => SwitchTab("Rsm"));
-            _btnEcho = CreateSidebarNavButton(echoSvg, "Prueba Latencia & Eco UDP", () => SwitchTab("Echo"));
-            _btnSettings = CreateSidebarNavButton(settingsSvg, "Ajustes", () => SwitchTab("Settings"));
+            _btnHome = CreateSidebarNavButton(homeSvg, LocalizationService.Get("nav_home"), () => SwitchTab("Home"));
+            _btnHost = CreateSidebarNavButton(hostSvg, LocalizationService.Get("nav_host"), () => SwitchTab("Host"));
+            _btnJoin = CreateSidebarNavButton(joinSvg, LocalizationService.Get("nav_join"), () => SwitchTab("Join"));
+            _btnRbxm = CreateSidebarNavButton(rbxmSvg, LocalizationService.Get("nav_rbxm"), () => SwitchTab("Rbxm"));
+            _btnRsm = CreateSidebarNavButton(rsmSvg, LocalizationService.Get("nav_rsm"), () => SwitchTab("Rsm"));
+            _btnEcho = CreateSidebarNavButton(echoSvg, LocalizationService.Get("nav_echo"), () => SwitchTab("Echo"));
+            _btnSettings = CreateSidebarNavButton(settingsSvg, LocalizationService.Get("nav_settings"), () => SwitchTab("Settings"));
 
             navPanel.Children.Add(_btnHome);
             navPanel.Children.Add(_btnHost);
@@ -1318,20 +1328,26 @@ namespace BlackHouseTunnel.Views
                 try
                 {
                     reinstallStudioBtn.IsEnabled = false;
-                    reinstallStudioBtn.Content = "⏳ Descargando Roblox Studio...";
-                    string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioInstaller.exe");
+                    reinstallStudioBtn.Content = "⏳ Abriendo Instalador Oficial...";
+
+                    // Open official Roblox Studio download tutorial page in browser
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://create.roblox.com/docs/es-es/tutorials/curriculums/studio/install-studio") { UseShellExecute = true });
+
+                    // Also download launcher with browser User-Agent to prevent 403 Forbidden
+                    string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioLauncherBeta.exe");
                     using (var client = new System.Net.Http.HttpClient())
                     {
+                        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
                         byte[] data = await client.GetByteArrayAsync("https://setup.rbxcdn.com/RobloxStudioLauncherBeta.exe");
                         await System.IO.File.WriteAllBytesAsync(tempInstaller, data);
+                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempInstaller) { UseShellExecute = true });
                     }
-                    reinstallStudioBtn.Content = "🚀 Ejecutando Instalador...";
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempInstaller) { UseShellExecute = true });
-                    DarkMessageBox.Show("¡Instalador oficial de Roblox Studio descargado y ejecutado!\n\nPor favor completa los pasos del instalador de Roblox en pantalla.", "Instalador Iniciado", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                    DarkMessageBox.Show("¡Página e Instalador oficial de Roblox Studio abiertos en pantalla!\n\nPor favor completa los pasos del instalador oficial de Roblox.", "Instalador Iniciado", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
-                    DarkMessageBox.Show($"Error al descargar o ejecutar el instalador de Roblox Studio: {ex.Message}", "Error de Instalación", MessageBoxButton.OK, MessageBoxImage.Error);
+                    Logger.Log($"[ReinstallStudio] {ex.Message}");
                 }
                 finally
                 {
@@ -1481,14 +1497,24 @@ namespace BlackHouseTunnel.Views
                 Cursor = System.Windows.Input.Cursors.Hand
             };
             SetButtonCornerRadius(saveBtn, 8);
-            saveBtn.Click += (s, e) =>
+            saveBtn.Click += async (s, e) =>
             {
                 string newNick = nickBox.Text.Trim();
                 if (!string.IsNullOrWhiteSpace(newNick))
                 {
+                    saveBtn.IsEnabled = false;
+                    saveBtn.Content = "⏳ Guardando...";
                     _user.CustomNickname = newNick;
                     ConfigManager.CurrentConfig.SavedUsername = newNick;
                     ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
+
+                    // Update nickname in Discord Server automatically via Discord API
+                    await _apiService.UpdateGuildMemberNicknameAsync(
+                        ConfigManager.CurrentConfig.SavedAccessToken ?? "",
+                        "1529015986135502951",
+                        newNick
+                    );
+
                     _dropdownOverlay.Children.Clear();
                     _dropdownOverlay.Visibility = Visibility.Collapsed;
                     OnReloadRequested?.Invoke(this, EventArgs.Empty);
