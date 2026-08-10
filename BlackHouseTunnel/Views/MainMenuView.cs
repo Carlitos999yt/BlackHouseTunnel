@@ -67,6 +67,7 @@ namespace BlackHouseTunnel.Views
             _membersMonitor.OnMembersUpdated += MembersMonitor_OnMembersUpdated;
             _membersMonitor.Start();
             DiscordRpcService.Initialize();
+            Task.Run(() => UpdateService.CheckAndDownloadUpdateAsync());
         }
 
         private void InitializeComponent()
@@ -412,6 +413,48 @@ namespace BlackHouseTunnel.Views
 
             bellContainer.Children.Add(bellBtn);
             bellContainer.Children.Add(badge);
+
+            // Auto-Updater Pill Button (Appears when update is available)
+            Button updatePillBtn = new Button
+            {
+                Content = "🚀 Actualización Disponible",
+                Height = 34,
+                Padding = new Thickness(14, 0, 14, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                Foreground = Brushes.White,
+                FontSize = 12,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 12, 0),
+                Visibility = UpdateService.IsUpdateAvailable ? Visibility.Visible : Visibility.Collapsed
+            };
+            SetButtonCornerRadius(updatePillBtn, 17);
+
+            updatePillBtn.Click += (s, e) =>
+            {
+                var result = DarkMessageBox.Show(
+                    $"¡Nueva versión {UpdateService.LatestVersion} descargada y lista para instalar!\n\n¿Deseas reiniciar la aplicación ahora para aplicar la actualización?",
+                    "Actualización Lista",
+                    MessageBoxButton.YesNo,
+                    MessageBoxImage.Information);
+
+                if (result == MessageBoxResult.Yes)
+                {
+                    UpdateService.ApplyUpdateAndRestart();
+                }
+            };
+
+            UpdateService.OnUpdateStatusChanged += (s, e) =>
+            {
+                Dispatcher.Invoke(() =>
+                {
+                    updatePillBtn.Visibility = UpdateService.IsUpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
+                    updatePillBtn.Content = $"🚀 v{UpdateService.LatestVersion} Disponible (Instalar)";
+                });
+            };
+
+            rightHeaderActions.Children.Add(updatePillBtn);
             rightHeaderActions.Children.Add(bellContainer);
 
             Border profileCard = Create4LevelProfileBadge(_user);
@@ -442,8 +485,8 @@ namespace BlackHouseTunnel.Views
 
             Border banner = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0F0F1A")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222238")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(16),
                 Padding = new Thickness(24),
@@ -453,10 +496,10 @@ namespace BlackHouseTunnel.Views
             StackPanel bannerPanel = new StackPanel();
             TextBlock welcomeTitle = new TextBlock
             {
-                Text = $"¡Hola de nuevo, {_user.DisplayNick}! ⚡",
+                Text = LocalizationService.Get("home_welcome", _user.DisplayNick),
                 FontSize = 24,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 0)
             };
 
@@ -506,7 +549,7 @@ namespace BlackHouseTunnel.Views
                 Text = "Miembros en Línea",
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 12)
             };
             body.Children.Add(friendsHeader);
@@ -524,10 +567,10 @@ namespace BlackHouseTunnel.Views
 
             TextBlock tunnelsHeader = new TextBlock
             {
-                Text = "Túneles de Host Activos",
+                Text = LocalizationService.Get("home_active_tunnels"),
                 FontSize = 16,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 14)
             };
             body.Children.Add(tunnelsHeader);
@@ -545,7 +588,7 @@ namespace BlackHouseTunnel.Views
                         {
                             Text = "ℹ️ No hay túneles de host activos en este momento. ¡Crea uno desde la pestaña Host para comenzar!",
                             FontSize = 13,
-                            Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
+                            Foreground = ThemeManager.TextMutedBrush,
                             Margin = new Thickness(0, 10, 0, 20)
                         });
                     }
@@ -578,18 +621,18 @@ namespace BlackHouseTunnel.Views
 
             TextBlock title = new TextBlock
             {
-                Text = "🖥️ Configuración Completa de Host de Servidor",
+                Text = LocalizationService.Get("host_title"),
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 6)
             };
 
             TextBlock sub = new TextBlock
             {
-                Text = "Configuración completa de servidor túnel.",
+                Text = LocalizationService.Get("host_sub"),
                 FontSize = 13,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#9494B8")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 24)
             };
 
@@ -598,8 +641,8 @@ namespace BlackHouseTunnel.Views
 
             Border box = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(24)
@@ -621,7 +664,7 @@ namespace BlackHouseTunnel.Views
 
             // Col 0, Row 0: ID de Usuario (UID)
             StackPanel uidPanel = new StackPanel();
-            uidPanel.Children.Add(CreateLabel("ID de Usuario de Roblox (User ID / UID)"));
+            uidPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_uid")));
             TextBox uidBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUserId);
             uidPanel.Children.Add(uidBox);
             Grid.SetRow(uidPanel, 0); Grid.SetColumn(uidPanel, 0);
@@ -629,7 +672,7 @@ namespace BlackHouseTunnel.Views
 
             // Col 2, Row 0: Apodo en el Servidor (Username)
             StackPanel userPanel = new StackPanel();
-            userPanel.Children.Add(CreateLabel("Apodo en el Servidor (Username)"));
+            userPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_username")));
             string defaultUser = !string.IsNullOrWhiteSpace(ConfigManager.CurrentConfig.SavedUsername) ? ConfigManager.CurrentConfig.SavedUsername : _user.DisplayNick;
             TextBox userBox = CreateStyledTextBox(defaultUser);
             userPanel.Children.Add(userBox);
@@ -638,7 +681,7 @@ namespace BlackHouseTunnel.Views
 
             // Col 0, Row 1: Nombre del Servidor Túnel
             StackPanel namePanel = new StackPanel();
-            namePanel.Children.Add(CreateLabel("Nombre del Servidor Túnel"));
+            namePanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_server_name")));
             TextBox nameBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedServerName);
             namePanel.Children.Add(nameBox);
             Grid.SetRow(namePanel, 1); Grid.SetColumn(namePanel, 0);
@@ -646,7 +689,7 @@ namespace BlackHouseTunnel.Views
 
             // Col 2, Row 1: Puerto Local UDP
             StackPanel portPanel = new StackPanel();
-            portPanel.Children.Add(CreateLabel("Puerto Local UDP"));
+            portPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_port")));
             TextBox portBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedUdpPort.ToString());
             portPanel.Children.Add(portBox);
             Grid.SetRow(portPanel, 1); Grid.SetColumn(portPanel, 2);
@@ -654,7 +697,7 @@ namespace BlackHouseTunnel.Views
 
             // Col 0, Row 2: Dirección del Túnel Remoto
             StackPanel addrPanel = new StackPanel();
-            addrPanel.Children.Add(CreateLabel("Dirección del Túnel Remoto (Host Address)"));
+            addrPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_addr")));
             TextBox addrBox = CreateStyledTextBox(ConfigManager.CurrentConfig.SavedRemoteHostAddress);
             addrPanel.Children.Add(addrBox);
             Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
@@ -662,12 +705,12 @@ namespace BlackHouseTunnel.Views
 
             // Col 2, Row 2: Visibilidad & Whitelist de Acceso
             StackPanel visPanel = new StackPanel();
-            visPanel.Children.Add(CreateLabel("🔒 Visibilidad & Control de Acceso"));
+            visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
             ComboBox visCombo = new ComboBox
             {
                 Height = 38,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
-                Foreground = Brushes.White,
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 FontSize = 13,
                 Margin = new Thickness(0, 0, 0, 16)
             };
@@ -949,18 +992,18 @@ namespace BlackHouseTunnel.Views
 
             TextBlock title = new TextBlock
             {
-                Text = "🎮 Unirse a un Túnel de Host",
+                Text = LocalizationService.Get("join_title"),
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 6)
             };
 
             TextBlock sub = new TextBlock
             {
-                Text = "Ingresa tu apodo de jugador y conéctate al servidor túnel.",
+                Text = LocalizationService.Get("join_sub"),
                 FontSize = 13,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 24)
             };
 
@@ -969,8 +1012,8 @@ namespace BlackHouseTunnel.Views
 
             Border box = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(24)
@@ -1329,35 +1372,82 @@ namespace BlackHouseTunnel.Views
                 try
                 {
                     reinstallStudioBtn.IsEnabled = false;
-                    reinstallStudioBtn.Content = "⏳ Abriendo Instalador Oficial...";
+                    reinstallStudioBtn.Content = "⏳ Descargando Instalador de GitHub...";
 
-                    // Open official Roblox Studio download tutorial page in browser
-                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo("https://create.roblox.com/docs/es-es/tutorials/curriculums/studio/install-studio") { UseShellExecute = true });
-
-                    // Also download launcher with browser User-Agent to prevent 403 Forbidden
-                    string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioLauncherBeta.exe");
+                    string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioInstaller.exe");
                     using (var client = new System.Net.Http.HttpClient())
                     {
-                        client.DefaultRequestHeaders.UserAgent.ParseAdd("Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36");
-                        byte[] data = await client.GetByteArrayAsync("https://setup.rbxcdn.com/RobloxStudioLauncherBeta.exe");
+                        byte[] data = await client.GetByteArrayAsync("https://raw.githubusercontent.com/Carlitos999yt/NepTunnel/main/RobloxInstaller/RobloxStudioInstaller.exe");
                         await System.IO.File.WriteAllBytesAsync(tempInstaller, data);
-                        System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempInstaller) { UseShellExecute = true });
                     }
 
-                    DarkMessageBox.Show("¡Página e Instalador oficial de Roblox Studio abiertos en pantalla!\n\nPor favor completa los pasos del instalador oficial de Roblox.", "Instalador Iniciado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    reinstallStudioBtn.Content = "🚀 Ejecutando Instalador...";
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempInstaller) { UseShellExecute = true });
+                    DarkMessageBox.Show("¡Instalador de Roblox Studio descargado desde GitHub y ejecutado en pantalla!", "Instalador Iniciado", MessageBoxButton.OK, MessageBoxImage.Information);
                 }
                 catch (Exception ex)
                 {
                     Logger.Log($"[ReinstallStudio] {ex.Message}");
+                    DarkMessageBox.Show($"Error al descargar el instalador desde GitHub: {ex.Message}", "Error de Instalación", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
                 finally
                 {
                     reinstallStudioBtn.IsEnabled = true;
-                    reinstallStudioBtn.Content = "🔄 Reinstalar / Actualizar Roblox Studio";
+                    reinstallStudioBtn.Content = LocalizationService.Get("btn_reinstall_studio");
                 }
             };
             studioBtnsRow.Children.Add(reinstallStudioBtn);
             boxPanel.Children.Add(studioBtnsRow);
+
+            // Section 4: Auto-Updater
+            boxPanel.Children.Add(CreateSectionHeader("🔄 Actualizaciones del Sistema"));
+            boxPanel.Children.Add(CreateLabel($"Versión Actual de la Aplicación: v{UpdateService.CurrentVersion}"));
+
+            TextBlock updateStatusLbl = new TextBlock
+            {
+                Text = UpdateService.IsUpdateAvailable ? $"¡Nueva versión v{UpdateService.LatestVersion} descargada y lista para instalar!" : "Tu aplicación está actualizada.",
+                FontSize = 13,
+                Foreground = UpdateService.IsUpdateAvailable ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")) : ThemeManager.TextMutedBrush,
+                Margin = new Thickness(0, 0, 0, 12)
+            };
+            boxPanel.Children.Add(updateStatusLbl);
+
+            Button checkUpdateBtn = new Button
+            {
+                Content = "🔍 Buscar Actualizaciones Manuales",
+                Height = 40,
+                Padding = new Thickness(14, 0, 14, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                Foreground = Brushes.White,
+                FontSize = 13,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            SetButtonCornerRadius(checkUpdateBtn, 10);
+
+            checkUpdateBtn.Click += async (s, e) =>
+            {
+                checkUpdateBtn.IsEnabled = false;
+                checkUpdateBtn.Content = "⏳ Buscando en GitHub...";
+                updateStatusLbl.Text = "Verificando versiones en GitHub...";
+
+                await UpdateService.CheckAndDownloadUpdateAsync();
+
+                if (UpdateService.IsUpdateAvailable)
+                {
+                    updateStatusLbl.Text = $"¡Actualización v{UpdateService.LatestVersion} encontrada y descargada completamente!";
+                    updateStatusLbl.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                }
+                else
+                {
+                    updateStatusLbl.Text = $"¡Tienes la versión más reciente (v{UpdateService.CurrentVersion})!";
+                    updateStatusLbl.Foreground = ThemeManager.TextMutedBrush;
+                }
+                checkUpdateBtn.IsEnabled = true;
+                checkUpdateBtn.Content = "🔍 Buscar Actualizaciones Manuales";
+            };
+            boxPanel.Children.Add(checkUpdateBtn);
 
             box.Child = boxPanel;
             panel.Children.Add(box);
