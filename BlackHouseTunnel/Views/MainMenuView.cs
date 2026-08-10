@@ -645,7 +645,7 @@ namespace BlackHouseTunnel.Views
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled
             };
 
-            StackPanel panel = new StackPanel { Margin = new Thickness(32), MaxWidth = 780, HorizontalAlignment = HorizontalAlignment.Left };
+            StackPanel panel = new StackPanel { Margin = new Thickness(32), MaxWidth = 1100, HorizontalAlignment = HorizontalAlignment.Left };
 
             TextBlock title = new TextBlock
             {
@@ -1029,10 +1029,23 @@ namespace BlackHouseTunnel.Views
 
             boxPanel.Children.Add(btnRow);
             box.Child = boxPanel;
-            panel.Children.Add(box);
 
-            // Add the key card BELOW the main form card
-            panel.Children.Add(keyCard);
+            // Horizontal layout: Main form (left) + Key card (right, only when Exclusivo con Rol)
+            Grid hostLayout = new Grid();
+            hostLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            hostLayout.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
+            Grid.SetColumn(box, 0);
+            hostLayout.Children.Add(box);
+
+            // Key card to the right side
+            keyCard.Width = 260;
+            keyCard.Margin = new Thickness(16, 0, 0, 0);
+            keyCard.VerticalAlignment = VerticalAlignment.Top;
+            Grid.SetColumn(keyCard, 1);
+            hostLayout.Children.Add(keyCard);
+
+            panel.Children.Add(hostLayout);
 
             scroll.Content = panel;
             return scroll;
