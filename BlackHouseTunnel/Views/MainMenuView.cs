@@ -68,7 +68,7 @@ namespace BlackHouseTunnel.Views
             _membersMonitor.OnMembersUpdated += MembersMonitor_OnMembersUpdated;
             _membersMonitor.Start();
             DiscordRpcService.Initialize();
-            Task.Run(() => UpdateService.CheckAndDownloadUpdateAsync());
+            Task.Run(() => UpdateService.CheckForUpdatesAsync());
         }
 
         private void InitializeComponent()
@@ -434,16 +434,7 @@ namespace BlackHouseTunnel.Views
 
             updatePillBtn.Click += (s, e) =>
             {
-                var result = DarkMessageBox.Show(
-                    $"¡Nueva versión {UpdateService.LatestVersion} descargada y lista para instalar!\n\n¿Deseas reiniciar la aplicación ahora para aplicar la actualización?",
-                    "Actualización Lista",
-                    MessageBoxButton.YesNo,
-                    MessageBoxImage.Information);
-
-                if (result == MessageBoxResult.Yes)
-                {
-                    UpdateService.ApplyUpdateAndRestart();
-                }
+                ShowDownloadAndUpdateModal();
             };
 
             UpdateService.OnUpdateStatusChanged += (s, e) =>
@@ -1429,12 +1420,12 @@ namespace BlackHouseTunnel.Views
             boxPanel.Children.Add(studioBtnsRow);
 
             // Section 4: Auto-Updater
-            boxPanel.Children.Add(CreateSectionHeader("🔄 Actualizaciones del Sistema"));
+            boxPanel.Children.Add(CreateSectionHeader(LocalizationService.Get("settings_updates_sec")));
             boxPanel.Children.Add(CreateLabel($"Versión Actual de la Aplicación: v{UpdateService.CurrentVersion}"));
 
             TextBlock updateStatusLbl = new TextBlock
             {
-                Text = UpdateService.IsUpdateAvailable ? $"¡Nueva versión v{UpdateService.LatestVersion} descargada y lista para instalar!" : "Tu aplicación está actualizada.",
+                Text = UpdateService.IsUpdateAvailable ? $"¡Nueva versión v{UpdateService.LatestVersion} disponible para instalar!" : "Tu aplicación está actualizada.",
                 FontSize = 13,
                 Foreground = UpdateService.IsUpdateAvailable ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")) : ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 12)
@@ -1443,7 +1434,7 @@ namespace BlackHouseTunnel.Views
 
             Button checkUpdateBtn = new Button
             {
-                Content = "🔍 Buscar Actualizaciones Manuales",
+                Content = LocalizationService.Get("btn_check_updates"),
                 Height = 40,
                 Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
@@ -1461,12 +1452,13 @@ namespace BlackHouseTunnel.Views
                 checkUpdateBtn.Content = "⏳ Buscando en GitHub...";
                 updateStatusLbl.Text = "Verificando versiones en GitHub...";
 
-                await UpdateService.CheckAndDownloadUpdateAsync();
+                await UpdateService.CheckForUpdatesAsync();
 
                 if (UpdateService.IsUpdateAvailable)
                 {
-                    updateStatusLbl.Text = $"¡Actualización v{UpdateService.LatestVersion} encontrada y descargada completamente!";
+                    updateStatusLbl.Text = $"¡Actualización v{UpdateService.LatestVersion} encontrada!";
                     updateStatusLbl.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                    ShowDownloadAndUpdateModal();
                 }
                 else
                 {
@@ -1474,7 +1466,7 @@ namespace BlackHouseTunnel.Views
                     updateStatusLbl.Foreground = ThemeManager.TextMutedBrush;
                 }
                 checkUpdateBtn.IsEnabled = true;
-                checkUpdateBtn.Content = "🔍 Buscar Actualizaciones Manuales";
+                checkUpdateBtn.Content = LocalizationService.Get("btn_check_updates");
             };
             boxPanel.Children.Add(checkUpdateBtn);
 
@@ -1483,6 +1475,166 @@ namespace BlackHouseTunnel.Views
 
             scroll.Content = panel;
             return scroll;
+        }
+
+        private void ShowDownloadAndUpdateModal()
+        {
+            Grid modalRoot = new Grid { Background = new SolidColorBrush(Color.FromArgb(180, 0, 0, 0)) };
+            Border card = new Border
+            {
+                Width = 440,
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
+                BorderThickness = new Thickness(1.5),
+                CornerRadius = new CornerRadius(16),
+                Padding = new Thickness(24),
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+
+            StackPanel stack = new StackPanel();
+
+            TextBlock title = new TextBlock
+            {
+                Text = $"📦 Actualización Disponible (v{UpdateService.LatestVersion})",
+                FontSize = 18,
+                FontWeight = FontWeights.Bold,
+                Foreground = ThemeManager.TextPrimaryBrush,
+                Margin = new Thickness(0, 0, 0, 8)
+            };
+            stack.Children.Add(title);
+
+            TextBlock sub = new TextBlock
+            {
+                Text = "Presiona 'Descargar e Instalar' para obtener la versión oficial desde GitHub con el progreso en tiempo real.",
+                FontSize = 13,
+                Foreground = ThemeManager.TextMutedBrush,
+                TextWrapping = TextWrapping.Wrap,
+                Margin = new Thickness(0, 0, 0, 20)
+            };
+            stack.Children.Add(sub);
+
+            ProgressBar progressBar = new ProgressBar
+            {
+                Height = 12,
+                Minimum = 0,
+                Maximum = 100,
+                Value = 0,
+                Background = ThemeManager.InputBgBrush,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            stack.Children.Add(progressBar);
+
+            TextBlock progressLbl = new TextBlock
+            {
+                Text = "Listo para iniciar descarga.",
+                FontSize = 12,
+                Foreground = ThemeManager.TextMutedBrush,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Margin = new Thickness(0, 0, 0, 20)
+            };
+            stack.Children.Add(progressLbl);
+
+            StackPanel btns = new StackPanel { Orientation = Orientation.Horizontal, HorizontalAlignment = HorizontalAlignment.Right };
+
+            Button cancelBtn = new Button
+            {
+                Content = LocalizationService.Get("btn_cancel"),
+                Height = 38,
+                Padding = new Thickness(16, 0, 16, 0),
+                Background = ThemeManager.InputBgBrush,
+                Foreground = ThemeManager.TextPrimaryBrush,
+                FontWeight = FontWeights.SemiBold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 10, 0)
+            };
+            SetButtonCornerRadius(cancelBtn, 8);
+            cancelBtn.Click += (s, e) =>
+            {
+                _modalOverlay.Children.Clear();
+                _modalOverlay.Visibility = Visibility.Collapsed;
+            };
+            btns.Children.Add(cancelBtn);
+
+            Button actionBtn = new Button
+            {
+                Content = "⬇️ Descargar e Instalar",
+                Height = 38,
+                Padding = new Thickness(20, 0, 20, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            SetButtonCornerRadius(actionBtn, 8);
+
+            bool isDownloaded = false;
+
+            actionBtn.Click += async (s, e) =>
+            {
+                if (isDownloaded)
+                {
+                    actionBtn.IsEnabled = false;
+                    actionBtn.Content = "⚡ Reiniciando...";
+                    UpdateService.ApplyUpdateAndRestart();
+                    return;
+                }
+
+                actionBtn.IsEnabled = false;
+                cancelBtn.IsEnabled = false;
+                actionBtn.Content = "⏳ Descargando...";
+
+                bool success = await UpdateService.DownloadUpdateWithProgressAsync((read, total, percent) =>
+                {
+                    Dispatcher.Invoke(() =>
+                    {
+                        progressBar.Value = percent;
+                        if (total > 0)
+                        {
+                            double mbRead = (double)read / (1024 * 1024);
+                            double mbTotal = (double)total / (1024 * 1024);
+                            progressLbl.Text = $"Descargando: {mbRead:F1} MB / {mbTotal:F1} MB ({percent:F0}%)";
+                        }
+                        else
+                        {
+                            progressLbl.Text = $"Descargando: {read / (1024 * 1024):F1} MB";
+                        }
+                    });
+                });
+
+                if (success)
+                {
+                    isDownloaded = true;
+                    progressBar.Value = 100;
+                    progressLbl.Text = "✅ ¡Descarga completada con éxito!";
+                    progressLbl.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                    actionBtn.Content = "⚡ Reiniciar e Instalar Ahora";
+                    actionBtn.Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981"));
+                    actionBtn.IsEnabled = true;
+                    cancelBtn.IsEnabled = true;
+                }
+                else
+                {
+                    progressLbl.Text = "❌ Error en la descarga. Por favor intenta de nuevo.";
+                    progressLbl.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#ED4245"));
+                    actionBtn.Content = "🔄 Reintentar Descarga";
+                    actionBtn.IsEnabled = true;
+                    cancelBtn.IsEnabled = true;
+                }
+            };
+
+            btns.Children.Add(actionBtn);
+            stack.Children.Add(btns);
+
+            card.Child = stack;
+            modalRoot.Children.Add(card);
+
+            _modalOverlay.Children.Clear();
+            _modalOverlay.Children.Add(modalRoot);
+            _modalOverlay.Visibility = Visibility.Visible;
         }
 
         private void SetButtonCornerRadius(Button btn, double radius = 8)
