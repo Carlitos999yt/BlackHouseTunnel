@@ -608,7 +608,7 @@ namespace BlackHouseTunnel.Views
                     {
                         foreach (var t in activeTunnels)
                         {
-                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", visibilityMode: t.VisibilityMode, remoteAddress: t.RemoteAddress));
+                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", visibilityMode: t.VisibilityMode, remoteAddress: t.RemoteAddress, accessKey: t.AccessKey, minAppVersion: t.MinAppVersion));
                         }
                     }
                 });
@@ -971,9 +971,8 @@ namespace BlackHouseTunnel.Views
                     string targetServerName = nameBox.Text.Trim();
                     string mapPath = mapBox.Text.Trim();
                     string addr = addrBox.Text.Trim();
-                    string accessKey = keyBox.Text.Trim();
-
-                    // Save all form values to config.json in BlackHouseTunnel folder
+                    int targetVisMode = isAuthorizedHost ? visCombo.SelectedIndex : 0;
+                    string accessKey = (targetVisMode == 2) ? keyBox.Text.Trim() : "";
                     ConfigManager.CurrentConfig.SavedUserId = targetUid;
                     ConfigManager.CurrentConfig.SavedUsername = targetUsername;
                     ConfigManager.CurrentConfig.SavedServerName = targetServerName;
@@ -981,7 +980,6 @@ namespace BlackHouseTunnel.Views
                     ConfigManager.CurrentConfig.SavedRemoteHostAddress = addr;
                     ConfigManager.CurrentConfig.SavedMapPath = mapPath;
                     ConfigManager.CurrentConfig.SavedAccessKey = accessKey;
-                    int targetVisMode = isAuthorizedHost ? visCombo.SelectedIndex : 0;
                     ConfigManager.CurrentConfig.SavedVisibilityOptionIndex = targetVisMode;
                     ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
 
@@ -2095,19 +2093,20 @@ namespace BlackHouseTunnel.Views
             return container;
         }
 
-        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "", string accessKey = "")
+        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "", string accessKey = "", string minAppVersion = "1.2.4")
         {
             bool isPrivadito = visibilityMode == 2;
             bool isServidor = visibilityMode == 1;
             bool reqKey = !string.IsNullOrWhiteSpace(accessKey);
+            bool isOutdatedApp = UpdateService.IsNewerVersion(minAppVersion, UpdateService.CurrentVersion);
 
-            string borderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
-            string badgeBgHex = isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937");
-            string badgeBorderHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563");
-            string badgeTextHex = isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF");
-            string badgeLabel = isPrivadito ? (reqKey ? "🔑 Privadito (Requiere Llave)" : "🔒 Privadito (Rol Exclusivo)") : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)");
-            string btnBgHex = isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563");
-            string btnText = isPrivadito ? (reqKey ? "🔑 Conectarse con Llave" : "🔒 Conectarse (Privadito)") : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel");
+            string borderHex = isOutdatedApp ? "#EF4444" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563"));
+            string badgeBgHex = isOutdatedApp ? "#450A0A" : (isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937"));
+            string badgeBorderHex = isOutdatedApp ? "#EF4444" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563"));
+            string badgeTextHex = isOutdatedApp ? "#F87171" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF"));
+            string badgeLabel = isOutdatedApp ? $"⛔ Requiere App v{minAppVersion}" : (isPrivadito ? (reqKey ? "🔑 Privadito (Requiere Llave)" : "🔒 Privadito (Rol Exclusivo)") : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)"));
+            string btnBgHex = isOutdatedApp ? "#DC2626" : (isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563"));
+            string btnText = isOutdatedApp ? "⛔ Actualizar App Requerida" : (isPrivadito ? (reqKey ? "🔑 Conectarse con Llave" : "🔒 Conectarse (Privadito)") : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel"));
 
             Border card = new Border
             {
@@ -2192,6 +2191,12 @@ namespace BlackHouseTunnel.Views
             string targetAddr = remoteAddress;
             connectBtn.Click += (s, e) =>
             {
+                if (isOutdatedApp)
+                {
+                    DarkMessageBox.Show($"⛔ ACTUALIZACIÓN NECESARIA\n\nEste túnel requiere BlackHouseTunnel v{minAppVersion} o superior para conectarse y validar llaves de acceso de forma segura.\n\nPor favor ve a Ajustes > Actualizaciones del Sistema para actualizar tu aplicación.", "Actualización Requerida", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    return;
+                }
+
                 if (isPrivadito && !(_user.IsPrivadito || _user.IsStaffOrAdmin))
                 {
                     DarkMessageBox.Show("⛔ ACCESO RESTRICTO Y DENEGADO\n\nEste túnel está reservado exclusivamente para usuarios con el rol 'Privadito' en nuestro servidor de Discord.\n\nRoblox Studio NO se ejecutará.", "Acceso Restringido", MessageBoxButton.OK, MessageBoxImage.Stop);

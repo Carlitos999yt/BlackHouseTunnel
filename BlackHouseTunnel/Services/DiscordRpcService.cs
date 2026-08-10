@@ -15,6 +15,7 @@ namespace BlackHouseTunnel.Services
         private static NamedPipeClientStream? _pipe;
         private static bool _isConnected = false;
         private static readonly object _lock = new object();
+        private static readonly long _startTimeUnix = DateTimeOffset.UtcNow.ToUnixTimeSeconds();
 
         public static void Initialize()
         {
@@ -132,6 +133,10 @@ namespace BlackHouseTunnel.Services
                             {
                                 details = details,
                                 state = state,
+                                timestamps = new
+                                {
+                                    start = _startTimeUnix
+                                },
                                 assets = new
                                 {
                                     large_image = largeImageKey,

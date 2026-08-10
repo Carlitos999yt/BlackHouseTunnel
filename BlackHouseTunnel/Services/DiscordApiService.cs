@@ -524,7 +524,8 @@ namespace BlackHouseTunnel.Services
                                 new { name = "ServerName", value = tunnel.ServerName, inline = true },
                                 new { name = "Host", value = tunnel.HostUsername, inline = true },
                                 new { name = "RemoteAddress", value = tunnel.RemoteAddress, inline = true },
-                                new { name = "AccessKey", value = tunnel.AccessKey ?? "", inline = true }
+                                new { name = "AccessKey", value = tunnel.AccessKey ?? "", inline = true },
+                                new { name = "MinAppVersion", value = string.IsNullOrWhiteSpace(tunnel.MinAppVersion) ? "1.2.4" : tunnel.MinAppVersion, inline = true }
                             },
                             timestamp = DateTime.UtcNow.ToString("o")
                         }
@@ -572,9 +573,9 @@ namespace BlackHouseTunnel.Services
             var list = new List<PublishedTunnel>();
             if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return list;
 
-            // Map hostId -> (remoteAddr, accessKey) from playit channel
-            var playitMap = new Dictionary<string, (string remoteAddr, string accessKey)>(StringComparer.OrdinalIgnoreCase);
-            var serverNameMap = new Dictionary<string, (string remoteAddr, string accessKey)>(StringComparer.OrdinalIgnoreCase);
+            // Map hostId -> (remoteAddr, accessKey, minAppVer) from playit channel
+            var playitMap = new Dictionary<string, (string remoteAddr, string accessKey, string minAppVer)>(StringComparer.OrdinalIgnoreCase);
+            var serverNameMap = new Dictionary<string, (string remoteAddr, string accessKey, string minAppVer)>(StringComparer.OrdinalIgnoreCase);
 
             if (!string.IsNullOrWhiteSpace(playitChannelId))
             {
@@ -600,6 +601,7 @@ namespace BlackHouseTunnel.Services
                                     string rAddr = "";
                                     string aKey = "";
                                     string sName = "";
+                                    string mVer = "1.2.4";
 
                                     if (embed.TryGetProperty("fields", out var fArr) && fArr.ValueKind == JsonValueKind.Array)
                                     {
@@ -611,15 +613,16 @@ namespace BlackHouseTunnel.Services
                                             else if (fn.Equals("RemoteAddress", StringComparison.OrdinalIgnoreCase)) rAddr = fv.Trim();
                                             else if (fn.Equals("AccessKey", StringComparison.OrdinalIgnoreCase)) aKey = fv.Trim();
                                             else if (fn.Equals("ServerName", StringComparison.OrdinalIgnoreCase)) sName = fv.Trim();
+                                            else if (fn.Equals("MinAppVersion", StringComparison.OrdinalIgnoreCase)) mVer = fv.Trim();
                                         }
                                     }
                                     if (!string.IsNullOrEmpty(hId) && !string.IsNullOrEmpty(rAddr))
                                     {
-                                        playitMap[hId] = (rAddr, aKey);
+                                        playitMap[hId] = (rAddr, aKey, mVer);
                                     }
                                     if (!string.IsNullOrEmpty(sName) && !string.IsNullOrEmpty(rAddr))
                                     {
-                                        serverNameMap[sName] = (rAddr, aKey);
+                                        serverNameMap[sName] = (rAddr, aKey, mVer);
                                     }
                                 }
                             }
@@ -701,16 +704,20 @@ namespace BlackHouseTunnel.Services
                                         }
                                     }
 
+                                    string minVer = "1.2.4";
+
                                     // Match by HostId first, then by ServerName fallback
                                     if (!string.IsNullOrEmpty(hostId) && playitMap.TryGetValue(hostId, out var pData))
                                     {
                                         remoteAddr = pData.remoteAddr;
                                         accessKey = pData.accessKey;
+                                        minVer = pData.minAppVer;
                                     }
                                     else if (serverNameMap.TryGetValue(serverName, out var pNameData))
                                     {
                                         remoteAddr = pNameData.remoteAddr;
                                         accessKey = pNameData.accessKey;
+                                        minVer = pNameData.minAppVer;
                                     }
 
                                     list.Add(new PublishedTunnel
@@ -722,6 +729,7 @@ namespace BlackHouseTunnel.Services
                                         RemoteAddress = remoteAddr,
                                         VisibilityMode = visMode,
                                         AccessKey = accessKey,
+                                        MinAppVersion = minVer,
                                         DiscordMessageId = msgElem.GetProperty("id").GetString()
                                     });
                                 }
