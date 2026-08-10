@@ -95,7 +95,7 @@ namespace BlackHouseTunnel.Services
                 ["btn_check_updates"] = "🔍 Buscar Actualizaciones Manuales",
 
                 // Profile
-                ["profile_edit_nick"] = "👤 Cambiar Mi Apodo",
+                ["profile_edit_nick"] = "Cambiar Mi Apodo",
                 ["profile_logout"] = "Cerrar Sesión",
                 ["modal_nick_title"] = "👤 Cambiar Mi Apodo en la App",
                 ["modal_nick_sub"] = "Ingresa tu nuevo apodo (Se actualizará en la app y en el Servidor de Discord)",
@@ -169,7 +169,7 @@ namespace BlackHouseTunnel.Services
                 ["btn_check_updates"] = "🔍 Check for Updates Manually",
 
                 // Profile
-                ["profile_edit_nick"] = "👤 Change My Nickname",
+                ["profile_edit_nick"] = "Change My Nickname",
                 ["profile_logout"] = "Log Out",
                 ["modal_nick_title"] = "👤 Change My Nickname",
                 ["modal_nick_sub"] = "Enter your new nickname (Will update in app and Discord Server)",
@@ -240,10 +240,10 @@ namespace BlackHouseTunnel.Services
                 ["btn_scan_studio"] = "🎯 Selecionar Versão...",
                 ["btn_browse_studio"] = "📁 Buscar Exe...",
                 ["btn_reinstall_studio"] = "🔄 Reinstalar / Atualizar Roblox Studio",
-                ["btn_check_updates"] = "🔍 Buscar Atualizações Manualmente",
+                ["btn_check_updates"] = "🔍 Buscar Actualizações Manualmente",
 
                 // Profile
-                ["profile_edit_nick"] = "👤 Alterar Meu Apelido",
+                ["profile_edit_nick"] = "Alterar Meu Apelido",
                 ["profile_logout"] = "Sair da Conta",
                 ["modal_nick_title"] = "👤 Alterar Meu Apelido",
                 ["modal_nick_sub"] = "Digite seu novo apelido (Atualizará no app e no Servidor do Discord)",

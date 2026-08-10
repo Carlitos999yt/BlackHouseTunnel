@@ -1808,7 +1808,7 @@ namespace BlackHouseTunnel.Views
                     ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
 
                     // Update nickname in Discord Server automatically via Discord API
-                    await _apiService.UpdateGuildMemberNicknameAsync(
+                    var (success, errorMsg) = await _apiService.UpdateGuildMemberNicknameAsync(
                         ConfigManager.CurrentConfig.SavedAccessToken ?? "",
                         "1529015986135502951",
                         _user.Id,
@@ -1818,6 +1818,15 @@ namespace BlackHouseTunnel.Views
                     _modalOverlay.Children.Clear();
                     _modalOverlay.Visibility = Visibility.Collapsed;
                     OnReloadRequested?.Invoke(this, EventArgs.Empty);
+
+                    if (!success)
+                    {
+                        DarkMessageBox.Show($"Tu apodo fue guardado localmente en la app como '{newNick}'.\n\nSin embargo, no se pudo sincronizar en el Servidor de Discord.\n\nMotivo:\n{errorMsg}", "Aviso de Apodo en Discord", MessageBoxButton.OK, MessageBoxImage.Warning);
+                    }
+                    else
+                    {
+                        DarkMessageBox.Show($"¡Tu apodo ha sido actualizado correctamente a '{newNick}' tanto en la aplicación como en el Servidor de Discord!", "Apodo Sincronizado", MessageBoxButton.OK, MessageBoxImage.Information);
+                    }
                 }
             };
             btns.Children.Add(saveBtn);

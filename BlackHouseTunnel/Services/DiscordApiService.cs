@@ -13,33 +13,33 @@ namespace BlackHouseTunnel.Services
     {
         private static readonly HttpClient HttpClient = new HttpClient();
 
-        public async Task<bool> UpdateGuildMemberNicknameAsync(string accessToken, string guildId, string userId, string nickname, string botToken = "")
+        public async Task<(bool Success, string ErrorMessage)> UpdateGuildMemberNicknameAsync(string accessToken, string guildId, string userId, string nickname, string botToken = "")
         {
             if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
             if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
 
+            string lastError = "No se pudo conectar con la API de Discord.";
+
             try
             {
-                var content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
-
                 // Try 1: User OAuth Bearer token (/guilds/{guildId}/members/@me/nick)
                 if (!string.IsNullOrWhiteSpace(accessToken))
                 {
                     var req = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me/nick");
                     req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                    req.Content = content;
+                    req.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
                     var resp = await HttpClient.SendAsync(req);
                     if (resp.IsSuccessStatusCode)
                     {
                         Logger.Log($"[DiscordApi] Updated nick for @me via OAuth token.");
-                        return true;
+                        return (true, "");
                     }
 
                     var reqAlt = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me");
                     reqAlt.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
                     reqAlt.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
                     var respAlt = await HttpClient.SendAsync(reqAlt);
-                    if (respAlt.IsSuccessStatusCode) return true;
+                    if (respAlt.IsSuccessStatusCode) return (true, "");
                 }
 
                 // Try 2: Bot token with specific User ID (/guilds/{guildId}/members/{userId})
@@ -49,23 +49,39 @@ namespace BlackHouseTunnel.Services
                     reqBot.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
                     reqBot.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
                     var respBot = await HttpClient.SendAsync(reqBot);
+
                     if (respBot.IsSuccessStatusCode)
                     {
                         Logger.Log($"[DiscordApi] Successfully updated nick for user {userId} to '{nickname}' via Bot API.");
-                        return true;
+                        return (true, "");
                     }
                     else
                     {
                         string errBody = await respBot.Content.ReadAsStringAsync();
                         Logger.Log($"[DiscordApi] Bot nick update failed ({respBot.StatusCode}): {errBody}");
+
+                        if (respBot.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                        {
+                            lastError = "Discord rechazó la acción (Error HTTP 403 Forbidden).\n\n⚠️ REGLA DE SEGURIDAD DE DISCORD:\nDiscord NO permite que un Bot cambie el apodo del Dueño del Servidor ni de usuarios que tengan un Rol ubicado por encima del Rol del Bot en la Jerarquía de Roles del Servidor.";
+                        }
+                        else if (respBot.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                        {
+                            lastError = "El Bot no tiene permisos suficientes para editar apodos en el Servidor (Asegúrate de otorgarle el permiso 'MANAGE_NICKNAMES').";
+                        }
+                        else
+                        {
+                            lastError = $"Discord devolvió el código HTTP {(int)respBot.StatusCode}: {errBody}";
+                        }
                     }
                 }
             }
             catch (Exception ex)
             {
+                lastError = ex.Message;
                 Logger.Log($"[DiscordApi] Error updating nick: {ex.Message}");
             }
-            return false;
+
+            return (false, lastError);
         }
 
         public async Task<DiscordUser?> GetUserProfileAndGuildMemberAsync(string accessToken, string guildId, string botToken = "")
