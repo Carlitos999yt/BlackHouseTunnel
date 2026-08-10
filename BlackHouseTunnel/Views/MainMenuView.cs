@@ -603,10 +603,11 @@ namespace BlackHouseTunnel.Views
             formGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(20) });
             formGrid.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
 
-            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 0
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 1
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 2
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 3
+            formGrid.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto }); // Row 4
 
             // Col 0, Row 0: ID de Usuario (UID)
             StackPanel uidPanel = new StackPanel();
@@ -718,7 +719,7 @@ namespace BlackHouseTunnel.Views
             mapGrid.Children.Add(browseBtn);
             mapPanel.Children.Add(mapGrid);
 
-            Grid.SetRow(mapPanel, 3); Grid.SetColumn(mapPanel, 0); Grid.SetColumnSpan(mapPanel, 3);
+            Grid.SetRow(mapPanel, 4); Grid.SetColumn(mapPanel, 0); Grid.SetColumnSpan(mapPanel, 3);
             formGrid.Children.Add(mapPanel);
 
             boxPanel.Children.Add(formGrid);
