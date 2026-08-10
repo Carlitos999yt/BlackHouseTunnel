@@ -469,7 +469,7 @@ namespace BlackHouseTunnel.Services
                 }
 
                 string embedTitle = tunnel.VisibilityMode == 2
-                    ? $"🔒 Servidor Privado v2: {tunnel.ServerName}"
+                    ? $"🖥️ Servidor\u200B de Host: {tunnel.ServerName}"
                     : $"🖥️ Servidor de Host: {tunnel.ServerName}";
 
                 var embedObj = new
@@ -514,7 +514,7 @@ namespace BlackHouseTunnel.Services
             try
             {
                 string playitTitle = tunnel.VisibilityMode == 2
-                    ? $"🔗 PLAYIT_MAP_V2:{tunnel.HostId}"
+                    ? $"🔗 PLAYIT\u200B_MAP:{tunnel.HostId}"
                     : $"🔗 PLAYIT_MAP:{tunnel.HostId}";
 
                 var embedObj = new
@@ -602,10 +602,11 @@ namespace BlackHouseTunnel.Services
                             {
                                 foreach (var embed in embedsArr.EnumerateArray())
                                 {
-                                    string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
-                                    if (!title.Contains("PLAYIT_MAP:", StringComparison.OrdinalIgnoreCase) && !title.Contains("PLAYIT_MAP_V2:", StringComparison.OrdinalIgnoreCase)) continue;
+                                    string rawTitle = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                                    string title = rawTitle.Replace("\u200B", "");
+                                    if (!title.Contains("PLAYIT_MAP:", StringComparison.OrdinalIgnoreCase)) continue;
 
-                                    string hId = title.Replace("🔗 PLAYIT_MAP_V2:", "").Replace("PLAYIT_MAP_V2:", "").Replace("🔗 PLAYIT_MAP:", "").Replace("PLAYIT_MAP:", "").Trim();
+                                    string hId = title.Replace("🔗 PLAYIT_MAP:", "").Replace("PLAYIT_MAP:", "").Trim();
                                     string rAddr = "";
                                     string aKey = "";
                                     string sName = "";
@@ -658,10 +659,11 @@ namespace BlackHouseTunnel.Services
                             {
                                 foreach (var embed in embedsArr.EnumerateArray())
                                 {
-                                    string title = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
-                                    if (!title.Contains("Servidor de Host", StringComparison.OrdinalIgnoreCase) && !title.Contains("Servidor Privado v2", StringComparison.OrdinalIgnoreCase)) continue;
+                                    string rawTitle = embed.TryGetProperty("title", out var t) ? t.GetString() ?? "" : "";
+                                    string title = rawTitle.Replace("\u200B", "");
+                                    if (!title.Contains("Servidor de Host", StringComparison.OrdinalIgnoreCase)) continue;
 
-                                    string serverName = title.Replace("🔒 Servidor Privado v2:", "").Replace("Servidor Privado v2:", "").Replace("🖥️ Servidor de Host:", "").Replace("Servidor de Host:", "").Trim();
+                                    string serverName = title.Replace("🖥️ Servidor de Host:", "").Replace("Servidor de Host:", "").Trim();
                                     string hostUser = "";
                                     string remoteAddr = "";
                                     string accessKey = "";
