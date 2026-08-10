@@ -9,13 +9,14 @@ namespace BlackHouseTunnel.Services
 {
     public static class UpdateService
     {
-        public static readonly string CurrentVersion = "1.0.0";
-        public static string LatestVersion { get; private set; } = "1.0.0";
+        public static readonly string CurrentVersion = "1.1.0";
+        public static string LatestVersion { get; private set; } = "1.1.0";
         public static bool IsUpdateAvailable { get; private set; } = false;
         public static string DownloadedUpdatePath { get; private set; } = "";
         public static event EventHandler? OnUpdateStatusChanged;
 
         private static readonly HttpClient Client = new HttpClient();
+        private static string _latestDownloadUrl = "";
 
         static UpdateService()
         {
@@ -33,26 +34,26 @@ namespace BlackHouseTunnel.Services
                 using var doc = JsonDocument.Parse(json);
                 if (doc.RootElement.TryGetProperty("version", out var vProp))
                 {
-                    string onlineVersion = vProp.GetString() ?? "1.0.0";
+                    string onlineVersion = vProp.GetString() ?? "1.1.0";
                     LatestVersion = onlineVersion;
 
                     if (IsNewerVersion(onlineVersion, CurrentVersion))
                     {
                         IsUpdateAvailable = true;
-                        OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
 
-                        // Download the update executable in background
                         if (doc.RootElement.TryGetProperty("download_url", out var dlProp))
                         {
-                            string downloadUrl = dlProp.GetString() ?? "";
-                            if (!string.IsNullOrWhiteSpace(downloadUrl))
+                            _latestDownloadUrl = dlProp.GetString() ?? "";
+                            if (!string.IsNullOrWhiteSpace(_latestDownloadUrl))
                             {
                                 string tempExe = Path.Combine(Path.GetTempPath(), "BlackHouseTunnel_Update.exe");
-                                byte[] data = await Client.GetByteArrayAsync(downloadUrl);
+                                byte[] data = await Client.GetByteArrayAsync(_latestDownloadUrl);
                                 await File.WriteAllBytesAsync(tempExe, data);
                                 DownloadedUpdatePath = tempExe;
                             }
                         }
+
+                        OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
                     }
                 }
             }
@@ -70,19 +71,39 @@ namespace BlackHouseTunnel.Services
                 if (string.IsNullOrEmpty(currentExe)) return;
 
                 string updateExe = DownloadedUpdatePath;
-                if (string.IsNullOrWhiteSpace(updateExe) || !File.Exists(updateExe))
+                if (string.IsNullOrWhiteSpace(updateExe) || !File.Exists(updateExe) || new FileInfo(updateExe).Length == 0)
                 {
-                    // Fallback to downloading directly if not already downloaded
                     updateExe = Path.Combine(Path.GetTempPath(), "BlackHouseTunnel_Update.exe");
+                    if (!string.IsNullOrWhiteSpace(_latestDownloadUrl))
+                    {
+                        try
+                        {
+                            byte[] data = Client.GetByteArrayAsync(_latestDownloadUrl).GetAwaiter().GetResult();
+                            File.WriteAllBytes(updateExe, data);
+                            DownloadedUpdatePath = updateExe;
+                        }
+                        catch (Exception ex)
+                        {
+                            Logger.Log($"[UpdateService] Synchronous download failed: {ex.Message}");
+                        }
+                    }
+                }
+
+                if (!File.Exists(updateExe) || new FileInfo(updateExe).Length == 0)
+                {
+                    DarkMessageBox.Show("El archivo de actualización no está listo aún. Por favor intenta de nuevo en unos segundos.", "Actualización en Progreso", System.Windows.MessageBoxButton.OK, System.Windows.MessageBoxImage.Warning);
+                    return;
                 }
 
                 string batchScript = Path.Combine(Path.GetTempPath(), "update_blackhouse.bat");
                 string scriptContent = $@"@echo off
+if not exist ""{updateExe}"" goto end
 :retry
 timeout /t 1 /nobreak > nul
 copy /y ""{updateExe}"" ""{currentExe}""
 if errorlevel 1 goto retry
 start """" ""{currentExe}""
+:end
 del ""%~f0""
 ";
                 File.WriteAllText(batchScript, scriptContent);
