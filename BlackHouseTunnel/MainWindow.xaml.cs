@@ -25,6 +25,8 @@ namespace BlackHouseTunnel
             this.MaxWidth = SystemParameters.WorkArea.Width;
 
             this.Loaded += MainWindow_Loaded;
+            DiscordRpcService.Initialize();
+            DiscordRpcService.SetPresenceInMenu();
         }
 
         private async void MainWindow_Loaded(object sender, RoutedEventArgs e)

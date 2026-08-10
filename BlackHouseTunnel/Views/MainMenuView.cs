@@ -260,6 +260,34 @@ namespace BlackHouseTunnel.Views
                     _contentHostGrid.Children.Add(BuildSettingsView());
                     break;
             }
+
+            if (_activeHostConsoleView == null && _activeJoinConsoleView == null)
+            {
+                switch (tabName)
+                {
+                    case "Home":
+                        DiscordRpcService.UpdatePresence("En el Menú Principal", "Inicio / Dashboard");
+                        break;
+                    case "Host":
+                        DiscordRpcService.UpdatePresence("En la pestaña Crear Host", "Configurando Servidor");
+                        break;
+                    case "Join":
+                        DiscordRpcService.UpdatePresence("En la pestaña Unirse a Túnel", "Buscando Servidores");
+                        break;
+                    case "Rbxm":
+                        DiscordRpcService.UpdatePresence("En Asistente de Modelos (.rbxm)", "Modelos 3D");
+                        break;
+                    case "Rsm":
+                        DiscordRpcService.UpdatePresence("En Asistente RSM", "Herramientas Studio");
+                        break;
+                    case "Echo":
+                        DiscordRpcService.UpdatePresence("En Diagnóstico Echo", "Probando Red");
+                        break;
+                    case "Settings":
+                        DiscordRpcService.UpdatePresence("En Configuraciones", "Ajustando Opciones");
+                        break;
+                }
+            }
         }
 
         private Border CreateTopHeaderBar()
