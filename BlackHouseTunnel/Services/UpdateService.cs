@@ -10,8 +10,8 @@ namespace BlackHouseTunnel.Services
 {
     public static class UpdateService
     {
-        public static readonly string CurrentVersion = "1.2.1";
-        public static string LatestVersion { get; private set; } = "1.2.1";
+        public static readonly string CurrentVersion = "1.2.2";
+        public static string LatestVersion { get; private set; } = "1.2.2";
         public static bool IsUpdateAvailable { get; private set; } = false;
         public static string LatestDownloadUrl { get; private set; } = "";
         public static string DownloadedUpdatePath { get; private set; } = "";
@@ -25,22 +25,65 @@ namespace BlackHouseTunnel.Services
         }
 
         /// <summary>
-        /// Step 1: Lightly check version.json from GitHub (Tiny ~200 byte check, no binary download yet).
+        /// Step 1: Lightly check version from GitHub Releases API (Real-time, zero CDN caching).
         /// </summary>
         public static async Task CheckForUpdatesAsync()
         {
             try
             {
-                string versionUrl = "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/version.json";
-                string json = await Client.GetStringAsync(versionUrl);
+                // Method 1: GitHub API Latest Release (Real-time, zero CDN caching)
+                string apiUrl = "https://api.github.com/repos/Carlitos999yt/BlackHouseTunnel/releases/latest";
+                var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+                req.Headers.UserAgent.ParseAdd("BlackHouseTunnel-App");
+                var resp = await Client.SendAsync(req);
 
-                using var doc = JsonDocument.Parse(json);
-                if (doc.RootElement.TryGetProperty("version", out var vProp))
+                if (resp.IsSuccessStatusCode)
+                {
+                    string json = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    if (doc.RootElement.TryGetProperty("tag_name", out var tagProp))
+                    {
+                        string tag = tagProp.GetString()?.TrimStart('v') ?? CurrentVersion;
+                        LatestVersion = tag;
+
+                        if (doc.RootElement.TryGetProperty("assets", out var assetsArr) && assetsArr.ValueKind == JsonValueKind.Array)
+                        {
+                            foreach (var asset in assetsArr.EnumerateArray())
+                            {
+                                string name = asset.GetProperty("name").GetString() ?? "";
+                                if (name.Equals("BlackHouseTunnel.exe", StringComparison.OrdinalIgnoreCase))
+                                {
+                                    LatestDownloadUrl = asset.GetProperty("browser_download_url").GetString() ?? "";
+                                    break;
+                                }
+                            }
+                        }
+
+                        if (string.IsNullOrWhiteSpace(LatestDownloadUrl))
+                        {
+                            LatestDownloadUrl = "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe";
+                        }
+
+                        if (IsNewerVersion(LatestVersion, CurrentVersion))
+                        {
+                            IsUpdateAvailable = true;
+                            OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
+                            return;
+                        }
+                    }
+                }
+
+                // Fallback Method 2: version.json with cache-busting timestamp
+                string versionUrl = $"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/version.json?t={DateTime.UtcNow.Ticks}";
+                string fallbackJson = await Client.GetStringAsync(versionUrl);
+
+                using var fDoc = JsonDocument.Parse(fallbackJson);
+                if (fDoc.RootElement.TryGetProperty("version", out var vProp))
                 {
                     string onlineVersion = vProp.GetString() ?? CurrentVersion;
                     LatestVersion = onlineVersion;
 
-                    if (doc.RootElement.TryGetProperty("download_url", out var dlProp))
+                    if (fDoc.RootElement.TryGetProperty("download_url", out var dlProp))
                     {
                         LatestDownloadUrl = dlProp.GetString() ?? "";
                     }
