@@ -18,12 +18,17 @@ namespace BlackHouseTunnel.Services
             if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
             if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
 
+            if (string.IsNullOrWhiteSpace(userId))
+            {
+                return (false, "No se encontró el ID de usuario de Discord.");
+            }
+
             string lastError = "No se pudo conectar con la API de Discord.";
 
             try
             {
-                // Try 1: User OAuth Bearer token (/guilds/{guildId}/members/@me/nick)
-                if (!string.IsNullOrWhiteSpace(accessToken))
+                // Method 1: Try User's OAuth Bearer token (modifies @me, which IS the user when using OAuth)
+                if (!string.IsNullOrWhiteSpace(accessToken) && !accessToken.StartsWith("MTU"))
                 {
                     var req = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me/nick");
                     req.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
@@ -31,19 +36,14 @@ namespace BlackHouseTunnel.Services
                     var resp = await HttpClient.SendAsync(req);
                     if (resp.IsSuccessStatusCode)
                     {
-                        Logger.Log($"[DiscordApi] Updated nick for @me via OAuth token.");
+                        Logger.Log($"[DiscordApi] Updated nick for user {userId} via OAuth token.");
                         return (true, "");
                     }
-
-                    var reqAlt = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/@me");
-                    reqAlt.Headers.Authorization = new AuthenticationHeaderValue("Bearer", accessToken);
-                    reqAlt.Content = new StringContent(JsonSerializer.Serialize(new { nick = nickname }), System.Text.Encoding.UTF8, "application/json");
-                    var respAlt = await HttpClient.SendAsync(reqAlt);
-                    if (respAlt.IsSuccessStatusCode) return (true, "");
                 }
 
-                // Try 2: Bot token with specific User ID (/guilds/{guildId}/members/{userId})
-                if (!string.IsNullOrWhiteSpace(botToken) && !string.IsNullOrWhiteSpace(userId))
+                // Method 2: Use Bot API targeting SPECIFIC USER ID (/guilds/{guildId}/members/{userId})
+                // NEVER use @me with Bot Token as @me with Bot Token modifies the BOT itself!
+                if (!string.IsNullOrWhiteSpace(botToken))
                 {
                     var reqBot = new HttpRequestMessage(HttpMethod.Patch, $"https://discord.com/api/v10/guilds/{guildId}/members/{userId}");
                     reqBot.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
@@ -62,7 +62,7 @@ namespace BlackHouseTunnel.Services
 
                         if (respBot.StatusCode == System.Net.HttpStatusCode.Forbidden)
                         {
-                            lastError = "Discord rechazó la acción (Error HTTP 403 Forbidden).\n\n⚠️ REGLA DE SEGURIDAD DE DISCORD:\nDiscord NO permite que un Bot cambie el apodo del Dueño del Servidor ni de usuarios que tengan un Rol ubicado por encima del Rol del Bot en la Jerarquía de Roles del Servidor.";
+                            lastError = "Discord rechazó la acción (Error HTTP 403 Forbidden).\n\n⚠️ REGLA DE JERARQUÍA DE DISCORD:\nDiscord NO permite que un Bot cambie el apodo del Dueño del Servidor ni de usuarios que tengan un Rol ubicado por encima del Rol del Bot en la Jerarquía de Roles del Servidor.";
                         }
                         else if (respBot.StatusCode == System.Net.HttpStatusCode.Unauthorized)
                         {
