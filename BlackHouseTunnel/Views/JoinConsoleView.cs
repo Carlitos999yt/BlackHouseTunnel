@@ -56,6 +56,7 @@ namespace BlackHouseTunnel.Views
                 {
                     UdpProxy.StopProxy();
                     RobloxStudioService.ForceKillAllStudioProcesses();
+                    DiscordRpcService.SetPresenceInMenu();
                     OnDisconnectRequested?.Invoke(this, EventArgs.Empty);
                 }
             };
@@ -109,6 +110,8 @@ namespace BlackHouseTunnel.Views
                 {
                     RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, "StudioPlayer_Proxy", username);
                     _console.AppendLog("● CONECTADO EXITOSAMENTE — Cliente en ejecución", "ok");
+                    bool isRegistered = !string.IsNullOrWhiteSpace(dstHost) && (dstHost.Contains("ply.gg") || dstHost.Contains("túnel"));
+                    DiscordRpcService.SetPresenceConnected(dstHost, isRegisteredTunnel: isRegistered);
                 }
                 catch (Exception ex)
                 {

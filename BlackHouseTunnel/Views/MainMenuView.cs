@@ -51,6 +51,7 @@ namespace BlackHouseTunnel.Views
             InitializeComponent();
             _membersMonitor.OnMembersUpdated += MembersMonitor_OnMembersUpdated;
             _membersMonitor.Start();
+            DiscordRpcService.Initialize();
         }
 
         private void InitializeComponent()
@@ -1085,8 +1086,10 @@ namespace BlackHouseTunnel.Views
 
             StackPanel boxPanel = new StackPanel();
 
-            // Option 1: Language Selector
-            boxPanel.Children.Add(CreateLabel("🌐 Idioma de la Aplicación"));
+            // Section 1: Language & Theme
+            boxPanel.Children.Add(CreateSectionHeader("🌐 Idioma y Apariencia"));
+
+            boxPanel.Children.Add(CreateLabel("Idioma de la Aplicación"));
             ComboBox langCombo = new ComboBox
             {
                 Height = 38,
@@ -1106,29 +1109,37 @@ namespace BlackHouseTunnel.Views
             };
             boxPanel.Children.Add(langCombo);
 
-            // Option 2: Visual Theme Selector (Dark vs Light)
-            boxPanel.Children.Add(CreateLabel("🎨 Tema de la Interfaz (Modo Claro / Oscuro)"));
+            boxPanel.Children.Add(CreateLabel("Tema de la Interfaz"));
             ComboBox themeCombo = new ComboBox
             {
                 Height = 38,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#141420")),
                 Foreground = Brushes.White,
                 FontSize = 13,
-                Margin = new Thickness(0, 0, 0, 16)
+                Margin = new Thickness(0, 0, 0, 24)
             };
-            themeCombo.Items.Add("🌙 Oscuro Neón Púrpura (Tema por Defecto)");
+            themeCombo.Items.Add("🌙 Oscuro Noche Profunda (Tema por Defecto)");
             themeCombo.Items.Add("☀️ Claro Moderno (Light Mode)");
-            themeCombo.Items.Add("🌌 Oscuro Noche Profunda");
-            themeCombo.SelectedIndex = config.ThemeMode switch
-            {
-                "Light" => 1,
-                "DeepDark" => 2,
-                _ => 0
-            };
+            themeCombo.SelectedIndex = config.ThemeMode == "Light" ? 1 : 0;
             boxPanel.Children.Add(themeCombo);
 
-            // Option 3: Roblox Studio Version & Path Selector
-            boxPanel.Children.Add(CreateLabel("🎮 Ejecutable Activo de Roblox Studio"));
+            // Section 2: Discord Rich Presence
+            boxPanel.Children.Add(CreateSectionHeader("🎮 Discord y Presencia en Vivo"));
+
+            CheckBox rpcCheck = new CheckBox
+            {
+                Content = "Activar Discord Rich Presence (Muestra tu estado 'Conectado a Host' o 'Hosteando' en Discord)",
+                IsChecked = config.EnableDiscordRpc,
+                Foreground = Brushes.White,
+                FontSize = 13,
+                Margin = new Thickness(0, 0, 0, 24)
+            };
+            boxPanel.Children.Add(rpcCheck);
+
+            // Section 3: Roblox Studio Maintenance
+            boxPanel.Children.Add(CreateSectionHeader("🛠️ Mantenimiento y Roblox Studio"));
+
+            boxPanel.Children.Add(CreateLabel("Ejecutable Activo de Roblox Studio"));
             string currentStudio = !string.IsNullOrEmpty(config.SelectedStudioPath) && File.Exists(config.SelectedStudioPath)
                 ? config.SelectedStudioPath
                 : (RobloxStudioService.GetStudioPath() ?? "No detectado");
@@ -1139,20 +1150,20 @@ namespace BlackHouseTunnel.Views
             studioBox.Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#A0A0C0"));
             boxPanel.Children.Add(studioBox);
 
-            StackPanel studioBtnsRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 20) };
+            WrapPanel studioBtnsRow = new WrapPanel { Margin = new Thickness(0, 0, 0, 24) };
 
             Button scanStudioBtn = new Button
             {
-                Content = "🎯 Seleccionar Versión de Studio...",
-                Height = 44,
-                Padding = new Thickness(18, 0, 18, 0),
+                Content = "🎯 Seleccionar Versión...",
+                Height = 40,
+                Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
                 Foreground = Brushes.White,
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 BorderThickness = new Thickness(0),
                 Cursor = System.Windows.Input.Cursors.Hand,
-                Margin = new Thickness(0, 0, 12, 0)
+                Margin = new Thickness(0, 0, 10, 10)
             };
             SetButtonCornerRadius(scanStudioBtn, 10);
 
@@ -1180,15 +1191,16 @@ namespace BlackHouseTunnel.Views
 
             Button browseStudioBtn = new Button
             {
-                Content = "📁 Buscar Ejecutable...",
-                Height = 44,
-                Padding = new Thickness(18, 0, 18, 0),
+                Content = "📁 Buscar Exe...",
+                Height = 40,
+                Padding = new Thickness(14, 0, 14, 0),
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F32")),
                 Foreground = Brushes.White,
                 FontSize = 13,
                 FontWeight = FontWeights.SemiBold,
                 BorderThickness = new Thickness(0),
-                Cursor = System.Windows.Input.Cursors.Hand
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 10, 10)
             };
             SetButtonCornerRadius(browseStudioBtn, 10);
 
@@ -1207,16 +1219,61 @@ namespace BlackHouseTunnel.Views
                 }
             };
             studioBtnsRow.Children.Add(browseStudioBtn);
+
+            Button reinstallStudioBtn = new Button
+            {
+                Content = "🔄 Reinstalar / Actualizar Roblox Studio",
+                Height = 40,
+                Padding = new Thickness(14, 0, 14, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                Foreground = Brushes.White,
+                FontSize = 13,
+                FontWeight = FontWeights.Bold,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 0, 10)
+            };
+            SetButtonCornerRadius(reinstallStudioBtn, 10);
+
+            reinstallStudioBtn.Click += async (s, e) =>
+            {
+                try
+                {
+                    reinstallStudioBtn.IsEnabled = false;
+                    reinstallStudioBtn.Content = "⏳ Descargando Roblox Studio...";
+                    string tempInstaller = System.IO.Path.Combine(System.IO.Path.GetTempPath(), "RobloxStudioInstaller.exe");
+                    using (var client = new System.Net.Http.HttpClient())
+                    {
+                        byte[] data = await client.GetByteArrayAsync("https://setup.rbxcdn.com/RobloxStudioLauncherBeta.exe");
+                        await System.IO.File.WriteAllBytesAsync(tempInstaller, data);
+                    }
+                    reinstallStudioBtn.Content = "🚀 Ejecutando Instalador...";
+                    System.Diagnostics.Process.Start(new System.Diagnostics.ProcessStartInfo(tempInstaller) { UseShellExecute = true });
+                    DarkMessageBox.Show("¡Instalador oficial de Roblox Studio descargado y ejecutado!\n\nPor favor completa los pasos del instalador de Roblox en pantalla.", "Instalador Iniciado", MessageBoxButton.OK, MessageBoxImage.Information);
+                }
+                catch (Exception ex)
+                {
+                    DarkMessageBox.Show($"Error al descargar o ejecutar el instalador de Roblox Studio: {ex.Message}", "Error de Instalación", MessageBoxButton.OK, MessageBoxImage.Error);
+                }
+                finally
+                {
+                    reinstallStudioBtn.IsEnabled = true;
+                    reinstallStudioBtn.Content = "🔄 Reinstalar / Actualizar Roblox Studio";
+                }
+            };
+            studioBtnsRow.Children.Add(reinstallStudioBtn);
+
             boxPanel.Children.Add(studioBtnsRow);
 
-            // Option 4: Discord Channel ID (Staff / Superior / Hoster Only)
+            // Section 4: Discord Channel ID (Staff / Superior / Hoster Only)
             TextBlock? channelLabel = null;
             TextBox? channelBox = null;
             if (_user.IsCanHostOrManage)
             {
-                channelLabel = CreateLabel("📢 ID del Canal de Discord (Publicación de Anuncios de Túnel)");
+                boxPanel.Children.Add(CreateSectionHeader("📢 Configuración de Canal (Hosters / Staff)"));
+                channelLabel = CreateLabel("ID del Canal de Anuncios de Túnel");
                 channelBox = CreateStyledTextBox(string.IsNullOrWhiteSpace(config.ChannelId) ? "1529169033482600659" : config.ChannelId);
-                channelBox.Margin = new Thickness(0, 0, 0, 20);
+                channelBox.Margin = new Thickness(0, 0, 0, 24);
                 boxPanel.Children.Add(channelLabel);
                 boxPanel.Children.Add(channelBox);
             }
@@ -1225,8 +1282,8 @@ namespace BlackHouseTunnel.Views
             Button saveBtn = new Button
             {
                 Content = "💾 Guardar Configuración del Sistema",
-                Height = 42,
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#10B981")),
+                Height = 44,
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
                 Foreground = Brushes.White,
                 FontSize = 14,
                 FontWeight = FontWeights.Bold,
@@ -1245,12 +1302,8 @@ namespace BlackHouseTunnel.Views
                     _ => "es"
                 };
 
-                config.ThemeMode = themeCombo.SelectedIndex switch
-                {
-                    1 => "Light",
-                    2 => "DeepDark",
-                    _ => "Dark"
-                };
+                config.ThemeMode = themeCombo.SelectedIndex == 1 ? "Light" : "Dark";
+                config.EnableDiscordRpc = rpcCheck.IsChecked == true;
 
                 config.SelectedStudioPath = studioBox.Text.Trim();
                 if (_user.IsCanHostOrManage && channelBox != null)
@@ -1258,7 +1311,17 @@ namespace BlackHouseTunnel.Views
                     config.ChannelId = string.IsNullOrWhiteSpace(channelBox.Text) ? "1529169033482600659" : channelBox.Text.Trim();
                 }
                 ConfigManager.SaveConfig(config);
-                DarkMessageBox.Show("¡Configuración del sistema guardada con éxito en %LocalAppData%\\BlackHouseTunnel\\config.json!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
+
+                if (config.EnableDiscordRpc)
+                {
+                    DiscordRpcService.SetPresenceInMenu();
+                }
+                else
+                {
+                    DiscordRpcService.ClearPresence();
+                }
+
+                DarkMessageBox.Show("¡Configuración del sistema guardada con éxito!", "Configuración Guardada", MessageBoxButton.OK, MessageBoxImage.Information);
             };
 
             boxPanel.Children.Add(saveBtn);
@@ -1284,6 +1347,18 @@ namespace BlackHouseTunnel.Views
             borderFactory.AppendChild(presenterFactory);
             template.VisualTree = borderFactory;
             btn.Template = template;
+        }
+
+        private TextBlock CreateSectionHeader(string text)
+        {
+            return new TextBlock
+            {
+                Text = text,
+                FontSize = 15,
+                FontWeight = FontWeights.Bold,
+                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")),
+                Margin = new Thickness(0, 16, 0, 10)
+            };
         }
 
         private TextBlock CreateLabel(string text)

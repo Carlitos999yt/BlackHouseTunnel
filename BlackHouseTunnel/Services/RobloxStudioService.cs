@@ -221,14 +221,7 @@ namespace BlackHouseTunnel.Services
                 "-userid", uid,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", "StudioServer",
-                "-playerName", cleanName,
-                "-player", cleanName,
-                "-name", cleanName,
-                "-playername", cleanName,
-                "-displayName", cleanName,
-                "-username", cleanName,
-                "-userName", cleanName
+                "-instanceId", "StudioServer"
             };
 
             var psi = BuildCmd(studio, args);
@@ -264,9 +257,8 @@ namespace BlackHouseTunnel.Services
             }
         }
 
-        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_0", string username = "Player")
+        public static void LaunchClient(string studio, string server, string port, string pg, string tg, string inst = "StudioPlayer_Proxy", string username = "Player")
         {
-            string cleanName = string.IsNullOrWhiteSpace(username) ? "Player" : username;
             var args = new List<string>
             {
                 "-task", "StartClient",
@@ -277,14 +269,7 @@ namespace BlackHouseTunnel.Services
                 "-port", port,
                 "-parentSessionGuid", pg,
                 "-playTestSessionGuid", tg,
-                "-instanceId", "StudioPlayer_0",
-                "-playerName", cleanName,
-                "-player", cleanName,
-                "-name", cleanName,
-                "-playername", cleanName,
-                "-displayName", cleanName,
-                "-username", cleanName,
-                "-userName", cleanName
+                "-instanceId", inst
             };
 
             var psi = BuildCmd(studio, args);

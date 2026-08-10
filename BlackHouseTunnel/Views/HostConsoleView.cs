@@ -72,6 +72,7 @@ namespace BlackHouseTunnel.Views
                 if (result == MessageBoxResult.Yes)
                 {
                     RobloxStudioService.ForceKillAllStudioProcesses();
+                    DiscordRpcService.SetPresenceInMenu();
                     OnStopHostRequested?.Invoke(this, EventArgs.Empty);
                 }
             };
@@ -124,6 +125,7 @@ namespace BlackHouseTunnel.Views
                     _console.AppendLog("¡Proceso de Servidor iniciado! Esperando 5 segundos...", "ok");
                     await Task.Delay(5000);
                     _console.AppendLog("● SERVIDOR EN VIVO Y LISTO PARA CONEXIONES", "ok");
+                    DiscordRpcService.SetPresenceHosting(username);
 
                     Dispatcher.Invoke(() =>
                     {

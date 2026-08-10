@@ -29,6 +29,7 @@ namespace BlackHouseTunnel.Models
         public string Language { get; set; } = "es";
         public string ThemeMode { get; set; } = "Dark";
         public string SelectedStudioPath { get; set; } = "";
+        public bool EnableDiscordRpc { get; set; } = true;
 
         // Saved Host Form Fields
         public string SavedUserId { get; set; } = "";
