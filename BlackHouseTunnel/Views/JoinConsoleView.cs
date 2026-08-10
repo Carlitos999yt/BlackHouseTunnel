@@ -107,8 +107,7 @@ namespace BlackHouseTunnel.Views
 
                 try
                 {
-                    string uniqueInstId = $"StudioPlayer_{Random.Shared.Next(100, 999)}";
-                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, uniqueInstId, username);
+                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.ActiveProxyPort.ToString(), parentGuid, playGuid, "StudioPlayer_Proxy", username);
                     _console.AppendLog("● CONECTADO EXITOSAMENTE — Cliente en ejecución", "ok");
                 }
                 catch (Exception ex)
