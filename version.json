@@ -1,1 +1,1 @@
-{"version":"1.2.2","download_url":"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe","notes":"¡Versión Oficial v1.2.2! Detección de versiones en tiempo real vía GitHub Releases API (sin caché CDN) y nuevo actualizador silencioso."}
+{"version":"1.2.2","download_url":"https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.2.2/BlackHouseTunnel.exe","notes":"¡Versión v1.2.2! Corrección de URL de descarga directa de Release Asset, soporte para redirecciones S3 y limpieza de archivos temporales."}
