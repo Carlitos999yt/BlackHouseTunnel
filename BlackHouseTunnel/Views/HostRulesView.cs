@@ -496,6 +496,11 @@ namespace BlackHouseTunnel.Views
                 if (!_selectedRoleIds.Contains(rId))
                 {
                     _selectedRoleIds.Add(rId);
+                    if (_currentRule != null)
+                    {
+                        _currentRule.AllowedRoleIds = new List<string>(_selectedRoleIds);
+                        ConfigManager.SaveConfig(_config);
+                    }
                     RenderSelectedRoles();
                 }
             }
@@ -512,7 +517,7 @@ namespace BlackHouseTunnel.Views
                 Border chip = new Border
                 {
                     Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1F2E")),
-                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A2B3D")),
+                    BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6")),
                     BorderThickness = new Thickness(1),
                     CornerRadius = new CornerRadius(6),
                     Padding = new Thickness(10, 4, 10, 4),
@@ -522,8 +527,9 @@ namespace BlackHouseTunnel.Views
                 StackPanel chipStack = new StackPanel { Orientation = Orientation.Horizontal };
                 TextBlock chipTxt = new TextBlock
                 {
-                    Text = $"[{roleId}] @{rName}",
+                    Text = $"🛡️ ID: {roleId} (@{rName})",
                     FontSize = 12,
+                    FontWeight = FontWeights.Bold,
                     Foreground = Brushes.White,
                     VerticalAlignment = VerticalAlignment.Center
                 };
@@ -544,6 +550,11 @@ namespace BlackHouseTunnel.Views
                 removeBtn.Click += (s, e) =>
                 {
                     _selectedRoleIds.Remove(capturedId);
+                    if (_currentRule != null)
+                    {
+                        _currentRule.AllowedRoleIds = new List<string>(_selectedRoleIds);
+                        ConfigManager.SaveConfig(_config);
+                    }
                     RenderSelectedRoles();
                 };
 
@@ -561,6 +572,11 @@ namespace BlackHouseTunnel.Views
             {
                 _allowedUserIds.Add(uid);
                 _userIdInput.Text = "";
+                if (_currentRule != null)
+                {
+                    _currentRule.AllowedUserIds = new List<string>(_allowedUserIds);
+                    ConfigManager.SaveConfig(_config);
+                }
                 RenderAllowedUsers();
             }
         }
@@ -605,6 +621,11 @@ namespace BlackHouseTunnel.Views
                 removeBtn.Click += (s, e) =>
                 {
                     _allowedUserIds.Remove(capturedUid);
+                    if (_currentRule != null)
+                    {
+                        _currentRule.AllowedUserIds = new List<string>(_allowedUserIds);
+                        ConfigManager.SaveConfig(_config);
+                    }
                     RenderAllowedUsers();
                 };
 

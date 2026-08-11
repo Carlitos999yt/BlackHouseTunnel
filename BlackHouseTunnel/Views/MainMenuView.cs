@@ -641,7 +641,7 @@ namespace BlackHouseTunnel.Views
                     {
                         foreach (var t in activeTunnels)
                         {
-                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", visibilityMode: t.VisibilityMode, remoteAddress: t.RemoteAddress, accessKey: t.AccessKey, minAppVersion: t.MinAppVersion));
+                            tunnelGrid.Children.Add(CreateTunnelCard(t.ServerName, $"Host: {t.HostUsername}", "22 ms", visibilityMode: t.VisibilityMode, remoteAddress: t.RemoteAddress, accessKey: t.AccessKey, minAppVersion: t.MinAppVersion, customRuleName: t.CustomRuleName ?? "", customBadgeLabel: t.CustomBadgeLabel ?? "", customColorHex: t.CustomEmbedColorHex ?? ""));
                         }
                     }
                 });
@@ -2228,20 +2228,25 @@ namespace BlackHouseTunnel.Views
             return container;
         }
 
-        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "", string accessKey = "", string minAppVersion = "1.2.4")
+        private Border CreateTunnelCard(string title, string host, string ping, int visibilityMode = 0, string remoteAddress = "", string accessKey = "", string minAppVersion = "1.3.1", string customRuleName = "", string customBadgeLabel = "", string customColorHex = "")
         {
+            bool isCustomRule = visibilityMode >= 3 || !string.IsNullOrWhiteSpace(customRuleName);
             bool isPrivadito = visibilityMode == 2;
             bool isServidor = visibilityMode == 1;
             bool reqKey = !string.IsNullOrWhiteSpace(accessKey);
             bool isOutdatedApp = UpdateService.IsNewerVersion(minAppVersion, UpdateService.CurrentVersion);
 
-            string borderHex = isOutdatedApp ? "#EF4444" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563"));
-            string badgeBgHex = isOutdatedApp ? "#450A0A" : (isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937"));
-            string badgeBorderHex = isOutdatedApp ? "#EF4444" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563"));
-            string badgeTextHex = isOutdatedApp ? "#F87171" : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF"));
-            string badgeLabel = isOutdatedApp ? $"⛔ Requiere App v{minAppVersion}" : (isPrivadito ? (reqKey ? "🔑 Privadito (Requiere Llave)" : "🔒 Privadito (Rol Exclusivo)") : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)"));
-            string btnBgHex = isOutdatedApp ? "#DC2626" : (isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563"));
-            string btnText = isOutdatedApp ? "⛔ Actualizar App Requerida" : (isPrivadito ? (reqKey ? "🔑 Conectarse con Llave" : "🔒 Conectarse (Privadito)") : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel"));
+            string customHex = !string.IsNullOrWhiteSpace(customColorHex) ? customColorHex : "#EC4899";
+
+            string borderHex = isOutdatedApp ? "#EF4444" : (isCustomRule ? customHex : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563")));
+            string badgeBgHex = isOutdatedApp ? "#450A0A" : (isCustomRule ? "#1E1220" : (isPrivadito ? "#3A2E00" : (isServidor ? "#0C4A6E" : "#1F2937")));
+            string badgeBorderHex = isOutdatedApp ? "#EF4444" : (isCustomRule ? customHex : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#4B5563")));
+            string badgeTextHex = isOutdatedApp ? "#F87171" : (isCustomRule ? customHex : (isPrivadito ? "#FFD700" : (isServidor ? "#38BDF8" : "#9CA3AF")));
+
+            string badgeLabel = isOutdatedApp ? $"⛔ Requiere App v{minAppVersion}" : (isCustomRule ? (!string.IsNullOrWhiteSpace(customBadgeLabel) ? customBadgeLabel : (!string.IsNullOrWhiteSpace(customRuleName) ? $"⚡ Regla: {customRuleName}" : "⚡ Regla Personalizada")) : (isPrivadito ? (reqKey ? "🔑 Privadito (Requiere Llave)" : "🔒 Privadito (Rol Exclusivo)") : (isServidor ? "🛡️ Host Servidor (Miembros)" : "🌐 Host Público (Global)")));
+
+            string btnBgHex = isOutdatedApp ? "#DC2626" : (isCustomRule ? customHex : (isPrivadito ? "#F59E0B" : (isServidor ? "#0284C7" : "#4B5563")));
+            string btnText = isOutdatedApp ? "⛔ Actualizar App Requerida" : (isCustomRule ? (reqKey ? "🔑 Conectarse con Llave" : (!string.IsNullOrWhiteSpace(customRuleName) ? $"⚡ Conectarse ({customRuleName})" : "⚡ Conectarse (Regla)")) : (isPrivadito ? (reqKey ? "🔑 Conectarse con Llave" : "🔒 Conectarse (Privadito)") : (isServidor ? "🛡️ Conectarse (Servidor)" : "🔌 Conectarse al Túnel")));
 
             Border card = new Border
             {
