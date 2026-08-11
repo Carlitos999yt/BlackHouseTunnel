@@ -401,7 +401,7 @@ namespace BlackHouseTunnel.Services
             else if (user.RoleIds.Contains("1535464923998715994") || user.RoleIds.Contains("1529016731941601382") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin")))
             {
                 user.PrimaryRole = "Staff";
-                user.PrimaryRoleColor = "#3B82F6"; // Azul / Cyan
+                user.PrimaryRoleColor = "#EF4444"; // Rojo
             }
             else if (user.IsHoster || user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster")))
             {

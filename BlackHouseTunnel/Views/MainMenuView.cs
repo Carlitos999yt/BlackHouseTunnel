@@ -24,6 +24,9 @@ namespace BlackHouseTunnel.Views
         private readonly DiscordApiService _apiService = new DiscordApiService();
         private HostConsoleView? _activeHostConsoleView = null;
         private JoinConsoleView? _activeJoinConsoleView = null;
+        private HostRulesView? _hostRulesView = null;
+        private UIElement? _activeHostView = null;
+        private bool _isShowingRulesSubView = false;
         private string _pendingJoinAddress = "";
         private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
 
@@ -245,13 +248,21 @@ namespace BlackHouseTunnel.Views
                     _contentHostGrid.Children.Add(BuildHomeDashboardView());
                     break;
                 case "Host":
-                    if (_activeHostConsoleView != null)
+                    if (_isShowingRulesSubView && _hostRulesView != null)
+                    {
+                        _contentHostGrid.Children.Add(_hostRulesView);
+                    }
+                    else if (_activeHostConsoleView != null)
                     {
                         _contentHostGrid.Children.Add(_activeHostConsoleView);
                     }
                     else
                     {
-                        _contentHostGrid.Children.Add(BuildHostView());
+                        if (_activeHostView == null)
+                        {
+                            _activeHostView = BuildHostView();
+                        }
+                        _contentHostGrid.Children.Add(_activeHostView);
                     }
                     break;
                 case "Join":
@@ -305,6 +316,26 @@ namespace BlackHouseTunnel.Views
                         break;
                 }
             }
+        }
+
+        private void OpenHostRulesSubView()
+        {
+            if (_hostRulesView == null)
+            {
+                _hostRulesView = new HostRulesView();
+                _hostRulesView.OnBackToHostRequested += (s, e) =>
+                {
+                    _isShowingRulesSubView = false;
+                    SwitchTab("Host");
+                };
+                _hostRulesView.OnRulesUpdated += (s, e) =>
+                {
+                    _activeHostView = null; // Rebuild host view when rules are added/deleted
+                };
+            }
+            _isShowingRulesSubView = true;
+            _contentHostGrid.Children.Clear();
+            _contentHostGrid.Children.Add(_hostRulesView);
         }
 
         private Border CreateTopHeaderBar()
@@ -730,47 +761,27 @@ namespace BlackHouseTunnel.Views
             Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
             formGrid.Children.Add(addrPanel);
 
-            // Col 2, Row 2: Visibilidad con botón de icono de Reglas
+            // Col 2, Row 2: Visibilidad (ComboBox con Reglas Personalizadas cargadas)
             StackPanel visPanel = new StackPanel();
             visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
 
-            Grid visGridRow = new Grid();
-            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
-            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
-            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
-
             ComboBox visCombo = CreateStyledComboBox();
-            visCombo.Items.Add(LocalizationService.Get("vis_option_0"));
-            visCombo.Items.Add(LocalizationService.Get("vis_option_1"));
-            visCombo.Items.Add(LocalizationService.Get("vis_option_2"));
-            visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
-            Grid.SetColumn(visCombo, 0);
-            visGridRow.Children.Add(visCombo);
-
-            Button editRulesBtn = new Button
+            Action populateVisCombo = () =>
             {
-                Content = "⚙️ Reglas",
-                ToolTip = "Configurar Reglas Personalizadas y Control de Acceso",
-                Height = 36,
-                Padding = new Thickness(12, 0, 12, 0),
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6")),
-                Foreground = Brushes.White,
-                FontWeight = FontWeights.Bold,
-                FontSize = 12,
-                BorderThickness = new Thickness(0),
-                Cursor = System.Windows.Input.Cursors.Hand
-            };
-            SetButtonCornerRadius(editRulesBtn, 8);
-            editRulesBtn.Click += (s, e) =>
-            {
-                var modal = new CustomRulesEditorModal();
-                modal.Owner = Window.GetWindow(this);
-                modal.ShowDialog();
-            };
-            Grid.SetColumn(editRulesBtn, 2);
-            visGridRow.Children.Add(editRulesBtn);
+                visCombo.Items.Clear();
+                visCombo.Items.Add(LocalizationService.Get("vis_option_0"));
+                visCombo.Items.Add(LocalizationService.Get("vis_option_1"));
+                visCombo.Items.Add(LocalizationService.Get("vis_option_2"));
 
-            visPanel.Children.Add(visGridRow);
+                foreach (var rule in ConfigManager.CurrentConfig.SavedCustomRules)
+                {
+                    visCombo.Items.Add($"⚡ Regla: {rule.RuleName}");
+                }
+                visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, Math.Max(0, visCombo.Items.Count - 1));
+            };
+            populateVisCombo();
+
+            visPanel.Children.Add(visCombo);
             Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
             formGrid.Children.Add(visPanel);
 
@@ -864,7 +875,28 @@ namespace BlackHouseTunnel.Views
             // Toggle key card visibility based on visCombo
             visCombo.SelectionChanged += (s, e) =>
             {
-                keyCard.Visibility = visCombo.SelectedIndex == 2 ? Visibility.Visible : Visibility.Collapsed;
+                int sel = visCombo.SelectedIndex;
+                if (sel == 2)
+                {
+                    keyCard.Visibility = Visibility.Visible;
+                }
+                else if (sel >= 3)
+                {
+                    int cIdx = sel - 3;
+                    if (cIdx >= 0 && cIdx < ConfigManager.CurrentConfig.SavedCustomRules.Count)
+                    {
+                        var rule = ConfigManager.CurrentConfig.SavedCustomRules[cIdx];
+                        keyCard.Visibility = rule.RequireAccessKey ? Visibility.Visible : Visibility.Collapsed;
+                    }
+                    else
+                    {
+                        keyCard.Visibility = Visibility.Collapsed;
+                    }
+                }
+                else
+                {
+                    keyCard.Visibility = Visibility.Collapsed;
+                }
             };
 
             // Custom Styled Checkbox Switch
@@ -970,6 +1002,48 @@ namespace BlackHouseTunnel.Views
                     DarkMessageBox.Show("Error al importar scripts: " + ex.Message, "Error Importación", MessageBoxButton.OK, MessageBoxImage.Error);
                 }
             };
+
+            Button configureRulesBtn = new Button
+            {
+                Height = 44,
+                Padding = new Thickness(18, 0, 18, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1F2E")),
+                Foreground = Brushes.White,
+                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#2A2B3D")),
+                BorderThickness = new Thickness(1),
+                Cursor = System.Windows.Input.Cursors.Hand,
+                Margin = new Thickness(0, 0, 14, 0),
+                ToolTip = "Configurar Reglas del Servidor y Control de Acceso"
+            };
+            SetButtonCornerRadius(configureRulesBtn, 10);
+
+            StackPanel rulesBtnStack = new StackPanel { Orientation = Orientation.Horizontal };
+            Path gearSvgIcon = new Path
+            {
+                Data = Geometry.Parse("M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"),
+                Fill = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6")),
+                Width = 18,
+                Height = 18,
+                Stretch = Stretch.Uniform,
+                Margin = new Thickness(0, 0, 8, 0)
+            };
+            TextBlock rulesBtnTxt = new TextBlock
+            {
+                Text = "Configurar Reglas del Servidor",
+                FontSize = 13,
+                FontWeight = FontWeights.Bold,
+                Foreground = Brushes.White,
+                VerticalAlignment = VerticalAlignment.Center
+            };
+            rulesBtnStack.Children.Add(gearSvgIcon);
+            rulesBtnStack.Children.Add(rulesBtnTxt);
+            configureRulesBtn.Content = rulesBtnStack;
+
+            configureRulesBtn.Click += (s, e) =>
+            {
+                OpenHostRulesSubView();
+            };
+            btnRow.Children.Add(configureRulesBtn);
             btnRow.Children.Add(importBtn);
 
             Button startHostBtn = new Button
