@@ -330,7 +330,9 @@ namespace BlackHouseTunnel.Views
                 };
                 _hostRulesView.OnRulesUpdated += (s, e) =>
                 {
-                    _activeHostView = null; // Rebuild host view when rules are added/deleted
+                    ConfigManager.CurrentConfig.SavedVisibilityOptionIndex = 1; // Automatically set to Servidor (Option 1) to prevent bugs
+                    ConfigManager.SaveConfig(ConfigManager.CurrentConfig);
+                    _activeHostView = null; // Rebuild host view when rules are added/deleted/edited
                 };
             }
             _isShowingRulesSubView = true;
