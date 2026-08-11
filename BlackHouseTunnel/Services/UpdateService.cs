@@ -10,8 +10,8 @@ namespace BlackHouseTunnel.Services
 {
     public static class UpdateService
     {
-        public static readonly string CurrentVersion = "1.3.1";
-        public static string LatestVersion { get; private set; } = "1.3.1";
+        public static readonly string CurrentVersion = "1.3.2";
+        public static string LatestVersion { get; private set; } = "1.3.2";
         public static bool IsUpdateAvailable { get; private set; } = false;
         public static string LatestDownloadUrl { get; private set; } = "";
         public static string DownloadedUpdatePath { get; private set; } = "";

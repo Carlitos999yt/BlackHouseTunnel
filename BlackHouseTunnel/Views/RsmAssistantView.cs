@@ -24,7 +24,7 @@ namespace BlackHouseTunnel.Views
                 Text = "🛠️ Asistente e Instalador de RSM Mod Manager",
                 FontSize = 22,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 4)
             };
 
@@ -32,7 +32,7 @@ namespace BlackHouseTunnel.Views
             {
                 Text = "Gestiona, instala, repara desde GitHub o limpia la instalación de Roblox Studio Mod Manager.",
                 FontSize = 13,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#AAAAAA")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 16)
             };
 
@@ -48,8 +48,8 @@ namespace BlackHouseTunnel.Views
 
             Border statusCard = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0D0D14")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1F1F30")),
+                Background = ThemeManager.CardBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(14),
                 Padding = new Thickness(16),

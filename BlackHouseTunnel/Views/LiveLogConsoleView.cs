@@ -3,6 +3,7 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Documents;
 using System.Windows.Media;
+using BlackHouseTunnel.Services;
 
 namespace BlackHouseTunnel.Views
 {
@@ -16,8 +17,8 @@ namespace BlackHouseTunnel.Views
 
             Border border = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#06040A")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#222238")),
+                Background = ThemeManager.InputBgBrush,
+                BorderBrush = ThemeManager.InputBorderBrush,
                 BorderThickness = new Thickness(1),
                 CornerRadius = new CornerRadius(10),
                 Height = height
@@ -26,7 +27,7 @@ namespace BlackHouseTunnel.Views
             _rtb = new RichTextBox
             {
                 Background = Brushes.Transparent,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#B39DDB")),
+                Foreground = ThemeManager.TextPrimaryBrush,
                 FontFamily = new FontFamily("Consolas, Courier New, monospace"),
                 FontSize = 12,
                 IsReadOnly = true,
@@ -51,7 +52,7 @@ namespace BlackHouseTunnel.Views
                 string timeStr = $"[{DateTime.Now:HH:mm:ss}]  ";
                 Run timeRun = new Run(timeStr)
                 {
-                    Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#72767D"))
+                    Foreground = ThemeManager.TextMutedBrush
                 };
                 p.Inlines.Add(timeRun);
 
@@ -62,7 +63,7 @@ namespace BlackHouseTunnel.Views
                     "warn" => (Color)ColorConverter.ConvertFromString("#F59E0B"),
                     "info" => (Color)ColorConverter.ConvertFromString("#5865F2"),
                     "dim" => (Color)ColorConverter.ConvertFromString("#8E9297"),
-                    _ => Colors.White
+                    _ => ThemeManager.TextPrimaryBrush.Color
                 };
 
                 Run msgRun = new Run(message)

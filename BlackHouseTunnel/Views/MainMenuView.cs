@@ -118,8 +118,8 @@ namespace BlackHouseTunnel.Views
         {
             Border sidebar = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#09090F")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#181826")),
+                Background = ThemeManager.SidebarBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(0, 0, 1, 0)
             };
 
@@ -219,14 +219,14 @@ namespace BlackHouseTunnel.Views
         {
             if (btn == null) return;
             btn.Background = isActive 
-                ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E30")) 
+                ? (ThemeManager.IsLight ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#E5E7EB")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#1E1E30"))) 
                 : Brushes.Transparent;
 
             if (btn.Content is Path path)
             {
                 path.Stroke = isActive 
                     ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#5865F2")) 
-                    : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297"));
+                    : (ThemeManager.IsLight ? new SolidColorBrush((Color)ColorConverter.ConvertFromString("#6B7280")) : new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")));
             }
         }
 
@@ -344,8 +344,8 @@ namespace BlackHouseTunnel.Views
         {
             Border topBar = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#0A0A10")),
-                BorderBrush = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#161624")),
+                Background = ThemeManager.HeaderBgBrush,
+                BorderBrush = ThemeManager.CardBorderBrush,
                 BorderThickness = new Thickness(0, 0, 0, 1)
             };
 
@@ -2511,7 +2511,7 @@ namespace BlackHouseTunnel.Views
 
             Border cardBorder = new Border
             {
-                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#14141E")),
+                Background = ThemeManager.CardBgBrush,
                 BorderBrush = new SolidColorBrush(roleColor),
                 BorderThickness = new Thickness(1.5),
                 CornerRadius = new CornerRadius(16),
@@ -2560,7 +2560,7 @@ namespace BlackHouseTunnel.Views
                 FontFamily = new FontFamily("Segoe UI, sans-serif"),
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
-                Foreground = Brushes.White,
+                Foreground = ThemeManager.TextPrimaryBrush,
                 Margin = new Thickness(0, 0, 0, 1)
             };
 
@@ -2569,7 +2569,7 @@ namespace BlackHouseTunnel.Views
                 Text = user.Handle,
                 FontFamily = new FontFamily("Segoe UI, sans-serif"),
                 FontSize = 10,
-                Foreground = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#8E9297")),
+                Foreground = ThemeManager.TextMutedBrush,
                 Margin = new Thickness(0, 0, 0, 3)
             };
 
