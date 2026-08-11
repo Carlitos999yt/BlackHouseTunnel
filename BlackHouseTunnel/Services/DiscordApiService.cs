@@ -473,18 +473,36 @@ namespace BlackHouseTunnel.Services
 
             try
             {
-                int color = tunnel.VisibilityMode switch
+                int color = 7045760; // Default Global
+                if (!string.IsNullOrWhiteSpace(tunnel.CustomEmbedColorHex))
                 {
-                    2 => 16766720, // Gold (Privadito)
-                    1 => 5793266,  // Blurple/Cyan (Servidor)
-                    _ => 7045760   // Dark Slate Gray (Global / Público)
-                };
-                string scopeText = tunnel.VisibilityMode switch
+                    try
+                    {
+                        string hex = tunnel.CustomEmbedColorHex.TrimStart('#');
+                        color = Convert.ToInt32(hex, 16);
+                    }
+                    catch { color = 11032055; }
+                }
+                else
                 {
-                    1 => "🛡️ Host para todo el Servidor",
-                    2 => "🔒 Host Privado (Solo Privadito)",
-                    _ => "🌐 Host Abierto (Público Global)"
-                };
+                    color = tunnel.VisibilityMode switch
+                    {
+                        2 => 16766720, // Gold (Privadito)
+                        1 => 5793266,  // Blurple/Cyan (Servidor)
+                        _ => 7045760   // Dark Slate Gray (Global / Público)
+                    };
+                }
+
+                string scopeText = !string.IsNullOrWhiteSpace(tunnel.CustomBadgeLabel)
+                    ? tunnel.CustomBadgeLabel
+                    : (!string.IsNullOrWhiteSpace(tunnel.CustomRuleName)
+                        ? $"⚡ Regla: {tunnel.CustomRuleName}"
+                        : tunnel.VisibilityMode switch
+                        {
+                            1 => "🛡️ Host para todo el Servidor",
+                            2 => "🔒 Host Privado (Solo Privadito)",
+                            _ => "🌐 Host Abierto (Público Global)"
+                        });
 
                 var fieldsList = new List<object>
                 {
@@ -563,7 +581,13 @@ namespace BlackHouseTunnel.Services
                                 new { name = "Host", value = tunnel.HostUsername, inline = true },
                                 new { name = "RemoteAddress", value = tunnel.RemoteAddress, inline = true },
                                 new { name = "AccessKey", value = tunnel.AccessKey ?? "", inline = true },
-                                new { name = "MinAppVersion", value = string.IsNullOrWhiteSpace(tunnel.MinAppVersion) ? "1.2.4" : tunnel.MinAppVersion, inline = true }
+                                new { name = "VisibilityMode", value = tunnel.VisibilityMode.ToString(), inline = true },
+                                new { name = "CustomRuleName", value = tunnel.CustomRuleName ?? "", inline = true },
+                                new { name = "CustomBadgeLabel", value = tunnel.CustomBadgeLabel ?? "", inline = true },
+                                new { name = "CustomColorHex", value = tunnel.CustomEmbedColorHex ?? "", inline = true },
+                                new { name = "AllowedRoleIds", value = string.Join(",", tunnel.AllowedRoleIds), inline = true },
+                                new { name = "AllowedUserIds", value = string.Join(",", tunnel.AllowedUserIds), inline = true },
+                                new { name = "MinAppVersion", value = string.IsNullOrWhiteSpace(tunnel.MinAppVersion) ? "1.3.1" : tunnel.MinAppVersion, inline = true }
                             },
                             timestamp = DateTime.UtcNow.ToString("o")
                         }
@@ -611,9 +635,9 @@ namespace BlackHouseTunnel.Services
             var list = new List<PublishedTunnel>();
             if (string.IsNullOrWhiteSpace(channelId) || string.IsNullOrWhiteSpace(botToken)) return list;
 
-            // Map hostId -> (remoteAddr, accessKey, minAppVer) from playit channel
-            var playitMap = new Dictionary<string, (string remoteAddr, string accessKey, string minAppVer)>(StringComparer.OrdinalIgnoreCase);
-            var serverNameMap = new Dictionary<string, (string remoteAddr, string accessKey, string minAppVer)>(StringComparer.OrdinalIgnoreCase);
+            // Map hostId -> PublishedTunnel meta from playit channel
+            var playitMap = new Dictionary<string, PublishedTunnel>(StringComparer.OrdinalIgnoreCase);
+            var serverNameMap = new Dictionary<string, PublishedTunnel>(StringComparer.OrdinalIgnoreCase);
 
             if (!string.IsNullOrWhiteSpace(playitChannelId))
             {
@@ -637,10 +661,7 @@ namespace BlackHouseTunnel.Services
                                     if (!title.Contains("PLAYIT_MAP:", StringComparison.OrdinalIgnoreCase)) continue;
 
                                     string hId = title.Replace("🔗 PLAYIT_MAP:", "").Replace("PLAYIT_MAP:", "").Trim();
-                                    string rAddr = "";
-                                    string aKey = "";
-                                    string sName = "";
-                                    string mVer = "1.2.4";
+                                    var meta = new PublishedTunnel { HostId = hId };
 
                                     if (embed.TryGetProperty("fields", out var fArr) && fArr.ValueKind == JsonValueKind.Array)
                                     {
@@ -648,20 +669,27 @@ namespace BlackHouseTunnel.Services
                                         {
                                             string fn = field.GetProperty("name").GetString() ?? "";
                                             string fv = field.GetProperty("value").GetString() ?? "";
-                                            if (fn.Equals("HostId", StringComparison.OrdinalIgnoreCase)) hId = fv.Trim();
-                                            else if (fn.Equals("RemoteAddress", StringComparison.OrdinalIgnoreCase)) rAddr = fv.Trim();
-                                            else if (fn.Equals("AccessKey", StringComparison.OrdinalIgnoreCase)) aKey = fv.Trim();
-                                            else if (fn.Equals("ServerName", StringComparison.OrdinalIgnoreCase)) sName = fv.Trim();
-                                            else if (fn.Equals("MinAppVersion", StringComparison.OrdinalIgnoreCase)) mVer = fv.Trim();
+                                            if (fn.Equals("HostId", StringComparison.OrdinalIgnoreCase)) meta.HostId = fv.Trim();
+                                            else if (fn.Equals("RemoteAddress", StringComparison.OrdinalIgnoreCase)) meta.RemoteAddress = fv.Trim();
+                                            else if (fn.Equals("AccessKey", StringComparison.OrdinalIgnoreCase)) meta.AccessKey = fv.Trim();
+                                            else if (fn.Equals("ServerName", StringComparison.OrdinalIgnoreCase)) meta.ServerName = fv.Trim();
+                                            else if (fn.Equals("Host", StringComparison.OrdinalIgnoreCase)) meta.HostUsername = fv.Trim();
+                                            else if (fn.Equals("VisibilityMode", StringComparison.OrdinalIgnoreCase) && int.TryParse(fv, out var vm)) meta.VisibilityMode = vm;
+                                            else if (fn.Equals("CustomRuleName", StringComparison.OrdinalIgnoreCase)) meta.CustomRuleName = fv.Trim();
+                                            else if (fn.Equals("CustomBadgeLabel", StringComparison.OrdinalIgnoreCase)) meta.CustomBadgeLabel = fv.Trim();
+                                            else if (fn.Equals("CustomColorHex", StringComparison.OrdinalIgnoreCase)) meta.CustomEmbedColorHex = fv.Trim();
+                                            else if (fn.Equals("AllowedRoleIds", StringComparison.OrdinalIgnoreCase)) meta.AllowedRoleIds = fv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                                            else if (fn.Equals("AllowedUserIds", StringComparison.OrdinalIgnoreCase)) meta.AllowedUserIds = fv.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries).ToList();
+                                            else if (fn.Equals("MinAppVersion", StringComparison.OrdinalIgnoreCase)) meta.MinAppVersion = fv.Trim();
                                         }
                                     }
-                                    if (!string.IsNullOrEmpty(hId) && !string.IsNullOrEmpty(rAddr))
+                                    if (!string.IsNullOrEmpty(meta.HostId) && !string.IsNullOrEmpty(meta.RemoteAddress))
                                     {
-                                        playitMap[hId] = (rAddr, aKey, mVer);
+                                        playitMap[meta.HostId] = meta;
                                     }
-                                    if (!string.IsNullOrEmpty(sName) && !string.IsNullOrEmpty(rAddr))
+                                    if (!string.IsNullOrEmpty(meta.ServerName) && !string.IsNullOrEmpty(meta.RemoteAddress))
                                     {
-                                        serverNameMap[sName] = (rAddr, aKey, mVer);
+                                        serverNameMap[meta.ServerName] = meta;
                                     }
                                 }
                             }
@@ -736,42 +764,47 @@ namespace BlackHouseTunnel.Services
                                                 {
                                                     visMode = 1;
                                                 }
-                                                else
+                                                else if (fVal.Contains("Global", StringComparison.OrdinalIgnoreCase) || fVal.Contains("Abierto", StringComparison.OrdinalIgnoreCase))
                                                 {
                                                     visMode = 0;
+                                                }
+                                                else
+                                                {
+                                                    visMode = 3;
                                                 }
                                             }
                                         }
                                     }
 
-                                    string minVer = "1.2.4";
-
-                                    // Match by HostId first, then by ServerName fallback
+                                    PublishedTunnel? metaFromPlayit = null;
                                     if (!string.IsNullOrEmpty(hostId) && playitMap.TryGetValue(hostId, out var pData))
                                     {
-                                        remoteAddr = pData.remoteAddr;
-                                        accessKey = pData.accessKey;
-                                        minVer = pData.minAppVer;
+                                        metaFromPlayit = pData;
                                     }
                                     else if (serverNameMap.TryGetValue(serverName, out var pNameData))
                                     {
-                                        remoteAddr = pNameData.remoteAddr;
-                                        accessKey = pNameData.accessKey;
-                                        minVer = pNameData.minAppVer;
+                                        metaFromPlayit = pNameData;
                                     }
 
-                                    list.Add(new PublishedTunnel
+                                    var item = new PublishedTunnel
                                     {
                                         Id = msgElem.GetProperty("id").GetString() ?? Guid.NewGuid().ToString(),
                                         HostId = !string.IsNullOrEmpty(hostId) ? hostId : "HOST-" + Guid.NewGuid().ToString("N").Substring(0, 8).ToUpperInvariant(),
                                         ServerName = serverName,
                                         HostUsername = hostUser,
-                                        RemoteAddress = remoteAddr,
-                                        VisibilityMode = visMode,
-                                        AccessKey = accessKey,
-                                        MinAppVersion = minVer,
+                                        RemoteAddress = metaFromPlayit != null ? metaFromPlayit.RemoteAddress : remoteAddr,
+                                        VisibilityMode = metaFromPlayit != null ? metaFromPlayit.VisibilityMode : visMode,
+                                        AccessKey = metaFromPlayit != null ? metaFromPlayit.AccessKey : accessKey,
+                                        MinAppVersion = metaFromPlayit != null ? metaFromPlayit.MinAppVersion : "1.3.1",
+                                        CustomRuleName = metaFromPlayit?.CustomRuleName,
+                                        CustomBadgeLabel = metaFromPlayit?.CustomBadgeLabel,
+                                        CustomEmbedColorHex = metaFromPlayit?.CustomEmbedColorHex,
+                                        AllowedRoleIds = metaFromPlayit?.AllowedRoleIds ?? new List<string>(),
+                                        AllowedUserIds = metaFromPlayit?.AllowedUserIds ?? new List<string>(),
                                         DiscordMessageId = msgElem.GetProperty("id").GetString()
-                                    });
+                                    };
+
+                                    list.Add(item);
                                 }
                             }
                         }

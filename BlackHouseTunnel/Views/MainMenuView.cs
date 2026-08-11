@@ -1078,7 +1078,18 @@ namespace BlackHouseTunnel.Views
                     string mapPath = mapBox.Text.Trim();
                     string addr = addrBox.Text.Trim();
                     int targetVisMode = isAuthorizedHost ? visCombo.SelectedIndex : 0;
-                    string accessKey = (targetVisMode == 2) ? keyBox.Text.Trim() : "";
+                    CustomAccessRule? activeCustomRule = null;
+                    if (targetVisMode >= 3)
+                    {
+                        int customIdx = targetVisMode - 3;
+                        var savedRules = ConfigManager.CurrentConfig.SavedCustomRules;
+                        if (savedRules != null && customIdx >= 0 && customIdx < savedRules.Count)
+                        {
+                            activeCustomRule = savedRules[customIdx];
+                        }
+                    }
+
+                    string accessKey = (targetVisMode == 2 || (activeCustomRule != null && activeCustomRule.RequireAccessKey)) ? keyBox.Text.Trim() : "";
                     ConfigManager.CurrentConfig.SavedUserId = targetUid;
                     ConfigManager.CurrentConfig.SavedUsername = targetUsername;
                     ConfigManager.CurrentConfig.SavedServerName = targetServerName;
@@ -1097,14 +1108,25 @@ namespace BlackHouseTunnel.Views
                     string? sentMsgId = null;
                     if (isAuthorizedHost && publishCheck.IsChecked == true)
                     {
-                        sentMsgId = await ActiveTunnelRegistry.PublishTunnelAsync(new PublishedTunnel
+                        var pubTunnel = new PublishedTunnel
                         {
                             ServerName = string.IsNullOrWhiteSpace(targetServerName) ? $"Servidor de {targetUsername}" : targetServerName,
                             HostUsername = targetUsername,
                             RemoteAddress = addr,
                             VisibilityMode = targetVisMode,
                             AccessKey = accessKey
-                        });
+                        };
+
+                        if (activeCustomRule != null)
+                        {
+                            pubTunnel.CustomRuleName = activeCustomRule.RuleName;
+                            pubTunnel.CustomEmbedColorHex = activeCustomRule.EmbedColorHex;
+                            pubTunnel.CustomBadgeLabel = activeCustomRule.BadgeLabel;
+                            pubTunnel.AllowedRoleIds = new List<string>(activeCustomRule.AllowedRoleIds ?? new List<string>());
+                            pubTunnel.AllowedUserIds = new List<string>(activeCustomRule.AllowedUserIds ?? new List<string>());
+                        }
+
+                        sentMsgId = await ActiveTunnelRegistry.PublishTunnelAsync(pubTunnel);
                     }
 
                     HostConsoleView hostConsole = new HostConsoleView(studioPath, targetUid, targetPort.ToString(), addr, mapPath, targetUsername, sentMsgId, isAuthorizedHost && publishCheck.IsChecked == true);
