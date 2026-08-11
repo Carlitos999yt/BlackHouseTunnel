@@ -148,17 +148,9 @@ namespace BlackHouseTunnel
 
             if (user == null)
             {
-                // Fallback for Offline Mode / No Internet Connection
-                user = new DiscordUser
-                {
-                    Id = "000000000000000000",
-                    Username = "offline_user",
-                    GlobalName = "Modo Offline (Sin Internet)",
-                    IsMemberOfGuild = true,
-                    PrimaryRole = "Offline Mode",
-                    PrimaryRoleColor = "#F59E0B"
-                };
-                DarkMessageBox.Show("🌐 Modo Offline Detectado:\n\nNo se detectó conexión a Internet activa o los servicios de Discord no responden. Se ha iniciado el programa en Modo Offline para permitir el uso local y túneles en red.", "Modo Offline", MessageBoxButton.OK, MessageBoxImage.Warning);
+                _welcomeView?.SetLoadingState(false, "Se requiere conexión a Internet.");
+                DarkMessageBox.Show("No se pudo verificar tu inicio de sesión con Discord.\n\nSe requiere una conexión a Internet activa para verificar tus permisos y miembros. Comprueba tu conexión de red e inténtalo nuevamente.", "Sin Conexión a Internet", MessageBoxButton.OK, MessageBoxImage.Error);
+                return;
             }
 
             if (user.IsMemberOfGuild)

@@ -1,5 +1,5 @@
 {
-  "version": "1.3.2",
+  "version": "1.3.3",
   "download_url": "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe",
-  "notes": "¡Actualización Oficial v1.3.2! Corrección completa de temas Claro/Oscuro, soporte de inicio Modo Offline sin internet, y mejoras de interfaz."
+  "notes": "¡Actualización Oficial v1.3.3! Verificación estricta de inicio de sesión de Discord y conexión a Internet."
 }
