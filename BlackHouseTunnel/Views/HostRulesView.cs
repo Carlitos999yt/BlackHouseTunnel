@@ -682,8 +682,9 @@ namespace BlackHouseTunnel.Views
 
         private TextBox CreateStyledTextBox(string defaultText)
         {
-            return new TextBox
+            TextBox tb = new TextBox
             {
+                Text = defaultText,
                 Height = 36,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12131C")),
                 Foreground = Brushes.White,
@@ -694,11 +695,29 @@ namespace BlackHouseTunnel.Views
                 VerticalContentAlignment = VerticalAlignment.Center,
                 Margin = new Thickness(0, 0, 0, 8)
             };
+
+            ControlTemplate template = new ControlTemplate(typeof(TextBox));
+            FrameworkElementFactory border = new FrameworkElementFactory(typeof(Border));
+            border.Name = "border";
+            border.SetValue(Border.BackgroundProperty, new TemplateBindingExtension(TextBox.BackgroundProperty));
+            border.SetValue(Border.BorderBrushProperty, new TemplateBindingExtension(TextBox.BorderBrushProperty));
+            border.SetValue(Border.BorderThicknessProperty, new TemplateBindingExtension(TextBox.BorderThicknessProperty));
+            border.SetValue(Border.CornerRadiusProperty, new CornerRadius(8));
+
+            FrameworkElementFactory scrollViewer = new FrameworkElementFactory(typeof(ScrollViewer));
+            scrollViewer.Name = "PART_ContentHost";
+            scrollViewer.SetValue(ScrollViewer.MarginProperty, new Thickness(0));
+            scrollViewer.SetValue(ScrollViewer.VerticalAlignmentProperty, VerticalAlignment.Center);
+            border.AppendChild(scrollViewer);
+
+            template.VisualTree = border;
+            tb.Template = template;
+            return tb;
         }
 
         private ComboBox CreateStyledComboBox()
         {
-            return new ComboBox
+            ComboBox cb = new ComboBox
             {
                 Height = 36,
                 Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#12131C")),
@@ -709,6 +728,7 @@ namespace BlackHouseTunnel.Views
                 FontSize = 13,
                 VerticalContentAlignment = VerticalAlignment.Center
             };
+            return cb;
         }
 
         private Path CreateSvgPath(string svgData, string colorHex, double size)

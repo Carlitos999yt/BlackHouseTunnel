@@ -1029,7 +1029,7 @@ namespace BlackHouseTunnel.Views
             };
             TextBlock rulesBtnTxt = new TextBlock
             {
-                Text = "Configurar Reglas del Servidor",
+                Text = "Configurar Reglas",
                 FontSize = 13,
                 FontWeight = FontWeights.Bold,
                 Foreground = Brushes.White,
