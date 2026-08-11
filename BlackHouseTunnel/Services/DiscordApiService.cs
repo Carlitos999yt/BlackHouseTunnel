@@ -213,6 +213,39 @@ namespace BlackHouseTunnel.Services
             }
         }
 
+        public async Task<List<DiscordRole>> FetchGuildRolesAsync(string guildId = "", string botToken = "")
+        {
+            if (string.IsNullOrWhiteSpace(guildId)) guildId = "1529015986135502951";
+            if (string.IsNullOrWhiteSpace(botToken)) botToken = TokenProtector.GetDefaultBotToken();
+
+            var list = new List<DiscordRole>();
+            try
+            {
+                var req = new HttpRequestMessage(HttpMethod.Get, $"https://discord.com/api/v10/guilds/{guildId}/roles");
+                req.Headers.Authorization = new AuthenticationHeaderValue("Bot", botToken);
+                var resp = await HttpClient.SendAsync(req);
+                if (resp.IsSuccessStatusCode)
+                {
+                    string json = await resp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(json);
+                    foreach (var elem in doc.RootElement.EnumerateArray())
+                    {
+                        string id = elem.GetProperty("id").GetString() ?? "";
+                        string name = elem.GetProperty("name").GetString() ?? "";
+                        int pos = elem.TryGetProperty("position", out var p) ? p.GetInt32() : 0;
+                        uint col = elem.TryGetProperty("color", out var c) ? c.GetUInt32() : 0;
+                        if (!string.IsNullOrEmpty(id) && !name.Equals("@everyone", StringComparison.OrdinalIgnoreCase))
+                        {
+                            list.Add(new DiscordRole { Id = id, Name = name, Position = pos, Color = col });
+                        }
+                    }
+                    list.Sort((a, b) => b.Position.CompareTo(a.Position));
+                }
+            }
+            catch { }
+            return list;
+        }
+
         public async Task<List<DiscordUser>> GetGuildOnlineMembersAsync(string guildId, string botToken)
         {
             var membersList = new List<DiscordUser>();
@@ -348,40 +381,37 @@ namespace BlackHouseTunnel.Services
             var namesLower = user.RoleNames.Select(r => r.ToLowerInvariant()).ToList();
 
             // Match by exact Discord Role ID or by Name substring
+            user.IsOwner = user.RoleIds.Contains("1535464249814679663") || namesLower.Any(r => r.Contains("owner") || r.Contains("dueño"));
+            user.IsMod = user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("mod") || r.Contains("moderador"));
+            user.IsStaffOrAdmin = user.IsOwner || user.IsMod || user.RoleIds.Contains("1535464923998715994") || user.RoleIds.Contains("1529016731941601382") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin"));
             user.IsPrivadito = user.RoleIds.Contains("1531465096302301305") || namesLower.Any(r => r.Contains("privadito"));
             user.IsHoster = user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster") || r.Contains("host"));
-            user.IsStaffOrAdmin = user.RoleIds.Contains("1529016731941601382") || user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin") || r.Contains("mod"));
 
-            // Determine Primary Role (Priority Order: Superior -> Staff -> Hoster -> Folladores -> Chica -> Privadito -> Default)
-            if (user.RoleIds.Contains("1529016731941601382") || namesLower.Any(r => r.Contains("superior")))
+            // Determine Primary Role (Priority Order: Owner -> Mod -> Staff -> Hoster -> Privadito -> Default)
+            if (user.IsOwner || user.RoleIds.Contains("1535464249814679663") || namesLower.Any(r => r.Contains("owner") || r.Contains("dueño")))
             {
-                user.PrimaryRole = "Superior";
-                user.PrimaryRoleColor = "#FFD700";
+                user.PrimaryRole = "Owner";
+                user.PrimaryRoleColor = "#FFD700"; // Gold
             }
-            else if (user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("staff") || r.Contains("admin")))
+            else if (user.IsMod || user.RoleIds.Contains("1530819254507802736") || namesLower.Any(r => r.Contains("mod") || r.Contains("moderador")))
+            {
+                user.PrimaryRole = "Mod";
+                user.PrimaryRoleColor = "#A855F7"; // Morado
+            }
+            else if (user.RoleIds.Contains("1535464923998715994") || user.RoleIds.Contains("1529016731941601382") || namesLower.Any(r => r.Contains("staff") || r.Contains("superior") || r.Contains("admin")))
             {
                 user.PrimaryRole = "Staff";
-                user.PrimaryRoleColor = "#E74C3C";
+                user.PrimaryRoleColor = "#3B82F6"; // Azul / Cyan
             }
-            else if (user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster")))
+            else if (user.IsHoster || user.RoleIds.Contains("1529275468535300168") || namesLower.Any(r => r.Contains("hoster")))
             {
                 user.PrimaryRole = "Hoster";
                 user.PrimaryRoleColor = "#9B59B6";
             }
-            else if (user.RoleIds.Contains("1529156574046588939") || namesLower.Any(r => r.Contains("follador")))
-            {
-                user.PrimaryRole = "Folladores";
-                user.PrimaryRoleColor = "#E67E22";
-            }
-            else if (user.RoleIds.Contains("1529156425027158296") || namesLower.Any(r => r.Contains("chica")))
-            {
-                user.PrimaryRole = "Chica";
-                user.PrimaryRoleColor = "#FF69B4";
-            }
-            else if (user.RoleIds.Contains("1531465096302301305") || namesLower.Any(r => r.Contains("privadito")))
+            else if (user.IsPrivadito || user.RoleIds.Contains("1531465096302301305") || namesLower.Any(r => r.Contains("privadito")))
             {
                 user.PrimaryRole = "Privadito";
-                user.PrimaryRoleColor = "#34D399";
+                user.PrimaryRoleColor = "#F59E0B";
             }
             else if (namesLower.Any(r => r.Contains("usuario") || r.Contains("member")))
             {

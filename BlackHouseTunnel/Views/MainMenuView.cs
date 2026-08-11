@@ -730,15 +730,47 @@ namespace BlackHouseTunnel.Views
             Grid.SetRow(addrPanel, 2); Grid.SetColumn(addrPanel, 0);
             formGrid.Children.Add(addrPanel);
 
-            // Col 2, Row 2: Visibilidad (solo ComboBox, sin Key al lado)
+            // Col 2, Row 2: Visibilidad con botón de icono de Reglas
             StackPanel visPanel = new StackPanel();
             visPanel.Children.Add(CreateLabel(LocalizationService.Get("lbl_vis")));
+
+            Grid visGridRow = new Grid();
+            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = new GridLength(8) });
+            visGridRow.ColumnDefinitions.Add(new ColumnDefinition { Width = GridLength.Auto });
+
             ComboBox visCombo = CreateStyledComboBox();
             visCombo.Items.Add(LocalizationService.Get("vis_option_0"));
             visCombo.Items.Add(LocalizationService.Get("vis_option_1"));
             visCombo.Items.Add(LocalizationService.Get("vis_option_2"));
             visCombo.SelectedIndex = Math.Clamp(ConfigManager.CurrentConfig.SavedVisibilityOptionIndex, 0, 2);
-            visPanel.Children.Add(visCombo);
+            Grid.SetColumn(visCombo, 0);
+            visGridRow.Children.Add(visCombo);
+
+            Button editRulesBtn = new Button
+            {
+                Content = "⚙️ Reglas",
+                ToolTip = "Configurar Reglas Personalizadas y Control de Acceso",
+                Height = 36,
+                Padding = new Thickness(12, 0, 12, 0),
+                Background = new SolidColorBrush((Color)ColorConverter.ConvertFromString("#3B82F6")),
+                Foreground = Brushes.White,
+                FontWeight = FontWeights.Bold,
+                FontSize = 12,
+                BorderThickness = new Thickness(0),
+                Cursor = System.Windows.Input.Cursors.Hand
+            };
+            SetButtonCornerRadius(editRulesBtn, 8);
+            editRulesBtn.Click += (s, e) =>
+            {
+                var modal = new CustomRulesEditorModal();
+                modal.Owner = Window.GetWindow(this);
+                modal.ShowDialog();
+            };
+            Grid.SetColumn(editRulesBtn, 2);
+            visGridRow.Children.Add(editRulesBtn);
+
+            visPanel.Children.Add(visGridRow);
             Grid.SetRow(visPanel, 2); Grid.SetColumn(visPanel, 2);
             formGrid.Children.Add(visPanel);
 
@@ -1675,7 +1707,7 @@ namespace BlackHouseTunnel.Views
             _modalOverlay.Visibility = Visibility.Visible;
         }
 
-        private void SetButtonCornerRadius(Button btn, double radius = 8)
+        public static void SetButtonCornerRadius(Button btn, double radius = 8)
         {
             ControlTemplate template = new ControlTemplate(typeof(Button));
             FrameworkElementFactory borderFactory = new FrameworkElementFactory(typeof(Border));

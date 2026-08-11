@@ -1,7 +1,21 @@
+using System;
+using System.Collections.Generic;
 using System.Text.Json.Serialization;
 
 namespace BlackHouseTunnel.Models
 {
+    public class CustomAccessRule
+    {
+        public string RuleId { get; set; } = Guid.NewGuid().ToString();
+        public string RuleName { get; set; } = "Regla Personalizada";
+        public List<string> AllowedRoleIds { get; set; } = new();
+        public List<string> AllowedUserIds { get; set; } = new();
+        public bool RequireAccessKey { get; set; } = false;
+        public string CustomAccessKey { get; set; } = "";
+        public string EmbedColorHex { get; set; } = "#A855F7";
+        public string BadgeLabel { get; set; } = "⚡ Regla Personalizada";
+    }
+
     public class AppConfig
     {
         public string ClientId { get; set; } = "1534613209523294349";
@@ -40,6 +54,9 @@ namespace BlackHouseTunnel.Models
         public string SavedMapPath { get; set; } = "";
         public int SavedVisibilityOptionIndex { get; set; } = 0;
         public string SavedAccessKey { get; set; } = "";
+
+        // Saved Custom Access Rules
+        public List<CustomAccessRule> SavedCustomRules { get; set; } = new();
 
         // Auto-Login Session Token
         public string? SavedAccessToken { get; set; } = null;
