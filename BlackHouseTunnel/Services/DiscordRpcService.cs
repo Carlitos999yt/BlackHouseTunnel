@@ -164,20 +164,20 @@ namespace BlackHouseTunnel.Services
 
         public static void SetPresenceHosting(string serverName)
         {
-            string name = string.IsNullOrWhiteSpace(serverName) ? "Servidor Privado" : serverName;
-            UpdatePresence($"Hosteando: {name}", "Servidor de Roblox Activo");
+            if (string.IsNullOrWhiteSpace(serverName) || serverName.Contains("ply.gg", StringComparison.OrdinalIgnoreCase) || serverName.Contains("tun", StringComparison.OrdinalIgnoreCase) || serverName.Contains(":"))
+            {
+                serverName = "Servidor Privado";
+            }
+            UpdatePresence($"Hosteando: {serverName}", "Servidor de Roblox Activo");
         }
 
         public static void SetPresenceConnected(string serverName, bool isRegisteredTunnel = true)
         {
-            if (isRegisteredTunnel && !string.IsNullOrWhiteSpace(serverName))
+            if (string.IsNullOrWhiteSpace(serverName) || serverName.Contains("ply.gg", StringComparison.OrdinalIgnoreCase) || serverName.Contains("tun", StringComparison.OrdinalIgnoreCase) || serverName.Contains(":") || serverName.Contains("127.0.0.1"))
             {
-                UpdatePresence($"Conectado a: {serverName}", "Jugando en Túnel de Host");
+                serverName = "Servidor Privado";
             }
-            else
-            {
-                UpdatePresence("Conectado a un Host", "Jugando en Túnel Remoto");
-            }
+            UpdatePresence($"Conectado a: {serverName}", "Jugando en Túnel de Host");
         }
 
         public static void ClearPresence()
