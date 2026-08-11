@@ -96,10 +96,8 @@ namespace BlackHouseTunnel.Services
                 {
                     await ApiService.DeleteTunnelEmbedAsync(channel, token, messageId);
                 }
-                if (!string.IsNullOrWhiteSpace(playitMessageId) && !string.IsNullOrWhiteSpace(playitChannel))
-                {
-                    await ApiService.DeleteTunnelEmbedAsync(playitChannel, token, playitMessageId);
-                }
+                // NOTE: We intentionally DO NOT delete playitChannel messages!
+                // The Playit channel acts as a permanent historical audit log of every host created.
             }
 
             lock (SyncLock)
