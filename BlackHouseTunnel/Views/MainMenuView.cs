@@ -1039,6 +1039,11 @@ namespace BlackHouseTunnel.Views
             rulesBtnStack.Children.Add(rulesBtnTxt);
             configureRulesBtn.Content = rulesBtnStack;
 
+            if (!isAuthorizedHost)
+            {
+                configureRulesBtn.Visibility = Visibility.Collapsed;
+            }
+
             configureRulesBtn.Click += (s, e) =>
             {
                 OpenHostRulesSubView();
