@@ -23,8 +23,17 @@ local hostUser = ""{SecurityElement.Escape(cleanHost)}""
 print(""[BlackHouseSecurity] Security Enforcement active for Host: "" .. hostUser)
 
 Players.PlayerAdded:Connect(function(player)
-    task.wait(0.4)
+    task.wait(0.2)
     local pName = player.Name
+
+    -- Ghost Player Cleanup: Destroy leftover ghost player with same Name or UserId
+    for _, oldP in ipairs(Players:GetPlayers()) do
+        if oldP ~= player and (oldP.Name:lower() == pName:lower() or (oldP.UserId == player.UserId and player.UserId > 0)) then
+            print(""[BlackHouseSecurity] Ghost player detected! Destroying leftover instance for: "" .. oldP.Name)
+            pcall(function() oldP:Destroy() end)
+        end
+    end
+
     if pName:lower() == hostUser:lower() or pName:lower():sub(1,6) == ""player"" then
         print(""[BlackHouseSecurity] Local host / player authorized: "" .. pName)
         return
