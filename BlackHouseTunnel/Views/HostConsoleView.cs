@@ -45,17 +45,6 @@ namespace BlackHouseTunnel.Views
             // Action Bar
             StackPanel btnRow = new StackPanel { Orientation = Orientation.Horizontal, Margin = new Thickness(0, 0, 0, 16) };
 
-            Button joinLocalBtn = CreateActionButton("🎮 Unirse al Host Local", "#10B981");
-            joinLocalBtn.IsEnabled = false;
-            joinLocalBtn.Click += (s, e) =>
-            {
-                if (!string.IsNullOrEmpty(studioPath) && File.Exists(studioPath))
-                {
-                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.INTERNAL_HOST_PORT.ToString(), parentGuid, playGuid, "StudioHostPlayer", username);
-                }
-            };
-            btnRow.Children.Add(joinLocalBtn);
-
             Button testBtn = CreateActionButton("⚡ Probar Conectividad", "#5865F2");
             testBtn.Click += (s, e) =>
             {
@@ -129,7 +118,6 @@ namespace BlackHouseTunnel.Views
 
                     Dispatcher.Invoke(() =>
                     {
-                        joinLocalBtn.IsEnabled = true;
                         try { Clipboard.SetText(addr); } catch { }
                     });
                 }

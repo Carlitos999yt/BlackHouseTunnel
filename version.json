@@ -1,5 +1,5 @@
 {
-  "version": "1.3.4",
+  "version": "1.3.5",
   "download_url": "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe",
-  "notes": "¡Actualización Oficial v1.3.4! Corrección de parámetros de conexión para el botón 'Unirse al Host Local'."
+  "notes": "¡Actualización Oficial v1.3.5! Eliminación limpia del botón local en consola de host para evitar conflictos de procesos de Roblox Studio."
 }
