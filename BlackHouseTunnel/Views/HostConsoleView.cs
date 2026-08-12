@@ -51,7 +51,7 @@ namespace BlackHouseTunnel.Views
             {
                 if (!string.IsNullOrEmpty(studioPath) && File.Exists(studioPath))
                 {
-                    RobloxStudioService.LaunchClient(studioPath, port, uid, parentGuid, playGuid, username);
+                    RobloxStudioService.LaunchClient(studioPath, "127.0.0.1", UdpProxy.INTERNAL_HOST_PORT.ToString(), parentGuid, playGuid, "StudioHostPlayer", username);
                 }
             };
             btnRow.Children.Add(joinLocalBtn);
