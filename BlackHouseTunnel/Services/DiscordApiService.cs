@@ -591,7 +591,7 @@ namespace BlackHouseTunnel.Services
                                 new { name = "CustomColorHex", value = tunnel.CustomEmbedColorHex ?? "", inline = true },
                                 new { name = "AllowedRoleIds", value = string.Join(",", tunnel.AllowedRoleIds), inline = true },
                                 new { name = "AllowedUserIds", value = string.Join(",", tunnel.AllowedUserIds), inline = true },
-                                new { name = "MinAppVersion", value = string.IsNullOrWhiteSpace(tunnel.MinAppVersion) ? "1.3.1" : tunnel.MinAppVersion, inline = true }
+                                new { name = "MinAppVersion", value = string.IsNullOrWhiteSpace(tunnel.MinAppVersion) ? UpdateService.CurrentVersion : tunnel.MinAppVersion, inline = true }
                             },
                             timestamp = DateTime.UtcNow.ToString("o")
                         }
@@ -799,7 +799,7 @@ namespace BlackHouseTunnel.Services
                                         RemoteAddress = metaFromPlayit != null ? metaFromPlayit.RemoteAddress : remoteAddr,
                                         VisibilityMode = metaFromPlayit != null ? metaFromPlayit.VisibilityMode : visMode,
                                         AccessKey = metaFromPlayit != null ? metaFromPlayit.AccessKey : accessKey,
-                                        MinAppVersion = metaFromPlayit != null ? metaFromPlayit.MinAppVersion : "1.3.1",
+                                        MinAppVersion = metaFromPlayit != null ? metaFromPlayit.MinAppVersion : UpdateService.CurrentVersion,
                                         CustomRuleName = metaFromPlayit?.CustomRuleName,
                                         CustomBadgeLabel = metaFromPlayit?.CustomBadgeLabel,
                                         CustomEmbedColorHex = metaFromPlayit?.CustomEmbedColorHex,

@@ -18,7 +18,7 @@ namespace BlackHouseTunnel.Services
         public int VisibilityMode { get; set; } = 0; // 0: Global, 1: Servidor, 2: Privadito, >= 3: Custom Rule
         public string AccessKey { get; set; } = ""; // Key/Password for private hosts
         public bool RequiresAccessKey => !string.IsNullOrWhiteSpace(AccessKey);
-        public string MinAppVersion { get; set; } = "1.3.1"; // Required minimum app version to join
+        public string MinAppVersion { get; set; } = UpdateService.CurrentVersion; // Required minimum app version to join
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public string? DiscordMessageId { get; set; } = null;
         public string? PlayitMessageId { get; set; } = null;
