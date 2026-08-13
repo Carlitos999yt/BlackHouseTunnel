@@ -1,1 +1,5 @@
-{"version":"1.3.1","download_url":"https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.3.1/BlackHouseTunnel.exe","notes":"Actualización v1.3.1: Renombrado botón a Configurar Reglas, diseño ultra redondeado en cajas de texto y optimización de diseño adaptativo responsive."}
+{
+  "version": "1.3.7",
+  "download_url": "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe",
+  "notes": "Â¡ActualizaciÃ³n Oficial v1.3.7! OptimizaciÃ³n de rendimiento en lista de miembros en lÃ­nea, filtro de bots y lÃ­mites estables de UI."
+}
