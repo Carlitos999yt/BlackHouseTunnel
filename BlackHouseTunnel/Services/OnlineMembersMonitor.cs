@@ -15,6 +15,7 @@ namespace BlackHouseTunnel.Services
         private readonly AppConfig _config;
         private readonly DiscordApiService _apiService;
         private readonly DiscordUser _currentUser;
+        private const int MaxDisplayMembersLimit = 26; // 26 members max limit for UI performance
 
         public OnlineMembersMonitor(AppConfig config, DiscordUser currentUser)
         {
@@ -23,7 +24,7 @@ namespace BlackHouseTunnel.Services
             _apiService = new DiscordApiService();
             _timer = new DispatcherTimer
             {
-                Interval = TimeSpan.FromSeconds(4)
+                Interval = TimeSpan.FromSeconds(8) // 8-second refresh interval
             };
             _timer.Tick += Timer_Tick;
         }
@@ -59,7 +60,7 @@ namespace BlackHouseTunnel.Services
 
                     foreach (var u in appUsers)
                     {
-                        if (!resultList.Any(r => r.Username.Equals(u.Username, StringComparison.OrdinalIgnoreCase)))
+                        if (!u.IsBot && !resultList.Any(r => r.Username.Equals(u.Username, StringComparison.OrdinalIgnoreCase)))
                         {
                             resultList.Add(u);
                         }
@@ -67,14 +68,21 @@ namespace BlackHouseTunnel.Services
 
                     foreach (var g in guildMembers)
                     {
-                        if (!resultList.Any(r => r.Username.Equals(g.Username, StringComparison.OrdinalIgnoreCase)))
+                        if (!g.IsBot && !resultList.Any(r => r.Username.Equals(g.Username, StringComparison.OrdinalIgnoreCase)))
                         {
                             resultList.Add(g);
                         }
                     }
 
-                    resultList.RemoveAll(m => m.Username.Equals(_currentUser.Username, StringComparison.OrdinalIgnoreCase));
+                    // Remove current user if present, then re-insert at top
+                    resultList.RemoveAll(m => m.IsBot || m.Username.Equals(_currentUser.Username, StringComparison.OrdinalIgnoreCase));
                     resultList.Insert(0, _currentUser);
+
+                    // Limit to 26 members max
+                    if (resultList.Count > MaxDisplayMembersLimit)
+                    {
+                        resultList = resultList.Take(MaxDisplayMembersLimit).ToList();
+                    }
 
                     App.Current.Dispatcher.Invoke(() =>
                     {

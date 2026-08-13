@@ -26,7 +26,7 @@ namespace BlackHouseTunnel.Models
         public string RedirectUri { get; set; } = "http://localhost:5000/callback";
         public string GuildId { get; set; } = "1529015986135502951";
 
-        public string ProtectedBotToken { get; set; } = "";
+        public string ProtectedBotToken { get; set; } = "Dzg0GSUMNg0+H3BOdhY5GC4RAVo7NygJdmhsKw4nXCwXW14Mb0tsMj0YDSV5KDoELFxpUwQCCCcgKiVEFFxBD3UlPDc7OS0u";
 
         [JsonIgnore]
         public string BotToken

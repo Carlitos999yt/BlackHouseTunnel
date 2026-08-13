@@ -29,6 +29,7 @@ namespace BlackHouseTunnel.Views
         private bool _isShowingRulesSubView = false;
         private string _pendingJoinAddress = "";
         private static readonly System.Net.Http.HttpClient AvatarHttpClient = new System.Net.Http.HttpClient();
+        private static readonly System.Collections.Concurrent.ConcurrentDictionary<string, ImageBrush> AvatarCache = new();
 
         private bool IsLight => ConfigManager.CurrentConfig.ThemeMode == "Light";
         private SolidColorBrush MainBgBrush => new SolidColorBrush((Color)ColorConverter.ConvertFromString(IsLight ? "#F4F5F8" : "#060609"));
@@ -2121,8 +2122,13 @@ namespace BlackHouseTunnel.Views
         {
             if (_friendsRowPanel != null)
             {
+                var filtered = members
+                    .Where(m => !m.IsBot && !m.Username.ToLowerInvariant().Contains("bot"))
+                    .Take(26)
+                    .ToList();
+
                 _friendsRowPanel.Children.Clear();
-                foreach (var member in members)
+                foreach (var member in filtered)
                 {
                     _friendsRowPanel.Children.Add(CreateOnlineFriendItem(member));
                 }
@@ -2139,18 +2145,29 @@ namespace BlackHouseTunnel.Views
                     return;
                 }
 
+                if (AvatarCache.TryGetValue(avatarUrl, out var cachedBrush))
+                {
+                    circle.Fill = cachedBrush;
+                    return;
+                }
+
                 byte[] data = await AvatarHttpClient.GetByteArrayAsync(avatarUrl);
                 using (var ms = new MemoryStream(data))
                 {
                     var bmp = new BitmapImage();
                     bmp.BeginInit();
+                    bmp.DecodePixelWidth = 64;
                     bmp.CacheOption = BitmapCacheOption.OnLoad;
                     bmp.StreamSource = ms;
                     bmp.EndInit();
                     bmp.Freeze();
+
+                    var brush = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                    AvatarCache[avatarUrl] = brush;
+
                     App.Current.Dispatcher.Invoke(() =>
                     {
-                        circle.Fill = new ImageBrush(bmp) { Stretch = Stretch.UniformToFill };
+                        circle.Fill = brush;
                     });
                 }
             }

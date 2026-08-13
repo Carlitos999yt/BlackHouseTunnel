@@ -287,12 +287,16 @@ namespace BlackHouseTunnel.Services
                     {
                         if (elem.TryGetProperty("user", out var uElem))
                         {
+                            bool isBotUser = uElem.TryGetProperty("bot", out var bProp) && bProp.ValueKind == JsonValueKind.True;
+                            if (isBotUser) continue;
+
                             var dUser = new DiscordUser
                             {
                                 Id = uElem.GetProperty("id").GetString() ?? "",
                                 Username = uElem.GetProperty("username").GetString() ?? "",
                                 GlobalName = uElem.TryGetProperty("global_name", out var g) && g.ValueKind != JsonValueKind.Null ? g.GetString() ?? "" : "",
-                                AvatarHash = uElem.TryGetProperty("avatar", out var av) && av.ValueKind != JsonValueKind.Null ? av.GetString() : null
+                                AvatarHash = uElem.TryGetProperty("avatar", out var av) && av.ValueKind != JsonValueKind.Null ? av.GetString() : null,
+                                IsBot = false
                             };
 
                             if (elem.TryGetProperty("nick", out var n) && n.ValueKind != JsonValueKind.Null)

@@ -13,6 +13,7 @@ namespace BlackHouseTunnel.Models
         public string? AvatarHash { get; set; } = null;
         public string? DirectAvatarUrl { get; set; } = null;
         public bool IsMemberOfGuild { get; set; } = false;
+        public bool IsBot { get; set; } = false;
         public List<string> RoleIds { get; set; } = new();
         public List<string> RoleNames { get; set; } = new();
         public string PrimaryRole { get; set; } = "Usuario";
