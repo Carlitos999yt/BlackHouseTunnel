@@ -98,7 +98,14 @@ namespace BlackHouseTunnel.Services
                     string onlineVersion = vProp.GetString() ?? CurrentVersion;
                     LatestVersion = onlineVersion;
 
-                    LatestDownloadUrl = $"https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v{onlineVersion}/BlackHouseTunnel.exe";
+                    if (fDoc.RootElement.TryGetProperty("download_url", out var dlProp) && dlProp.ValueKind != JsonValueKind.Null && !string.IsNullOrWhiteSpace(dlProp.GetString()))
+                    {
+                        LatestDownloadUrl = dlProp.GetString()!;
+                    }
+                    else
+                    {
+                        LatestDownloadUrl = $"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe";
+                    }
 
                     if (IsNewerVersion(onlineVersion, CurrentVersion))
                     {
