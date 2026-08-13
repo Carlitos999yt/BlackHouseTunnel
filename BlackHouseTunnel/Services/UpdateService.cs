@@ -48,14 +48,47 @@ namespace BlackHouseTunnel.Services
         {
             try
             {
-                string apiUrl = "https://api.github.com/repos/Carlitos999yt/BlackHouseTunnel/releases/latest";
-                var req = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+                // Primary check: Check version.json with cache-busting timestamp directly from main branch
+                string versionUrl = $"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/version.json?t={DateTime.UtcNow.Ticks}";
+                var req = new HttpRequestMessage(HttpMethod.Get, versionUrl);
                 var resp = await Client.SendAsync(req);
 
                 if (resp.IsSuccessStatusCode)
                 {
                     string json = await resp.Content.ReadAsStringAsync();
-                    using var doc = JsonDocument.Parse(json);
+                    using var fDoc = JsonDocument.Parse(json);
+                    if (fDoc.RootElement.TryGetProperty("version", out var vProp))
+                    {
+                        string onlineVersion = vProp.GetString() ?? CurrentVersion;
+                        LatestVersion = onlineVersion;
+
+                        if (fDoc.RootElement.TryGetProperty("download_url", out var dlProp) && dlProp.ValueKind != JsonValueKind.Null && !string.IsNullOrWhiteSpace(dlProp.GetString()))
+                        {
+                            LatestDownloadUrl = dlProp.GetString()!;
+                        }
+                        else
+                        {
+                            LatestDownloadUrl = "https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe";
+                        }
+
+                        if (IsNewerVersion(onlineVersion, CurrentVersion))
+                        {
+                            IsUpdateAvailable = true;
+                            OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
+                            return;
+                        }
+                    }
+                }
+
+                // Secondary Fallback: Query GitHub Releases API
+                string apiUrl = "https://api.github.com/repos/Carlitos999yt/BlackHouseTunnel/releases/latest";
+                var relReq = new HttpRequestMessage(HttpMethod.Get, apiUrl);
+                var relResp = await Client.SendAsync(relReq);
+
+                if (relResp.IsSuccessStatusCode)
+                {
+                    string relJson = await relResp.Content.ReadAsStringAsync();
+                    using var doc = JsonDocument.Parse(relJson);
                     if (doc.RootElement.TryGetProperty("tag_name", out var tagProp))
                     {
                         string tag = tagProp.GetString()?.TrimStart('v') ?? CurrentVersion;
@@ -83,34 +116,7 @@ namespace BlackHouseTunnel.Services
                         {
                             IsUpdateAvailable = true;
                             OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
-                            return;
                         }
-                    }
-                }
-
-                // Fallback: Check version.json with cache-busting timestamp
-                string versionUrl = $"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/version.json?t={DateTime.UtcNow.Ticks}";
-                string fallbackJson = await Client.GetStringAsync(versionUrl);
-
-                using var fDoc = JsonDocument.Parse(fallbackJson);
-                if (fDoc.RootElement.TryGetProperty("version", out var vProp))
-                {
-                    string onlineVersion = vProp.GetString() ?? CurrentVersion;
-                    LatestVersion = onlineVersion;
-
-                    if (fDoc.RootElement.TryGetProperty("download_url", out var dlProp) && dlProp.ValueKind != JsonValueKind.Null && !string.IsNullOrWhiteSpace(dlProp.GetString()))
-                    {
-                        LatestDownloadUrl = dlProp.GetString()!;
-                    }
-                    else
-                    {
-                        LatestDownloadUrl = $"https://raw.githubusercontent.com/Carlitos999yt/BlackHouseTunnel/main/Archivos_Compilados_Y_Zips/BlackHouseTunnel.exe";
-                    }
-
-                    if (IsNewerVersion(onlineVersion, CurrentVersion))
-                    {
-                        IsUpdateAvailable = true;
-                        OnUpdateStatusChanged?.Invoke(null, EventArgs.Empty);
                     }
                 }
             }
