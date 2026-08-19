@@ -1,5 +1,5 @@
 {
-  "version": "1.4.7",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.7/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.7: Sistema maestro de sincronizacion de nombres en 4 capas (UDP + HTTP Bridge de servidor, modal interactivo en juego y comando /nick) y boton Topbar centrado."
+  "version": "1.4.8",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.8/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.8: Optimizacion maxima de rendimiento en Luau (0 lag/congelamiento), sincronizacion global exacta del orden de jugadores (NepJoinOrder) y temporizador de minutos sin desfase."
 }
