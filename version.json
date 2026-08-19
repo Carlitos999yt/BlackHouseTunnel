@@ -1,5 +1,5 @@
 {
-  "version": "1.4.4",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.4/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.4: Nuevo boton Topbar para celulares y PC, encabezados en ingles (PLAYERS y MINUTES), ScrollingFrame y aislamiento estricto de apodos."
+  "version": "1.4.5",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.5/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.5: Alineacion perfecta del boton Topbar con IgnoreGuiInset, correccion de alternancia de la tecla TAB sin conflicto de eventos y propagacion limpia de apodos en Studio."
 }
