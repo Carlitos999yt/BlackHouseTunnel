@@ -1,5 +1,5 @@
 {
-  "version": "1.4.5",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.5/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.5: Alineacion perfecta del boton Topbar con IgnoreGuiInset, correccion de alternancia de la tecla TAB sin conflicto de eventos y propagacion limpia de apodos en Studio."
+  "version": "1.4.6",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.6/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.6: Reversion completa de banderas CLI de Studio para eliminar pantalla de inicio de sesion, posicion Topbar corregida y control de apodos."
 }
