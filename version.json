@@ -1,5 +1,5 @@
 {
-  "version": "1.4.6",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.6/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.6: Reversion completa de banderas CLI de Studio para eliminar pantalla de inicio de sesion, posicion Topbar corregida y control de apodos."
+  "version": "1.4.7",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.7/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.7: Sistema maestro de sincronizacion de nombres en 4 capas (UDP + HTTP Bridge de servidor, modal interactivo en juego y comando /nick) y boton Topbar centrado."
 }
