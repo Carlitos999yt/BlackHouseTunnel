@@ -1,5 +1,5 @@
 {
-  "version": "1.4.2",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.2/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.2: Correccion definitiva en la sincronizacion e independencia de apodos, deduplicacion del tabulador y orden por tiempo de juego."
+  "version": "1.4.3",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.3/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.3: Redisenio moderno de tabulador estilo Glassmorphism con conteo dinamico, privacidad completa en pruebas de conectividad y optimizacion de apodos."
 }
