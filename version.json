@@ -1,5 +1,5 @@
 {
-  "version": "1.4.8",
-  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.8/BlackHouseTunnel.exe",
-  "notes": "Actualizacion Oficial v1.4.8: Optimizacion maxima de rendimiento en Luau (0 lag/congelamiento), sincronizacion global exacta del orden de jugadores (NepJoinOrder) y temporizador de minutos sin desfase."
+  "version": "1.4.9",
+  "download_url": "https://github.com/Carlitos999yt/BlackHouseTunnel/releases/download/v1.4.9/BlackHouseTunnel.exe",
+  "notes": "Actualizacion Oficial v1.4.9: Base de datos temporal en RAM (TempPlayerDB) para mapeo exacto de apodos, optimizacion extrema sin lag y sincronizacion nativa de jugadores."
 }
